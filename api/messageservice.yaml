@@ -1,0 +1,208 @@
+swagger: "2.0"
+info:
+  description: "This information will be replaced by the SpringFox config information"
+  version: "0.0.1"
+  title: "will be replaced"
+securityDefinitions:
+  Bearer:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+
+# REST API path definitions #
+paths:
+  /messages/key:
+    post:
+      tags:
+        - "message-controller"
+      summary: "Update the master-key fragment for the Session-Key [Authorization: Role: technical]"
+      operationId: "updateKey"
+      security:
+        - Bearer: []
+      parameters:
+        - in: "body"
+          name: "key"
+          required: true
+          schema:
+            $ref: "#/definitions/MasterKeyDTO"
+      responses:
+        202:
+          description: "ACCEPTED - key was successfully inserted"
+        401:
+          description: "UNAUTHORIZED - no/invalid Keycloak token"
+        403:
+          description: "FORBIDDEN - no/invalid role/authorization"
+        409:
+          description: "CONFLICT - there was a key in the service"
+        500:
+          description: "INTERNAL SERVER ERROR - server encountered unexpected condition"
+  /messages/new:
+    post:
+      tags:
+       - "message-controller"
+      summary: "Add new Rocket.Chat message [Authorization: Role: user, consultant, technical]"
+      operationId: "createMessage"
+      security:
+        - Bearer: []
+      parameters:
+      - in: "body"
+        name: "Message"
+        required: true
+        schema:
+          $ref: "#/definitions/MessageDTO"
+      - in: header
+        name: "RCToken"
+        type: string
+        required: true
+      - in: header
+        name: "RCUserId"
+        type: string
+        required: true
+      - in: header
+        name: "RCGroupId"
+        type: string
+        required: true
+      responses:
+        201:
+          description: "CREATED - message was successfully created"
+        400:
+          description: "BAD REQUEST - invalid/incomplete request or body object"
+        401:
+          description: "UNAUTHORIZED - no/invalid Keycloak token"
+        403:
+          description: "FORBIDDEN - no/invalid role/authorization"
+        500:
+          description: "INTERNAL SERVER ERROR - server encountered unexpected condition"
+  /messages/feedback/new:
+    post:
+      tags:
+       - "message-controller"
+      summary: "Add new Rocket.Chat message to feedback chat [Authorization: authority for feedback chat]"
+      operationId: "createFeedbackMessage"
+      security:
+        - Bearer: []
+      parameters:
+      - in: "body"
+        name: "Message"
+        required: true
+        schema:
+          $ref: "#/definitions/MessageDTO"
+      - in: header
+        name: "RCToken"
+        type: string
+        required: true
+      - in: header
+        name: "RCUserId"
+        type: string
+        required: true
+      - in: header
+        name: "RCFeedbackGroupId"
+        type: string
+        required: true
+      responses:
+        201:
+          description: "CREATED - message was successfully created"
+        400:
+          description: "BAD REQUEST - invalid/incomplete request or body object"
+        401:
+          description: "UNAUTHORIZED - no/invalid Keycloak token"
+        403:
+          description: "FORBIDDEN - no/invalid role/authorization"
+        500:
+          description: "INTERNAL SERVER ERROR - server encountered unexpected condition"    
+  /messages:
+    get:
+      tags:
+       - "message-controller"
+      summary: "Get Rocket.Chat message stream [Authorization: Role: user, consultant]"
+      operationId: "getMessageStream"
+      security:
+        - Bearer: []
+      parameters:
+      - in: header
+        name: "RCToken"
+        type: string
+        required: true
+      - in: header
+        name: "RCUserId"
+        type: string
+        required: true
+      - in: "query"
+        name: "rcGroupId"
+        required: true
+        type: string
+        description: "Rocket.Chat roomId"
+      - in: "query"
+        name: "offset"
+        required: true
+        type: integer
+        description: "Number of items where to start in the query (0 = first item)"
+      - in: "query"
+        name: "count"
+        required: true
+        type: integer
+        description: "Number of item which are being returned (0 = all)"
+      responses:
+        200:
+          description: "OK - successfull operation"
+          schema:
+              $ref: "#/definitions/MessageStreamDTO"
+        204:
+          description: "NO CONTENT - no messages available"
+        400:
+          description: "BAD REQUEST - invalid/incomplete request or body object"
+        401:
+          description: "UNAUTHORIZED - no/invalid Keycloak token"
+        403:
+          description: "FORBIDDEN - no/invalid role/authorization"
+        500:
+          description: "INTERNAL SERVER ERROR - server encountered unexpected condition"
+  /messages/forward:
+    post:
+      tags:
+       - "message-controller"
+      summary: "Forward a Rocket.Chat message to another group [Authorization: Role: u25-consultant]"
+      operationId: "forwardMessage"
+      security:
+        - Bearer: []
+      parameters:
+      - in: "body"
+        name: "Message"
+        required: true
+        description: "Body description"
+        schema:
+          $ref: "#/definitions/ForwardMessageDTO"
+      - in: header
+        name: "RCToken"
+        type: string
+        required: true
+      - in: header
+        name: "RCUserId"
+        type: string
+        required: true
+      - in: header
+        name: "RCGroupId"
+        type: string
+        required: true
+      responses:
+        201:
+          description: "CREATED - message was successfully created"
+        400:
+          description: "BAD REQUEST - invalid/incomplete request or body object"
+        401:
+          description: "UNAUTHORIZED - no/invalid Keycloak token"
+        403:
+          description: "FORBIDDEN - no/invalid role/authorization"
+        500:
+          description: "INTERNAL SERVER ERROR - server encountered unexpected condition" 
+       
+# Model/object definitions #
+definitions:
+  MessageDTO:
+    type: "object"
+  MessageStreamDTO:
+    type: "object"
+  MasterKeyDTO:
+    type: "object"
+  ForwardMessageDTO:
+    type: "object"
