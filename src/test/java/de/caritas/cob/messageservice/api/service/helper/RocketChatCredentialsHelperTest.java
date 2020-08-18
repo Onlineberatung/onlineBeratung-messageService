@@ -142,7 +142,8 @@ public class RocketChatCredentialsHelperTest {
    **/
 
   @Test
-  public void updateCredentials_Should_LoginAUsers_WhenNoUsersAreLoggedIn() {
+  public void updateCredentials_Should_LoginAUsers_WhenNoUsersAreLoggedIn()
+      throws RocketChatUserNotInitializedException {
     // Prepare Header for Requests
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -170,7 +171,7 @@ public class RocketChatCredentialsHelperTest {
 
   @Test
   public void updateCredentials_Should_LoginBUsers_WhenAUsersAreLoggedIn()
-      throws NoSuchFieldException {
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
     // Prepare Header for Requests
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -209,7 +210,7 @@ public class RocketChatCredentialsHelperTest {
 
   @Test
   public void updateCredentials_Should_LogoutAndReLoginBUsers_WhenAllUsersArePresent()
-      throws NoSuchFieldException {
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -281,7 +282,7 @@ public class RocketChatCredentialsHelperTest {
 
   @Test
   public void getSystemUser_Should_ReturnUserA_WhenOnlyUserAIsInitialized()
-      throws NoSuchFieldException {
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
 
     RocketChatCredentials sysUserA = new RocketChatCredentials(SYSTEM_USER_A_ID,
         SYSTEM_USER_A_TOKEN, SYSTEM_USER_A_USERNAME, LocalDateTime.now());
@@ -296,7 +297,7 @@ public class RocketChatCredentialsHelperTest {
 
   @Test
   public void getSystemUser_Should_ReturnUserB_WhenOnlyUserBIsInitialized()
-      throws NoSuchFieldException {
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
 
     RocketChatCredentials sysUserB = new RocketChatCredentials(SYSTEM_USER_B_ID,
         SYSTEM_USER_B_TOKEN, SYSTEM_USER_B_USERNAME, LocalDateTime.now());
@@ -310,7 +311,8 @@ public class RocketChatCredentialsHelperTest {
   }
 
   @Test
-  public void getSystemUser_Should_ReturnUserA_WhenUserAIsNewer() throws NoSuchFieldException {
+  public void getSystemUser_Should_ReturnUserA_WhenUserAIsNewer()
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
 
     // Prepare User A
     RocketChatCredentials sysUserA = new RocketChatCredentials(SYSTEM_USER_A_ID,
@@ -334,7 +336,8 @@ public class RocketChatCredentialsHelperTest {
   }
 
   @Test
-  public void getSystemUser_Should_ReturnUserB_WhenUserBIsNewer() throws NoSuchFieldException {
+  public void getSystemUser_Should_ReturnUserB_WhenUserBIsNewer()
+      throws NoSuchFieldException, RocketChatUserNotInitializedException {
 
     // Prepare User A - 5 minutes older than User B
     RocketChatCredentials sysUserA = new RocketChatCredentials(SYSTEM_USER_A_ID,

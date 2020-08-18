@@ -73,11 +73,10 @@ public class LogService {
   /**
    * Logs a Rocket.Chat Bad Request error
    * 
-   * @param exception
+   * @param message
    */
-  public static void logRocketChatBadRequestError(Exception exception) {
-    LOGGER.error(RC_BAD_REQUEST_ERROR + "{}",
-        getStackTrace(exception));
+  public static void logRocketChatBadRequestError(String message) {
+    LOGGER.error(RC_BAD_REQUEST_ERROR + "{}", message);
   }
 
   /**

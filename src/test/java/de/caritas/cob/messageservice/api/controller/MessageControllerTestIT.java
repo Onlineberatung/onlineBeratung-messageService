@@ -2,7 +2,6 @@ package de.caritas.cob.messageservice.api.controller;
 
 import static de.caritas.cob.messageservice.testHelper.TestConstants.DONT_SEND_NOTIFICATION;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_DTO_WITH_NOTIFICATION;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_ATTACHMENT_DESCRIPTION;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_ATTACHMENT_FILE_TYPE;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_ATTACHMENT_ID;
@@ -21,13 +20,29 @@ import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_TIMESTAM
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.SEND_NOTIFICATION;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
+import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.UserDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.AttachmentDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.FileDTO;
+import de.caritas.cob.messageservice.api.service.EncryptionService;
+import de.caritas.cob.messageservice.api.service.LogService;
+import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.ArrayList;
 import java.util.List;
 import org.assertj.core.util.Arrays;
@@ -38,21 +53,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
-import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.UserDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.AttachmentDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.FileDTO;
-import de.caritas.cob.messageservice.api.service.EncryptionService;
-import de.caritas.cob.messageservice.api.service.LogService;
-import de.caritas.cob.messageservice.api.service.RocketChatService;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(MessageController.class)
@@ -109,7 +112,6 @@ public class MessageControllerTestIT {
 
   /**
    * 400 - Bad Request tests
-   * 
    */
 
   @Test
@@ -189,7 +191,6 @@ public class MessageControllerTestIT {
 
   /**
    * 200 - OK & 201 CREATED tests
-   * 
    */
 
   @Test
@@ -219,9 +220,6 @@ public class MessageControllerTestIT {
   public void createMessage_Should_ReturnCreated_WhenProvidedWithValidRequestValuesAndSuccessfulPostGroupMessageFacadeCall()
       throws Exception {
 
-    when(postGroupMessageFacade.postGroupMessage(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString(), Mockito.any())).thenReturn(HttpStatus.CREATED);
-
     mvc.perform(post(PATH_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .content(VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION)
@@ -236,10 +234,6 @@ public class MessageControllerTestIT {
   public void forwardMessage_Should_ReturnCreated_WhenProvidedWithValidRequestValuesAndSuccessfulPostGroupMessageFacadeCall()
       throws Exception {
 
-    when(postGroupMessageFacade.postFeedbackGroupMessage(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
-            .thenReturn(HttpStatus.CREATED);
-
     mvc.perform(post(PATH_POST_FORWARD_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .content(VALID_FORWARD_MESSAGE_REQUEST_BODY).contentType(MediaType.APPLICATION_JSON)
@@ -249,9 +243,6 @@ public class MessageControllerTestIT {
   @Test
   public void createFeedbackMessage_Should_ReturnCreated_WhenProvidedWithValidRequestValuesAndSuccessfulPostGroupMessageFacadeCall()
       throws Exception {
-
-    when(postGroupMessageFacade.postFeedbackGroupMessage(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID,
-        MESSAGE, null)).thenReturn(HttpStatus.CREATED);
 
     mvc.perform(post(PATH_CREATE_FEEDBACK_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
@@ -266,7 +257,6 @@ public class MessageControllerTestIT {
 
   /**
    * 204 - No Content test
-   * 
    */
   @Test
   public void getMessageStream_Should_ReturnNoContent_WhenProvidedWithValidRequestValuesAndMessageStreamIsEmpty()
@@ -286,14 +276,14 @@ public class MessageControllerTestIT {
 
   /**
    * 500 - Internal Server Error test
-   * 
    */
   @Test
   public void createMessage_Should_ReturnInternalServerError_WhenProvidedWithValidRequestValuesAndPostGroupMessageFacadeResponseIsEmpty()
       throws Exception {
 
-    when(postGroupMessageFacade.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID,
-        MESSAGE_DTO_WITH_NOTIFICATION)).thenReturn(null);
+    doThrow(new InternalServerErrorException())
+        .when(postGroupMessageFacade).postGroupMessage(eq(RC_TOKEN), eq(RC_USER_ID),
+        eq(RC_GROUP_ID), any());
 
     mvc.perform(post(PATH_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
@@ -309,8 +299,8 @@ public class MessageControllerTestIT {
   public void forwardMessage_Should_ReturnInternalServerError_WhenProvidedWithValidRequestValuesAndPostGroupMessageFacadeResponseIsEmpty()
       throws Exception {
 
-    when(postGroupMessageFacade.postGroupMessage(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString(), Mockito.any())).thenReturn(null);
+    doThrow(new InternalServerErrorException())
+        .when(postGroupMessageFacade).postFeedbackGroupMessage(any(), any(), any(), any(), any());
 
     mvc.perform(post(PATH_POST_FORWARD_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
@@ -325,8 +315,8 @@ public class MessageControllerTestIT {
   public void createFeedbackMessage_Should_ReturnInternalServerError_WhenProvidedWithValidRequestValuesAndPostGroupMessageFacadeResponseIsEmpty()
       throws Exception {
 
-    when(postGroupMessageFacade.postFeedbackGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE,
-        null)).thenReturn(null);
+    doThrow(new InternalServerErrorException()).when(postGroupMessageFacade)
+        .postFeedbackGroupMessage(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
 
     mvc.perform(post(PATH_CREATE_FEEDBACK_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
@@ -341,8 +331,6 @@ public class MessageControllerTestIT {
 
   /**
    * 202 - Accepted Test
-   * 
-   * @throws Exception
    */
   @Test
   public void updateKey_Should_ReturnAccepted_WhenProvidedWithNewKey() throws Exception {
@@ -356,8 +344,6 @@ public class MessageControllerTestIT {
 
   /**
    * 409 - Conflict test
-   * 
-   * @throws Exception
    */
   @Test
   public void updateKey_Should_ReturnConflict_WhenProvidedWithSameKey() throws Exception {
@@ -371,7 +357,6 @@ public class MessageControllerTestIT {
 
   /**
    * Helper methods
-   * 
    */
   private String convertObjectToJson(Object object) throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();

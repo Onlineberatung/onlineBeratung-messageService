@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
+import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.KeycloakException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
@@ -106,6 +107,21 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   public ResponseEntity<Object> handleInternal(final RuntimeException ex,
       final WebRequest request) {
     LogService.logInternalServerError(ex);
+
+    return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR,
+        request);
+  }
+
+  /**
+   * 500 - Custom Internal Server Error with logging method.
+   *
+   * @param ex the thrown exception
+   * @param request
+   */
+  @ExceptionHandler({InternalServerErrorException.class})
+  public ResponseEntity<Object> handleInternal(final InternalServerErrorException ex,
+      final WebRequest request) {
+    ex.executeLogging();
 
     return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR,
         request);

@@ -1,6 +1,8 @@
 package de.caritas.cob.messageservice.api.exception;
 
-public class RocketChatBadRequestException extends RuntimeException {
+import java.util.function.Consumer;
+
+public class RocketChatBadRequestException extends CustomLoggableResponseException {
 
   private static final long serialVersionUID = 362702101121444833L;
 
@@ -9,8 +11,8 @@ public class RocketChatBadRequestException extends RuntimeException {
    * 
    * @param message
    */
-  public RocketChatBadRequestException(String message) {
-    super(message);
+  public RocketChatBadRequestException(String message, Consumer<String> loggingMethod) {
+    super(message, loggingMethod);
   }
 
 }

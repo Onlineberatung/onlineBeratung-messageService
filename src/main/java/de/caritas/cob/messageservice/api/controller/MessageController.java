@@ -47,13 +47,13 @@ public class MessageController implements MessagesApi {
     MessageStreamDTO message =
         rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId, offset, count);
 
-    return (message != null) ? new ResponseEntity<MessageStreamDTO>(message, HttpStatus.OK)
-        : new ResponseEntity<MessageStreamDTO>(HttpStatus.NO_CONTENT);
+    return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
+        : new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
   /**
    * Upates the Master-Key Fragment for the en-/decryption of messages
-   * 
+   *
    * @param masterKey
    * @return
    */
@@ -63,10 +63,10 @@ public class MessageController implements MessagesApi {
     if (!encryptionService.getMasterKey().equals(masterKey.getMasterKey())) {
       encryptionService.updateMasterKey(masterKey.getMasterKey());
       LogService.logInfo("MasterKey updated");
-      return new ResponseEntity<Void>(HttpStatus.OK);
+      return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    return new ResponseEntity<Void>(HttpStatus.CONFLICT);
+    return new ResponseEntity<>(HttpStatus.CONFLICT);
   }
 
   /**
@@ -77,11 +77,9 @@ public class MessageController implements MessagesApi {
       @NotBlank @RequestHeader String rcToken, @NotBlank @NotNull @RequestHeader String rcUserId,
       @NotBlank @NotNull @RequestHeader String rcGroupId) {
 
-    HttpStatus status =
-        postGroupMessageFacade.postGroupMessage(rcToken, rcUserId, rcGroupId, message);
+    postGroupMessageFacade.postGroupMessage(rcToken, rcUserId, rcGroupId, message);
 
-    return (status != null) ? new ResponseEntity<Void>(status)
-        : new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
   /**
@@ -97,14 +95,13 @@ public class MessageController implements MessagesApi {
     Optional<String> alias = JSONHelper.convertForwardMessageDTOToString(forwardMessageDTO);
 
     if (!alias.isPresent()) {
-      return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    HttpStatus status = postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
+    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
         rcGroupId, forwardMessageDTO.getMessage(), alias.get());
 
-    return (status != null) ? new ResponseEntity<Void>(status)
-        : new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
   /**
@@ -115,11 +112,10 @@ public class MessageController implements MessagesApi {
       @NotBlank @RequestHeader String rcToken, @NotBlank @NotNull @RequestHeader String rcUserId,
       @NotBlank @NotNull @RequestHeader String rcFeedbackGroupId) {
 
-    HttpStatus status = postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
+    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
         rcFeedbackGroupId, message.getMessage(), null);
 
-    return (status != null) ? new ResponseEntity<Void>(status)
-        : new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(HttpStatus.CREATED);
 
 
   }

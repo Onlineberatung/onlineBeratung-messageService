@@ -53,7 +53,7 @@ public class RocketChatCredentialsHelper {
    * 
    * @return
    */
-  public RocketChatCredentials getSystemUser() {
+  public RocketChatCredentials getSystemUser() throws RocketChatUserNotInitializedException {
     // If both are uninitialized throw Exception
     if (systemUser_A == null && systemUser_B == null) {
       throw new RocketChatUserNotInitializedException("No system user was initialized");

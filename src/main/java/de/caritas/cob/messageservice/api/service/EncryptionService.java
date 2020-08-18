@@ -3,6 +3,7 @@ package de.caritas.cob.messageservice.api.service;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -85,13 +86,14 @@ public class EncryptionService {
    * @param secret The secret to be used
    * @return
    */
-  public String encrypt(String messageToEncrypt, String secret) {
+  public String encrypt(String messageToEncrypt, String secret) throws CustomCryptoException {
     try {
       SecretKeySpec keySpec = generateSecretKeySpec(secret);
       Cipher cipher = Cipher.getInstance(CIPHER_METHODS);
       cipher.init(Cipher.ENCRYPT_MODE, keySpec);
       return ENCRYPTED_MESSAGE_FLAG
-          + Base64.getEncoder().encodeToString(cipher.doFinal(messageToEncrypt.getBytes("UTF-8")));
+          + Base64.getEncoder().encodeToString(cipher.doFinal(messageToEncrypt.getBytes(
+          StandardCharsets.UTF_8)));
     } catch (Exception e) {
       LogService.logEncryptionServiceError(e);
       throw new CustomCryptoException(e);
@@ -105,7 +107,7 @@ public class EncryptionService {
    * @param secret The secret to be used
    * @return The decrypted message
    */
-  public String decrypt(String messageToDecrypt, String secret) {
+  public String decrypt(String messageToDecrypt, String secret) throws CustomCryptoException {
 
     if (messageToDecrypt == null || !messageToDecrypt.startsWith(ENCRYPTED_MESSAGE_FLAG)) {
       return messageToDecrypt;

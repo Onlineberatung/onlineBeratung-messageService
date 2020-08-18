@@ -60,16 +60,14 @@ public class EncryptionServiceTest {
 
   @Test
   public void encrypt_Should_ReturnEncryptedText_WhenProvidedWithValidParameters()
-      throws NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException,
-      BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+      throws  CustomCryptoException {
     String encryptMessage = encryptionService.encrypt(MESSAGE_PLAIN, KEY_SESSION);
     assertEquals("Did not get the expected encryption result.", MESSAGE_ENCRYPTED, encryptMessage);
   }
 
   @Test
   public void encrypt_Should_ReturnWrongEncryptedText_WhenProvidedWithInvalidParameters()
-      throws NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException,
-      BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+      throws  CustomCryptoException {
     String encryptMessage = encryptionService.encrypt(MESSAGE_PLAIN, KEY_SESSION_WRONG);
     Assert.assertNotEquals("Did not get the expected encryption result.", MESSAGE_ENCRYPTED,
         encryptMessage);
@@ -77,16 +75,13 @@ public class EncryptionServiceTest {
 
   @Test
   public void decrypt_Should_ReturnDecryptedText_WhenProvidedWithValidParameters()
-      throws NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException,
-      BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+      throws  CustomCryptoException {
     String decryptedMessage = encryptionService.decrypt(MESSAGE_ENCRYPTED, KEY_SESSION);
     assertEquals("Did not get the expected decrypted result.", MESSAGE_PLAIN, decryptedMessage);
   }
 
   @Test
-  public void decrypt_Should_ReturnWrongDecryptedText_WhenProvidedWithInvalidParameters()
-      throws NoSuchPaddingException, UnsupportedEncodingException, IllegalBlockSizeException,
-      NoSuchAlgorithmException, InvalidKeyException {
+  public void decrypt_Should_ReturnWrongDecryptedText_WhenProvidedWithInvalidParameters() {
     try {
       encryptionService.decrypt(MESSAGE_ENCRYPTED, KEY_SESSION_WRONG);
       fail("The expected BadPaddingException due to wrong password was not thrown.");
@@ -96,7 +91,7 @@ public class EncryptionServiceTest {
   }
 
   @Test
-  public void decrypt_Should_ReturnNull_WhenMessageIsNull() {
+  public void decrypt_Should_ReturnNull_WhenMessageIsNull() throws CustomCryptoException {
     assertNull(encryptionService.decrypt(null, KEY_MASTER));
   }
 

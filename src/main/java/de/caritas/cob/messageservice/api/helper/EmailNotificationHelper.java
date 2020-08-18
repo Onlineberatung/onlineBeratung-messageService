@@ -26,7 +26,6 @@ public class EmailNotificationHelper {
     this.serviceHelper = serviceHelper;
   }
 
-
   /**
    * Send an email via the UserService
    * 

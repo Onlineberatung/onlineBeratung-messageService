@@ -1,13 +1,17 @@
 package de.caritas.cob.messageservice.api.facade;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import static java.util.Objects.isNull;
+
+import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
+import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /*
  * Facade to encapsulate the steps for posting a (group) message to Rocket.Chat
@@ -20,7 +24,7 @@ public class PostGroupMessageFacade {
 
   /**
    * Constructor
-   * 
+   *
    * @param rocketChatService
    */
   @Autowired
@@ -33,81 +37,63 @@ public class PostGroupMessageFacade {
   /**
    * Posts a message to the given Rocket.Chat group id and sends out a notification e-mail via the
    * UserService (because we need to get the user information).
-   * 
+   *
    * @param rcToken
    * @param rcUserId
    * @param rcGroupId
    * @param message
-   * @return
    */
-  public HttpStatus postGroupMessage(String rcToken, String rcUserId, String rcGroupId,
+  public void postGroupMessage(String rcToken, String rcUserId, String rcGroupId,
       MessageDTO message) {
 
-    HttpStatus httpStatus =
-        postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
+    postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
 
-    if (message.isSendNotification() && httpStatus == HttpStatus.CREATED) {
+    if (message.isSendNotification()) {
       emailNoticationFacade.sendEmailNotification(rcGroupId);
     }
-
-    return httpStatus;
   }
 
   /**
    * Posts a message to the given Rocket.Chat feedback group id and sends out a notification e-mail
    * via the UserService (because we need to get the user information).
-   * 
+   *
    * @param rcToken
    * @param rcUserId
    * @param rcFeedbackGroupId
    * @param message
-   * @return
    */
-  public HttpStatus postFeedbackGroupMessage(String rcToken, String rcUserId,
+  public void postFeedbackGroupMessage(String rcToken, String rcUserId,
       String rcFeedbackGroupId, String message, String alias) {
 
-    HttpStatus httpStatus =
-        postRocketChatGroupMessage(rcToken, rcUserId, rcFeedbackGroupId, message, alias);
-    if (httpStatus == HttpStatus.CREATED) {
-      emailNoticationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
-    }
-    return httpStatus;
-
+    postRocketChatGroupMessage(rcToken, rcUserId, rcFeedbackGroupId, message, alias);
+    emailNoticationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
   }
 
   /**
    * Posts a message to the given Rocket.Chat group id
-   * 
+   *
    * @param rcToken
    * @param rcUserId
    * @param rcGroupId
    * @param message
    * @param alias
-   * @return
    */
-  private HttpStatus postRocketChatGroupMessage(String rcToken, String rcUserId, String rcGroupId,
+  private void postRocketChatGroupMessage(String rcToken, String rcUserId, String rcGroupId,
       String message, String alias) {
-
-    PostMessageResponseDTO response = null;
 
     try {
       // Send message to Rocket.Chat via RocketChatService
-      response = rocketChatService.postGroupMessage(rcToken, rcUserId, rcGroupId, message, alias);
+      PostMessageResponseDTO response = rocketChatService.postGroupMessage(rcToken, rcUserId,
+          rcGroupId, message, alias);
+      if (isNull(response) || !response.isSuccess()) {
+        throw new InternalServerErrorException();
+      }
 
       // Set all messages as read for system message user
       rocketChatService.markGroupAsReadForSystemUser(rcGroupId);
 
-      if (response != null && response.isSuccess()) {
-        return HttpStatus.CREATED;
-      }
-
-    } catch (RocketChatPostMessageException postMsgEx) {
-      return HttpStatus.INTERNAL_SERVER_ERROR;
-
-    } catch (RocketChatPostMarkGroupAsReadException e) {
-      return HttpStatus.INTERNAL_SERVER_ERROR;
+    } catch (RocketChatPostMessageException | RocketChatPostMarkGroupAsReadException | CustomCryptoException ex) {
+      throw new InternalServerErrorException(ex, LogService::logInternalServerError);
     }
-
-    return HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

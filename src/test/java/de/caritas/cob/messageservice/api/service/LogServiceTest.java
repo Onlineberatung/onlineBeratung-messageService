@@ -94,10 +94,11 @@ public class LogServiceTest {
   }
 
   @Test
-  public void logRocketChatBadRequestError_Should_LogExceptionStackTrace() {
+  public void logRocketChatBadRequestError_Should_LogErrorMessage() {
 
-    LogService.logRocketChatBadRequestError(exception);
-    verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
+    LogService.logRocketChatBadRequestError(ERROR_MESSAGE);
+    verify(logger, times(1))
+        .error(eq("Rocket.Chat Bad Request service error: {}"), eq(ERROR_MESSAGE));
   }
 
   @Test
