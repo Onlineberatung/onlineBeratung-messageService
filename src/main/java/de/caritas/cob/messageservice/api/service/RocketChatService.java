@@ -102,7 +102,7 @@ public class RocketChatService {
       HttpEntity<MessageStreamDTO> response = restTemplate.exchange(uri, HttpMethod.GET, entity,
           MessageStreamDTO.class);
 
-      MessageStreamDTO messageStream = decryptMessagesAndremoveTechnicalMessages(
+      MessageStreamDTO messageStream = decryptMessages(
           requireNonNull(response.getBody()), rcGroupId);
 
       if (rcCount == 1) {
@@ -132,9 +132,8 @@ public class RocketChatService {
    * @param rcGroupId
    * @return The updated MessageStreamDTO
    */
-  private MessageStreamDTO decryptMessagesAndremoveTechnicalMessages(MessageStreamDTO dto,
+  private MessageStreamDTO decryptMessages(MessageStreamDTO dto,
       String rcGroupId) throws CustomCryptoException {
-    int deleteCounter = 0;
     List<MessagesDTO> messages = dto.getMessages();
 
     List<MessagesDTO> decryptedMessages = new ArrayList<>();
@@ -147,18 +146,6 @@ public class RocketChatService {
     }
 
     dto.setMessages(decryptedMessages);
-
-    if (deleteCounter > 0) {
-      dto.setCleaned(Integer.toString(deleteCounter));
-
-      int messageCount = Integer.parseInt(dto.getCount());
-      dto.setCount(Integer.toString(messageCount - deleteCounter));
-
-      int messageTotal = Integer.parseInt(dto.getTotal());
-      dto.setTotal(Integer.toString(messageTotal - deleteCounter));
-
-      dto.setMessages(messages);
-    }
 
     return dto;
   }
