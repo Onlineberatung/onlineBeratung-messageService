@@ -1,14 +1,12 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
-import de.caritas.cob.messageservice.api.exception.RocketChatGetGroupMessagesException;
-import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
-import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.Helper;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
@@ -86,7 +84,7 @@ public class RocketChatService {
    * @param rcGroupId Rocket.Chat group Id
    * @param rcOffset Number of items where to start in the query (0 = first item)
    * @param rcCount In MVP only 0 (all) or 1(one entry) are allowed - Number of item which are being
-   *        returned (0 = all)
+   * returned (0 = all)
    * @return MessageStreamDTO
    */
   public MessageStreamDTO getGroupMessages(String rcToken, String rcUserId, String rcGroupId,
@@ -116,11 +114,9 @@ public class RocketChatService {
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     } catch (Exception ex) {
-
-      LogService.logRocketChatServiceError(ex);
-      throw new RocketChatGetGroupMessagesException(String.format(
+      throw new InternalServerErrorException(String.format(
           "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s, rcOffset: %s, rcCount: %s)",
-          rcUserId, rcGroupId, rcOffset, rcCount));
+          rcUserId, rcGroupId, rcOffset, rcCount), LogService::logRocketChatServiceError);
     }
   }
 
@@ -129,13 +125,15 @@ public class RocketChatService {
    * accordingly
    *
    * @param dto The MessageStream, which needs to be updated
-   * @param rcGroupId
    * @return The updated MessageStreamDTO
    */
-  private MessageStreamDTO decryptMessages(MessageStreamDTO dto,
-      String rcGroupId) throws CustomCryptoException {
-    List<MessagesDTO> messages = dto.getMessages();
+  private MessageStreamDTO decryptMessages(MessageStreamDTO dto, String rcGroupId)
+      throws CustomCryptoException {
+    if (CollectionUtils.isEmpty(dto.getMessages())) {
+      return dto;
+    }
 
+    List<MessagesDTO> messages = dto.getMessages();
     List<MessagesDTO> decryptedMessages = new ArrayList<>();
 
     for (MessagesDTO message : messages) {
@@ -155,12 +153,13 @@ public class RocketChatService {
     if (CollectionUtils.isEmpty(messages)) {
       dto.setMessages(new ArrayList<>());
       dto.setCount("0");
+    } else {
+      MessagesDTO messagesDTO = messages.get(messages.size() - 1);
+      messages.clear();
+      messages.add(messagesDTO);
+      dto.setMessages(messages);
+      dto.setCount("1");
     }
-    MessagesDTO messagesDTO = messages.get(messages.size() - 1);
-    messages.clear();
-    messages.add(messagesDTO);
-    dto.setMessages(messages);
-    dto.setCount("1");
   }
 
   /**
@@ -188,18 +187,13 @@ public class RocketChatService {
       return restTemplate.postForObject(rcPostMessageUrl, request, PostMessageResponseDTO.class);
 
     } catch (Exception ex) {
-      LogService.logRocketChatServiceError(ex);
-      throw new RocketChatPostMessageException(ex);
+      throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
 
   }
 
   /**
    * Creates and returns the {@link HttpHeaders} with Rocket.Chat Authentication Token and User Id
-   *
-   * @param rcToken
-   * @param rcUserId
-   * @return
    */
   private HttpHeaders getRocketChatHeader(String rcToken, String rcUserId) {
     HttpHeaders headers = new HttpHeaders();
@@ -210,12 +204,11 @@ public class RocketChatService {
   }
 
   /**
-   * Marks the specified Rocket.Chat group as read for the system (message) user
+   * Marks the specified Rocket.Chat group as read for the system (message) user.
    *
    * @param rcGroupId
-   * @return
    */
-  public boolean markGroupAsReadForSystemUser(String rcGroupId) {
+  public void markGroupAsReadForSystemUser(String rcGroupId) {
 
     RocketChatCredentials rocketChatCredentials;
     try {
@@ -224,29 +217,29 @@ public class RocketChatService {
       throw new InternalServerErrorException(e, LogService::logInternalServerError);
     }
 
-    if (rocketChatCredentials.getRocketChatToken() != null
-        && rocketChatCredentials.getRocketChatUserId() != null) {
-      return this.markGroupAsRead(rocketChatCredentials.getRocketChatToken(),
+    if (areRequiredRocketChatParamsNotNull(rocketChatCredentials)) {
+      this.markGroupAsRead(rocketChatCredentials.getRocketChatToken(),
           rocketChatCredentials.getRocketChatUserId(), rcGroupId);
 
     } else {
       LogService.logRocketChatServiceError(
           String.format("Could not set messages as read for system user in group %s", rcGroupId));
-      return false;
     }
   }
 
-  /**
-   * Marks the specified Rocket.Chat group as read for the given user credentials
-   *
-   * @param rcToken
-   * @param rcUserId
-   * @param rcGroupId
-   * @return
-   */
-  private boolean markGroupAsRead(String rcToken, String rcUserId, String rcGroupId) {
+  private boolean areRequiredRocketChatParamsNotNull(RocketChatCredentials rocketChatCredentials) {
+    return nonNull(rocketChatCredentials.getRocketChatToken())
+        && nonNull(rocketChatCredentials.getRocketChatUserId());
+  }
 
-    StandardResponseDTO response;
+  /**
+   * Marks the specified Rocket.Chat group as read for the given user credentials.
+   *
+   * @param rcToken the rocket chat token
+   * @param rcUserId the rocket chat user id
+   * @param rcGroupId the rocket chat group id
+   */
+  private void markGroupAsRead(String rcToken, String rcUserId, String rcGroupId) {
 
     try {
       HttpHeaders headers = getRocketChatHeader(rcToken, rcUserId);
@@ -254,15 +247,12 @@ public class RocketChatService {
       HttpEntity<PostGroupAsReadDTO> request =
           new HttpEntity<>(postGroupAsReadDTO, headers);
 
-      response = restTemplate.postForObject(rcPostGroupMessagesRead, request,
+      restTemplate.postForObject(rcPostGroupMessagesRead, request,
           StandardResponseDTO.class);
 
     } catch (Exception ex) {
-      LogService.logRocketChatServiceError(ex);
-      throw new RocketChatPostMarkGroupAsReadException(ex);
+      throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
-
-    return response != null && response.isSuccess();
   }
 
 }

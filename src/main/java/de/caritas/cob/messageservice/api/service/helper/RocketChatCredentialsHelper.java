@@ -1,24 +1,25 @@
 package de.caritas.cob.messageservice.api.service.helper;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
+import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
+import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
+import de.caritas.cob.messageservice.api.model.rocket.chat.login.LoginResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.logout.LogoutResponseDTO;
+import de.caritas.cob.messageservice.api.service.LogService;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import de.caritas.cob.messageservice.api.exception.RocketChatLoginException;
-import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
-import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
-import de.caritas.cob.messageservice.api.model.rocket.chat.login.LoginResponseDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.logout.LogoutResponseDTO;
-import de.caritas.cob.messageservice.api.service.LogService;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 public class RocketChatCredentialsHelper {
@@ -45,73 +46,78 @@ public class RocketChatCredentialsHelper {
   private RestTemplate restTemplate;
 
   // Tokens
-  private RocketChatCredentials systemUser_A;
-  private RocketChatCredentials systemUser_B;
+  private RocketChatCredentials systemUserA;
+  private RocketChatCredentials systemUserB;
 
   /**
-   * Get a valid system user
+   * Get a valid system user.
    * 
-   * @return
+   * @return the credentials for system user
    */
   public RocketChatCredentials getSystemUser() throws RocketChatUserNotInitializedException {
     // If both are uninitialized throw Exception
-    if (systemUser_A == null && systemUser_B == null) {
+    if (areBothSystemUsersNull()) {
       throw new RocketChatUserNotInitializedException("No system user was initialized");
     }
 
-    if (systemUser_A == null) {
-      return systemUser_B;
-    }
-    if (systemUser_B == null) {
-      return systemUser_A;
+    if (isOneOfSystemUsersNull()) {
+      return getNonNullSystemUser();
     }
 
-    if (systemUser_A.getTimeStampCreated().isAfter(systemUser_B.getTimeStampCreated())) {
-      return systemUser_A;
+    return getNewestCreatedSystemUser();
+  }
+
+  private boolean areBothSystemUsersNull() {
+    return isNull(systemUserA) && isNull(systemUserB);
+  }
+
+  private boolean isOneOfSystemUsersNull() {
+    return isNull(systemUserA) || isNull(systemUserB);
+  }
+
+  private RocketChatCredentials getNonNullSystemUser() {
+    return nonNull(systemUserA) ? systemUserA : systemUserB;
+  }
+
+  private RocketChatCredentials getNewestCreatedSystemUser() {
+    if (systemUserA.getTimeStampCreated().isAfter(systemUserB.getTimeStampCreated())) {
+      return systemUserA;
     } else {
-      return systemUser_B;
+      return systemUserB;
     }
   }
 
   /**
-   * Update the Credentials
+   * Update the Credentials.
    *
    */
   public void updateCredentials() {
 
-    if (systemUser_A != null && systemUser_B != null) {
-      if (systemUser_A.getTimeStampCreated().isBefore(systemUser_B.getTimeStampCreated())) {
-        logoutUser(systemUser_A);
-        systemUser_A = null;
+    if (!isOneOfSystemUsersNull()) {
+      if (systemUserA.getTimeStampCreated().isBefore(systemUserB.getTimeStampCreated())) {
+        logoutUser(systemUserA);
+        systemUserA = null;
       } else {
-        logoutUser(systemUser_B);
-        systemUser_B = null;
+        logoutUser(systemUserB);
+        systemUserB = null;
       }
     }
 
-    if (systemUser_A == null && systemUser_B == null) {
-      systemUser_A = loginUserServiceUser(systemUsername, systemPassword);
+    if (areBothSystemUsersNull()) {
+      systemUserA = loginUserServiceUser(systemUsername, systemPassword);
     } else {
-      if (systemUser_A == null) {
-        systemUser_A = loginUserServiceUser(systemUsername, systemPassword);
+      if (systemUserA == null) {
+        systemUserA = loginUserServiceUser(systemUsername, systemPassword);
       }
 
-      if (systemUser_B == null) {
-        systemUser_B = loginUserServiceUser(systemUsername, systemPassword);
+      if (systemUserB == null) {
+        systemUserB = loginUserServiceUser(systemUsername, systemPassword);
       }
     }
-
 
   }
 
-  /**
-   * Login a system user and receive a RocketChatCredentials-Object
-   * 
-   * @param username
-   * @param password
-   * @return
-   */
-  public RocketChatCredentials loginUserServiceUser(String username, String password) {
+  private RocketChatCredentials loginUserServiceUser(String username, String password) {
 
     RocketChatCredentials rcc = new RocketChatCredentials();
     rcc.setTimeStampCreated(LocalDateTime.now());
@@ -125,97 +131,56 @@ public class RocketChatCredentialsHelper {
       rcc.setRocketChatUserId(response.getBody().getData().getUserId());
 
     } catch (Exception ex) {
-      LogService.logRocketChatServiceError("Could not login " + username + " user in Rocket.Chat",
-          ex);
-      throw new RocketChatLoginException(ex);
+      throw new InternalServerErrorException("Could not login " + username + " user in Rocket"
+          + ".Chat", LogService::logRocketChatServiceError);
     }
 
     if (rcc.getRocketChatToken() == null || rcc.getRocketChatUserId() == null) {
       String error = "Could not login " + username
           + " user in Rocket.Chat correctly, no authToken or UserId received.";
-      LogService.logRocketChatServiceError(error);
-      throw new RocketChatLoginException(error);
+      throw new InternalServerErrorException(error, LogService::logRocketChatServiceError);
     }
 
     return rcc;
   }
 
-  /**
-   * Performs a login with the given credentials and returns the Result
-   *
-   * @param username
-   * @param password
-   * @return
-   */
-  public ResponseEntity<LoginResponseDTO> loginUser(String username, String password) {
+  private ResponseEntity<LoginResponseDTO> loginUser(String username, String password) {
 
     try {
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-      MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
+      MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
       map.add("username", username);
       map.add("password", password);
 
-      HttpEntity<MultiValueMap<String, String>> request =
-          new HttpEntity<MultiValueMap<String, String>>(map, headers);
+      HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
 
-      ResponseEntity<LoginResponseDTO> response =
-          restTemplate.postForEntity(rocketChatApiUserLogin, request, LoginResponseDTO.class);
-
-      return response;
-
+      return restTemplate.postForEntity(rocketChatApiUserLogin, request, LoginResponseDTO.class);
     } catch (Exception ex) {
-      LogService.logRocketChatServiceError(
-          String.format("Could not login user (%s) in Rocket.Chat", username), ex);
-      throw new RocketChatLoginException(ex);
+      throw new InternalServerErrorException(String.format("Could not login user (%s) in Rocket"
+          + ".Chat", username), LogService::logRocketChatServiceError);
     }
   }
 
-  /**
-   * Performs a logout with the given credentials and returns true on success.
-   * 
-   * @param rcUserId
-   * @param rcAuthToken
-   * @return
-   */
-  public boolean logoutUser(String rcUserId, String rcAuthToken) {
+  private void logoutUser(String rcUserId, String rcAuthToken) {
 
     try {
       HttpHeaders headers = getStandardHttpHeaders(rcAuthToken, rcUserId);
 
-      HttpEntity<Void> request = new HttpEntity<Void>(headers);
-
-      ResponseEntity<LogoutResponseDTO> response =
-          restTemplate.postForEntity(rocketChatApiUserLogout, request, LogoutResponseDTO.class);
-
-      return response != null && response.getStatusCode() == HttpStatus.OK ? true : false;
+      HttpEntity<Void> request = new HttpEntity<>(headers);
+      restTemplate.postForEntity(rocketChatApiUserLogout, request, LogoutResponseDTO.class);
 
     } catch (Exception ex) {
       LogService.logRocketChatServiceError(
           String.format("Could not log out user id (%s) from Rocket.Chat", rcUserId), ex);
-
-      return false;
     }
   }
 
-  /**
-   * Logout a RocketChatCredentials-User
-   * 
-   * @param user
-   */
   private void logoutUser(RocketChatCredentials user) {
     this.logoutUser(user.getRocketChatUserId(), user.getRocketChatToken());
   }
 
-  /**
-   * Returns a HttpHeaders instance with standard settings (Rocket.Chat-Token, Rocket.Chat-User-ID,
-   * MediaType)
-   *
-   * @param rcToken
-   * @param rcUserId
-   * @return a HttpHeaders instance with the standard settings
-   */
   private HttpHeaders getStandardHttpHeaders(String rcToken, String rcUserId) {
 
     HttpHeaders httpHeaders = new HttpHeaders();

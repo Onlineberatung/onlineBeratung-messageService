@@ -21,11 +21,13 @@ import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.SEND_NOTIFICATION;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.reflect.Whitebox.setInternalState;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -46,9 +48,12 @@ import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.ArrayList;
 import java.util.List;
 import org.assertj.core.util.Arrays;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -105,10 +110,15 @@ public class MessageControllerTestIT {
   private EncryptionService encryptionService;
 
   @MockBean
-  private LogService logService;
-
-  @MockBean
   private PostGroupMessageFacade postGroupMessageFacade;
+
+  @Mock
+  private Logger logger;
+
+  @Before
+  public void setup() {
+    setInternalState(LogService.class, "LOGGER", logger);
+  }
 
   /**
    * 400 - Bad Request tests
@@ -361,5 +371,21 @@ public class MessageControllerTestIT {
   private String convertObjectToJson(Object object) throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
     return mapper.writeValueAsString(object);
+  }
+
+  @Test
+  public void createMessage_Should_LogInternalServerError_When_InternalServerErrorIsThrown()
+      throws Exception {
+
+    doThrow(new InternalServerErrorException())
+        .when(postGroupMessageFacade).postGroupMessage(any(), any(), any(), any());
+
+    mvc.perform(post(PATH_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
+        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+        .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isInternalServerError());
+
+    verify(logger, atLeastOnce()).error(eq("{}{}"), eq("Internal Server Error: "), anyString());
   }
 }

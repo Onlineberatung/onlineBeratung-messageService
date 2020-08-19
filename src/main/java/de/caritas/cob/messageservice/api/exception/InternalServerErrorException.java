@@ -19,6 +19,16 @@ public class InternalServerErrorException extends CustomLoggableResponseExceptio
   }
 
   /**
+   * Creates an Internal Server Error with a custom message to be logged.
+   *
+   * @param message the message
+   * @param loggingMethod the method to log that exception
+   */
+  public InternalServerErrorException(String message, Consumer<String> loggingMethod) {
+    super(message, loggingMethod);
+  }
+
+  /**
    * Creates an Internal Server Error with the default error logging method.
    */
   public InternalServerErrorException() {

@@ -38,8 +38,8 @@ public class RocketChatCredentialsHelperTest {
    * FIELD Names
    */
 
-  private final static String FIELD_NAME_SYSTEM_USER_A = "systemUser_A";
-  private final static String FIELD_NAME_SYSTEM_USER_B = "systemUser_B";
+  private final static String FIELD_NAME_SYSTEM_USER_A = "systemUserA";
+  private final static String FIELD_NAME_SYSTEM_USER_B = "systemUserB";
 
   private final static String FIELD_NAME_SYSTEM_USERNAME = "systemUsername";
   private final static String FIELD_NAME_SYSTEM_PASSWORD = "systemPassword";

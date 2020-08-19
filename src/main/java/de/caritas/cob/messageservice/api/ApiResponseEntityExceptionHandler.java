@@ -36,13 +36,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
   /**
+   * Constraint violations.
    *
-   * Handle all common "Bad Request" errors (400)
-   *
-   */
-
-  /**
-   * Constraint violations
+   * @param ex the exception to be handled
+   * @param request the web request where the exception was thrown
    */
   @ExceptionHandler({ConstraintViolationException.class, RocketChatBadRequestException.class})
   public ResponseEntity<Object> handleBadRequest(final RuntimeException ex,
@@ -53,7 +50,12 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   }
 
   /**
-   * Incoming request body could not be deserialized
+   * Incoming request body could not be deserialized.
+   *
+   * @param ex the exception to be handled
+   * @param headers http headers
+   * @param status http status
+   * @param request web request
    */
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -65,7 +67,12 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   }
 
   /**
-   * @Valid on object fails validation
+   * @Valid on object fails validation.
+   *
+   * @param ex the exception to be handled
+   * @param headers  http headers
+   * @param status http status
+   * @param request web request
    */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
@@ -77,7 +84,10 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   }
 
   /**
-   * 409 - Conflict
+   * 409 - Conflict.
+   *
+   * @param ex the exception to be handled
+   * @param request web request
    */
   @ExceptionHandler({InvalidDataAccessApiUsageException.class, DataAccessException.class})
   protected ResponseEntity<Object> handleConflict(final RuntimeException ex,
@@ -88,7 +98,10 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   }
 
   /**
-   * {@link RestTemplate} API client errors
+   * {@link RestTemplate} API client errors.
+   *
+   * @param ex the exception to be handled
+   * @param request web request
    */
   @ExceptionHandler({HttpClientErrorException.class})
   protected ResponseEntity<Object> handleHttpClientException(final HttpClientErrorException ex,
@@ -99,7 +112,10 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   }
 
   /**
-   * 500 - Internal Server Error
+   * 500 - Internal Server Error.
+   *
+   * @param ex the exception to be handled
+   * @param request web request
    */
   @ExceptionHandler({NullPointerException.class, IllegalArgumentException.class,
       IllegalStateException.class, ServiceException.class, KeycloakException.class,
@@ -115,8 +131,8 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   /**
    * 500 - Custom Internal Server Error with logging method.
    *
-   * @param ex the thrown exception
-   * @param request
+   * @param ex the exception to be handled
+   * @param request web request
    */
   @ExceptionHandler({InternalServerErrorException.class})
   public ResponseEntity<Object> handleInternal(final InternalServerErrorException ex,

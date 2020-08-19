@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service for logging
+ * Service for logging.
  */
 public class LogService {
 
@@ -27,27 +27,28 @@ public class LogService {
   private LogService() {}
 
   /**
-   * Logs a Rocket.Chat service error
+   * Logs a Rocket.Chat service error.
    *
-   * @param exception
+   * @param exception the exception to be logged
    */
   public static void logRocketChatServiceError(Exception exception) {
     LOGGER.error(RC_SERVICE_ERROR + "{}", getStackTrace(exception));
   }
 
   /**
-   * Logs a Rocket.Chat service error
+   * Logs a Rocket.Chat service error.
    * 
-   * @param message
+   * @param message the message to be logged
    */
   public static void logRocketChatServiceError(String message) {
     LOGGER.error(RC_SERVICE_ERROR + "{}", message);
   }
 
   /**
-   * Logs a Rocket.Chat service error
+   * Logs a Rocket.Chat service error.
    *
-   * @param exception
+   * @param message the message to be logged
+   * @param exception the exception to be logged
    */
   public static void logRocketChatServiceError(String message, Exception exception) {
     LOGGER.error(RC_SERVICE_ERROR + "{}", message);
@@ -56,33 +57,38 @@ public class LogService {
   }
 
   /**
-   * Logs a Encryption service error
+   * Logs a Encryption service error.
    *
-   * @param exception
+   * @param exception the exception to be logged
    */
   public static void logEncryptionServiceError(Exception exception) {
     LOGGER.error(RC_ENCRYPTION_SERVICE_ERROR + "{}",
         getStackTrace(exception));
   }
 
+  /**
+   * Logs a excryption error exception.
+   *
+   * @param exception the exception to be logged
+   */
   public static void logEncryptionPossibleBadKeyError(Exception exception) {
     LOGGER.error(RC_ENCRYPTION_BAD_KEY_SERVICE_ERROR + "{}",
         getStackTrace(exception));
   }
 
   /**
-   * Logs a Rocket.Chat Bad Request error
+   * Logs a Rocket.Chat Bad Request error.
    * 
-   * @param message
+   * @param message the message to be logged
    */
   public static void logRocketChatBadRequestError(String message) {
     LOGGER.error(RC_BAD_REQUEST_ERROR + "{}", message);
   }
 
   /**
-   * Logs a UserServiceHelper error
+   * Logs a UserServiceHelper error.
    * 
-   * @param exception
+   * @param exception the exception to be logged
    */
   public static void logUserServiceHelperError(Exception exception) {
     LOGGER.error(USERSERVICE_HELPER_ERROR + "{}",
@@ -90,7 +96,7 @@ public class LogService {
   }
 
   /**
-   * Logs a Info message
+   * Logs a Info message.
    * 
    * @param msg The message
    */
@@ -99,10 +105,10 @@ public class LogService {
   }
 
   /**
-   * Internal Server Error/Exception
+   * Internal Server Error/Exception.
    * 
-   * @param message
-   * @param exception
+   * @param message the message to be logged
+   * @param exception the exception to be logged
    */
   public static void logInternalServerError(String message, Exception exception) {
     LOGGER.error("{}{}", INTERNAL_SERVER_ERROR_TEXT, message);
@@ -110,39 +116,46 @@ public class LogService {
   }
 
   /**
-   * Internal Server Error/Exception
+   * Internal Server Error/Exception.
    *
-   * @param exception
+   * @param exception the exception to be logged
    */
   public static void logInternalServerError(Exception exception) {
     LOGGER.error("{}{}", INTERNAL_SERVER_ERROR_TEXT, getStackTrace(exception));
   }
 
   /**
-   * Bad Request
+   * Bad Request.
    * 
-   * @param message
+   * @param message the message to be logged
    */
   public static void logBadRequest(String message) {
     LOGGER.error(BAD_REQUEST_TEXT + "{}", message);
   }
 
   /**
-   * Logs a warning
+   * Logs a warning.
+   *
+   * @param status the http status to be logged
+   * @param ex the exception to be logged
    */
   public static void logWarning(final HttpStatus status, final Exception ex) {
     LOGGER.warn("MessageService API: {}: {}", status.getReasonPhrase(), getStackTrace(ex));
   }
 
   /**
-   * Logs a warning
+   * Logs a warning.
+   *
+   * @param ex the exception to be logged
    */
   public static void logWarning(final Exception ex) {
     LOGGER.warn("MessageService API: {}:", getStackTrace(ex));
   }
 
   /**
-   * Logs a debug message
+   * Logs a debug message.
+   *
+   * @param message the message to be logged
    */
   public static void logDebug(final String message) {
     LOGGER.debug("MessageService API: {}:", message);
