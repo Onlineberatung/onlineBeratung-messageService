@@ -1,6 +1,8 @@
 package de.caritas.cob.messageservice.testHelper;
 
 import de.caritas.cob.messageservice.api.model.MessageDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
+import de.caritas.cob.messageservice.api.model.rocket.chat.group.GroupDto;
 
 public class TestConstants {
 
@@ -18,7 +20,9 @@ public class TestConstants {
   public static final String RC_OFFSET = "0";
   public static final String RC_COUNT = "0";
   public static final String RC_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
+  public static final String RC_GROUP_NAME = "405_1590499423659";
   public static final String RC_FEEDBACK_GROUP_ID = "Ad3RzsdmWmHdXE8xy";
+  public static final String RC_FEEDBACK_GROUP_NAME = "405_feedback_1590499423600";
   public static final String RC_TIMESTAMP = "2018-11-15T09:32:55.045Z";
   public static final String RC_ATTACHMENT_ID = "aR2Rz7dmWmHdXE8u3";
   public static final String RC_ATTACHMENT_TITLE = "filename.jpg";
@@ -45,14 +49,15 @@ public class TestConstants {
   /*
    * Messages
    */
-
   public static final String MESSAGE = "Lorem ipsum";
   public static final String MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME =
       "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_ENCODED + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
+          + USERNAME_ENCODED
+          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
   public static final String MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME =
       "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_DECODED + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
+          + USERNAME_DECODED
+          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
   public static final String MESSAGE_FORWARD_EMPTY_ALIAS_JSON = "{\"alias\":\"\"";
   public static final String MESSAGE_FORWARD_NULL_ALIAS_JSON = "{\"alias\":null";
   public static final boolean SEND_NOTIFICATION = true;
@@ -62,4 +67,13 @@ public class TestConstants {
   public static final MessageDTO MESSAGE_DTO_WITHOUT_NOTIFICATION =
       new MessageDTO(MESSAGE, DONT_SEND_NOTIFICATION);
 
+  /*
+   * Groups
+   */
+  public static final GroupDto GROUP_DTO = new GroupDto(RC_GROUP_ID, RC_GROUP_NAME);
+  public static final GetGroupInfoDto GET_GROUP_INFO_DTO = new GetGroupInfoDto(GROUP_DTO, true);
+  public static final GroupDto GROUP_DTO_FEEDBACK_CHAT =
+      new GroupDto(RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_NAME);
+  public static final GetGroupInfoDto GET_GROUP_INFO_DTO_FEEDBACK_CHAT =
+      new GetGroupInfoDto(GROUP_DTO_FEEDBACK_CHAT, true);
 }
