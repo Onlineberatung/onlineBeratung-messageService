@@ -2,10 +2,8 @@ package de.caritas.cob.messageservice.api.service;
 
 import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
 import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_NAME_RC_POST_USER_LOGIN_URL;
 import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
 import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ;
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_VALUE_RC_POST_USER_LOGIN_URL;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_GROUP_ID;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_USER_ID;
@@ -130,10 +128,6 @@ public class RocketChatServiceTest {
         rocketChatService,
         rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_GROUP_MESSAGES_READ),
         FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ);
-    FieldSetter.setField(
-        rocketChatService,
-        rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_USER_LOGIN_URL),
-        FIELD_VALUE_RC_POST_USER_LOGIN_URL);
     FieldSetter.setField(
         rocketChatService,
         rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_GET_GROUP_INFO_URL),
