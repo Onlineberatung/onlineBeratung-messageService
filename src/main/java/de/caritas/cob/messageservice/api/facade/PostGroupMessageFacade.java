@@ -23,7 +23,7 @@ public class PostGroupMessageFacade {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
   private final RocketChatService rocketChatService;
-  private final EmailNotificationFacade emailNoticationFacade;
+  private final EmailNotificationFacade emailNotificationFacade;
 
   /**
    * Constructor
@@ -31,10 +31,10 @@ public class PostGroupMessageFacade {
    * @param rocketChatService {@link RocketChatService}
    */
   @Autowired
-  public PostGroupMessageFacade(
-      RocketChatService rocketChatService, EmailNotificationFacade emailNoticationFacade) {
+  public PostGroupMessageFacade(RocketChatService rocketChatService,
+      EmailNotificationFacade emailNotificationFacade) {
     this.rocketChatService = rocketChatService;
-    this.emailNoticationFacade = emailNoticationFacade;
+    this.emailNotificationFacade = emailNotificationFacade;
   }
 
   /**
@@ -46,13 +46,13 @@ public class PostGroupMessageFacade {
    * @param rcGroupId Rocket.Chat group ID
    * @param message   the message
    */
-  public void postGroupMessage(
-      String rcToken, String rcUserId, String rcGroupId, MessageDTO message) {
+  public void postGroupMessage(String rcToken, String rcUserId, String rcGroupId,
+      MessageDTO message) {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
 
     if (message.isSendNotification()) {
-      emailNoticationFacade.sendEmailNotification(rcGroupId);
+      emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
   }
 
@@ -65,12 +65,12 @@ public class PostGroupMessageFacade {
    * @param rcFeedbackGroupId Rocket.Chat feedback group ID
    * @param message           the message
    */
-  public void postFeedbackGroupMessage(
-      String rcToken, String rcUserId, String rcFeedbackGroupId, String message, String alias) {
+  public void postFeedbackGroupMessage(String rcToken, String rcUserId, String rcFeedbackGroupId,
+      String message, String alias) {
 
     validateFeedbackChatId(rcToken, rcUserId, rcFeedbackGroupId);
     postRocketChatGroupMessage(rcToken, rcUserId, rcFeedbackGroupId, message, alias);
-    emailNoticationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
+    emailNotificationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
   }
 
   /**
@@ -82,8 +82,8 @@ public class PostGroupMessageFacade {
    * @param message   the message
    * @param alias     alias containing forward message information
    */
-  private void postRocketChatGroupMessage(
-      String rcToken, String rcUserId, String rcGroupId, String message, String alias) {
+  private void postRocketChatGroupMessage(String rcToken, String rcUserId, String rcGroupId,
+      String message, String alias) {
 
     try {
       // Send message to Rocket.Chat via RocketChatService
