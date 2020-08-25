@@ -5,12 +5,8 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
 
-/**
- * Service for logging.
- */
+/** Service for logging. */
 public class LogService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LogService.class);
@@ -37,7 +33,7 @@ public class LogService {
 
   /**
    * Logs a Rocket.Chat service error.
-   * 
+   *
    * @param message the message to be logged
    */
   public static void logRocketChatServiceError(String message) {
@@ -52,8 +48,7 @@ public class LogService {
    */
   public static void logRocketChatServiceError(String message, Exception exception) {
     LOGGER.error(RC_SERVICE_ERROR + "{}", message);
-    LOGGER.error(RC_SERVICE_ERROR + "{}",
-        getStackTrace(exception));
+    LOGGER.error(RC_SERVICE_ERROR + "{}", getStackTrace(exception));
   }
 
   /**
@@ -62,8 +57,7 @@ public class LogService {
    * @param exception the exception to be logged
    */
   public static void logEncryptionServiceError(Exception exception) {
-    LOGGER.error(RC_ENCRYPTION_SERVICE_ERROR + "{}",
-        getStackTrace(exception));
+    LOGGER.error(RC_ENCRYPTION_SERVICE_ERROR + "{}", getStackTrace(exception));
   }
 
   /**
@@ -72,13 +66,12 @@ public class LogService {
    * @param exception the exception to be logged
    */
   public static void logEncryptionPossibleBadKeyError(Exception exception) {
-    LOGGER.error(RC_ENCRYPTION_BAD_KEY_SERVICE_ERROR + "{}",
-        getStackTrace(exception));
+    LOGGER.error(RC_ENCRYPTION_BAD_KEY_SERVICE_ERROR + "{}", getStackTrace(exception));
   }
 
   /**
    * Logs a Rocket.Chat Bad Request error.
-   * 
+   *
    * @param message the message to be logged
    */
   public static void logRocketChatBadRequestError(String message) {
@@ -87,17 +80,16 @@ public class LogService {
 
   /**
    * Logs a UserServiceHelper error.
-   * 
+   *
    * @param exception the exception to be logged
    */
   public static void logUserServiceHelperError(Exception exception) {
-    LOGGER.error(USERSERVICE_HELPER_ERROR + "{}",
-        getStackTrace(exception));
+    LOGGER.error(USERSERVICE_HELPER_ERROR + "{}", getStackTrace(exception));
   }
 
   /**
    * Logs a Info message.
-   * 
+   *
    * @param msg The message
    */
   public static void logInfo(String msg) {
@@ -106,7 +98,7 @@ public class LogService {
 
   /**
    * Internal Server Error/Exception.
-   * 
+   *
    * @param message the message to be logged
    * @param exception the exception to be logged
    */
@@ -126,11 +118,11 @@ public class LogService {
 
   /**
    * Bad Request.
-   * 
+   *
    * @param message the message to be logged
    */
   public static void logBadRequest(String message) {
-    LOGGER.error(BAD_REQUEST_TEXT + "{}", message);
+    LOGGER.warn(BAD_REQUEST_TEXT + "{}", message);
   }
 
   /**

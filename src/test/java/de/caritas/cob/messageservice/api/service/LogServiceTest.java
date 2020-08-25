@@ -26,11 +26,9 @@ public class LogServiceTest {
   private static final String BAD_REQUEST_TEXT = "Bad Request: {}";
   private static final String MESSAGE_API_LOG_TEXT = "MessageService API: {}:";
 
-  @Mock
-  Exception exception;
+  @Mock Exception exception;
 
-  @Mock
-  private Logger logger;
+  @Mock private Logger logger;
 
   @Before
   public void setup() {
@@ -41,9 +39,7 @@ public class LogServiceTest {
   public void logRocketChatServiceError_Should_LogExceptionStackTrace() {
 
     LogService.logRocketChatServiceError(exception);
-    verify(exception, atLeastOnce())
-        .printStackTrace(any(PrintWriter.class));
-
+    verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 
   @Test
@@ -58,8 +54,7 @@ public class LogServiceTest {
 
     LogService.logRocketChatServiceError(ERROR_MESSAGE, exception);
     verify(logger, times(1)).error(eq(RC_SERVICE_ERROR_TEXT), eq(ERROR_MESSAGE));
-    verify(exception, atLeastOnce())
-        .printStackTrace(any(PrintWriter.class));
+    verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 
   @Test
@@ -67,7 +62,6 @@ public class LogServiceTest {
 
     LogService.logUserServiceHelperError(exception);
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
-
   }
 
   @Test
@@ -82,7 +76,6 @@ public class LogServiceTest {
 
     LogService.logEncryptionServiceError(exception);
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
-
   }
 
   @Test
@@ -104,8 +97,7 @@ public class LogServiceTest {
   public void logInternalServerError_Should_LogErrorMessageAndExceptionStackTrace() {
 
     LogService.logInternalServerError(ERROR_MESSAGE, exception);
-    verify(logger, times(1))
-        .error(eq("{}{}"), eq(INTERNAL_SERVER_ERROR_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).error(eq("{}{}"), eq(INTERNAL_SERVER_ERROR_TEXT), eq(ERROR_MESSAGE));
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 
@@ -113,7 +105,7 @@ public class LogServiceTest {
   public void logBadRequest_Should_LogMessage() {
 
     LogService.logBadRequest(ERROR_MESSAGE);
-    verify(logger, times(1)).error(eq(BAD_REQUEST_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).warn(eq(BAD_REQUEST_TEXT), eq(ERROR_MESSAGE));
   }
 
   @Test
@@ -128,8 +120,10 @@ public class LogServiceTest {
 
     LogService.logWarning(HttpStatus.INTERNAL_SERVER_ERROR, exception);
     verify(logger, times(1))
-        .warn(eq(MESSAGE_API_LOG_TEXT + " {}"),
-            eq(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase()), anyString());
+        .warn(
+            eq(MESSAGE_API_LOG_TEXT + " {}"),
+            eq(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase()),
+            anyString());
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 

@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api;
 
+import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.KeycloakException;
@@ -38,12 +39,12 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   /**
    * Constraint violations.
    *
-   * @param ex the exception to be handled
+   * @param ex      the exception to be handled
    * @param request the web request where the exception was thrown
    */
   @ExceptionHandler({ConstraintViolationException.class, RocketChatBadRequestException.class})
-  public ResponseEntity<Object> handleBadRequest(final RuntimeException ex,
-      final WebRequest request) {
+  public ResponseEntity<Object> handleBadRequest(
+      final RuntimeException ex, final WebRequest request) {
     LogService.logWarning(ex);
 
     return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
@@ -59,7 +60,9 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
    */
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
-      final HttpMessageNotReadableException ex, final HttpHeaders headers, final HttpStatus status,
+      final HttpMessageNotReadableException ex,
+      final HttpHeaders headers,
+      final HttpStatus status,
       final WebRequest request) {
     LogService.logWarning(status, ex);
 
@@ -70,13 +73,15 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
    * @Valid on object fails validation.
    *
    * @param ex the exception to be handled
-   * @param headers  http headers
+   * @param headers http headers
    * @param status http status
    * @param request web request
    */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
-      final MethodArgumentNotValidException ex, final HttpHeaders headers, final HttpStatus status,
+      final MethodArgumentNotValidException ex,
+      final HttpHeaders headers,
+      final HttpStatus status,
       final WebRequest request) {
     LogService.logWarning(status, ex);
 
@@ -86,12 +91,12 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   /**
    * 409 - Conflict.
    *
-   * @param ex the exception to be handled
+   * @param ex      the exception to be handled
    * @param request web request
    */
   @ExceptionHandler({InvalidDataAccessApiUsageException.class, DataAccessException.class})
-  protected ResponseEntity<Object> handleConflict(final RuntimeException ex,
-      final WebRequest request) {
+  protected ResponseEntity<Object> handleConflict(
+      final RuntimeException ex, final WebRequest request) {
     LogService.logWarning(HttpStatus.CONFLICT, ex);
 
     return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.CONFLICT, request);
@@ -100,12 +105,12 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   /**
    * {@link RestTemplate} API client errors.
    *
-   * @param ex the exception to be handled
+   * @param ex      the exception to be handled
    * @param request web request
    */
   @ExceptionHandler({HttpClientErrorException.class})
-  protected ResponseEntity<Object> handleHttpClientException(final HttpClientErrorException ex,
-      final WebRequest request) {
+  protected ResponseEntity<Object> handleHttpClientException(
+      final HttpClientErrorException ex, final WebRequest request) {
     LogService.logWarning(ex.getStatusCode(), ex);
 
     return handleExceptionInternal(null, null, new HttpHeaders(), ex.getStatusCode(), request);
@@ -114,33 +119,46 @@ public class ApiResponseEntityExceptionHandler extends ResponseEntityExceptionHa
   /**
    * 500 - Internal Server Error.
    *
-   * @param ex the exception to be handled
+   * @param ex      the exception to be handled
    * @param request web request
    */
   @ExceptionHandler({NullPointerException.class, IllegalArgumentException.class,
       IllegalStateException.class, ServiceException.class, KeycloakException.class,
       UnknownHostException.class, CustomCryptoException.class, NoMasterKeyException.class})
-  public ResponseEntity<Object> handleInternal(final RuntimeException ex,
-      final WebRequest request) {
+  public ResponseEntity<Object> handleInternal(
+      final RuntimeException ex, final WebRequest request) {
     LogService.logInternalServerError(ex);
 
-    return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR,
-        request);
+    return handleExceptionInternal(
+        null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
   }
 
   /**
    * 500 - Custom Internal Server Error with logging method.
    *
-   * @param ex the exception to be handled
+   * @param ex      the exception to be handled
    * @param request web request
    */
   @ExceptionHandler({InternalServerErrorException.class})
-  public ResponseEntity<Object> handleInternal(final InternalServerErrorException ex,
-      final WebRequest request) {
+  public ResponseEntity<Object> handleInternal(
+      final InternalServerErrorException ex, final WebRequest request) {
     ex.executeLogging();
 
-    return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR,
-        request);
+    return handleExceptionInternal(
+        null, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
   }
 
+  /**
+   * 400 - Custom Bad Request with logging method.
+   *
+   * @param ex      the exception to be handled
+   * @param request web request
+   */
+  @ExceptionHandler({BadRequestException.class})
+  public ResponseEntity<Object> handleInternal(
+      final BadRequestException ex, final WebRequest request) {
+    ex.executeLogging();
+
+    return handleExceptionInternal(null, null, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+  }
 }

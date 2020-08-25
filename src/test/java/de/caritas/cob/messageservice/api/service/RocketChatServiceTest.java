@@ -1,5 +1,12 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -54,14 +61,6 @@ import org.springframework.web.client.RestTemplate;
 @RunWith(MockitoJUnitRunner.class)
 public class RocketChatServiceTest {
 
-  private static final String FIELD_NAME_RC_POST_GROUP_MESSAGES_READ = "rcPostGroupMessagesRead";
-  private static final String FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ = "/api/v1/subscriptions"
-      + ".read";
-  private static final String FIELD_NAME_RC_POST_USER_LOGIN_URL = "rcPostUserLoginUrl";
-  private static final String FIELD_VALUE_RC_POST_USER_LOGIN_URL = "/api/v1/login";
-  private static final String RC_TOKEN = "r94qMDk8gtgVNzqCq9zD2hELK-eXGB5VHlUVBgE8a8f";
-  private static final String RC_USER_ID = "pptLwARyTMzbTTRdg";
-  private static final String RC_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
   private static final int RC_OFFSET = 0;
   private static final int RC_COUNT = 0;
   private static final String RC_MESSAGE = "Lorem ipsum";
@@ -71,70 +70,80 @@ public class RocketChatServiceTest {
   private static final String RC_SYSTEM_USERNAME = "system";
   private static final String RC_SYSTEM_USER_ID = "systemId";
   private static final String RC_SYSTEM_USER_AUTH_TOKEN = "systemToken";
-  private static final RocketChatCredentials RCC_SYSTEM_USER = new RocketChatCredentials(
-      RC_SYSTEM_USER_AUTH_TOKEN, RC_SYSTEM_USER_ID, RC_SYSTEM_USERNAME, null);
+  private static final RocketChatCredentials RCC_SYSTEM_USER =
+      new RocketChatCredentials(
+          RC_SYSTEM_USER_AUTH_TOKEN, RC_SYSTEM_USER_ID, RC_SYSTEM_USERNAME, null);
   private static final RocketChatCredentials INVALID_RCC_SYSTEM_USER =
       new RocketChatCredentials(null, null, null, null);
 
-  @InjectMocks
-  private RocketChatService rocketChatService;
+  @InjectMocks private RocketChatService rocketChatService;
 
-  @Mock
-  private RestTemplate restTemplate;
+  @Mock private RestTemplate restTemplate;
 
-  @Mock
-  private EncryptionService encryptionService;
+  @Mock private EncryptionService encryptionService;
 
-  @Mock
-  RocketChatCredentialsHelper rcCredentialsHelper;
+  @Mock RocketChatCredentialsHelper rcCredentialsHelper;
 
-  @Mock
-  private Logger logger;
+  @Mock private Logger logger;
 
   @Before
   public void setup() throws NoSuchFieldException, SecurityException {
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcHeaderAuthToken"), RC_TOKEN);
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcHeaderUserId"), RC_USER_ID);
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcQueryParamRoomId"), RC_GROUP_ID);
-    FieldSetter.setField(rocketChatService,
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField("rcHeaderAuthToken"),
+        RC_TOKEN);
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField("rcHeaderUserId"),
+        RC_USER_ID);
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField("rcQueryParamRoomId"),
+        RC_GROUP_ID);
+    FieldSetter.setField(
+        rocketChatService,
         rocketChatService.getClass().getDeclaredField("rcQueryParamOffset"),
         String.valueOf(RC_OFFSET));
-    FieldSetter.setField(rocketChatService,
+    FieldSetter.setField(
+        rocketChatService,
         rocketChatService.getClass().getDeclaredField("rcQueryParamCount"),
         String.valueOf(RC_COUNT));
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcQueryParamSort"), "sort");
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcQueryParamSortValue"), "{\"ts\":1}");
-    FieldSetter.setField(rocketChatService,
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField("rcQueryParamSort"),
+        "sort");
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField("rcQueryParamSortValue"),
+        "{\"ts\":1}");
+    FieldSetter.setField(
+        rocketChatService,
         rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
         "http://localhost/api/v1/groups.messages");
-    FieldSetter.setField(rocketChatService,
+    FieldSetter.setField(
+        rocketChatService,
         rocketChatService.getClass().getDeclaredField("rcPostMessageUrl"),
         "http://localhost/api/v1/chat.postMessage");
-    FieldSetter.setField(rocketChatService,
+    FieldSetter.setField(
+        rocketChatService,
         rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_GROUP_MESSAGES_READ),
         FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ);
-    FieldSetter.setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_USER_LOGIN_URL),
-        FIELD_VALUE_RC_POST_USER_LOGIN_URL);
+    FieldSetter.setField(
+        rocketChatService,
+        rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_GET_GROUP_INFO_URL),
+        FIELD_VALUE_RC_GET_GROUP_INFO_URL);
     setInternalState(LogService.class, "LOGGER", logger);
   }
 
-  /**
-   * Exception tests
-   */
-
+  /** Exception tests */
   @Test
-  public void getGroupMessages_Should_ReturnInternalServerErrorException_WhenHTTPRequestFails() {
+  public void getGroupMessages_Should_ReturnInternalServerErrorException_When_HttpRequestFails() {
 
     InternalServerErrorException ex = new InternalServerErrorException();
 
-    when(restTemplate.exchange(any(), any(HttpMethod.class),
-        any(), ArgumentMatchers.<Class<String>>any())).thenThrow(ex);
+    when(restTemplate.exchange(
+            any(), any(HttpMethod.class), any(), ArgumentMatchers.<Class<String>>any()))
+        .thenThrow(ex);
 
     try {
       rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, RC_OFFSET, RC_COUNT);
@@ -145,12 +154,14 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void getGroupMessages_Should_ReturnRocketChatBadRequestException_WhenProvidedWithInvalidParameters() {
+  public void
+      getGroupMessages_Should_ReturnRocketChatBadRequestException_When_ProvidedWithInvalidParameters() {
 
     HttpClientErrorException ex = new HttpClientErrorException(HttpStatus.BAD_REQUEST);
 
-    when(restTemplate.exchange(any(), any(HttpMethod.class),
-        any(), ArgumentMatchers.<Class<String>>any())).thenThrow(ex);
+    when(restTemplate.exchange(
+            any(), any(HttpMethod.class), any(), ArgumentMatchers.<Class<String>>any()))
+        .thenThrow(ex);
 
     try {
       rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, RC_OFFSET, RC_COUNT);
@@ -161,13 +172,16 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void postGroupMessage_Should_ReturnRocketChatPostMessageException_WhenHTTPRequestFails()
+  public void postGroupMessage_Should_ReturnRocketChatPostMessageException_When_HttpRequestFails()
       throws CustomCryptoException {
 
     RocketChatPostMessageException ex = new RocketChatPostMessageException(new Exception("reason"));
 
-    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
-        ArgumentMatchers.<Class<PostMessageResponseDTO>>any())).thenThrow(ex);
+    when(restTemplate.postForObject(
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.<Class<PostMessageResponseDTO>>any()))
+        .thenThrow(ex);
 
     when(encryptionService.encrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
         .thenReturn(RC_MESSAGE);
@@ -180,21 +194,36 @@ public class RocketChatServiceTest {
     }
   }
 
-  /**
-   * Return correct object class tests
-   */
+  @Test(expected = RocketChatBadRequestException.class)
+  public void getGroupInfo_Should_ReturnRocketChatBadRequestException_When_HttpRequestFails() {
 
+    HttpClientErrorException ex = new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+
+    when(restTemplate.exchange(
+            any(), any(HttpMethod.class), any(), ArgumentMatchers.<Class<String>>any()))
+        .thenThrow(ex);
+
+    rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_GROUP_ID);
+  }
+
+  /** Return correct object class tests */
   @Test
-  public void getGroupMessages_Should_ReturnMessageStreamDTO_WhenProvidedWithValidParameters() {
+  public void getGroupMessages_Should_ReturnMessageStreamDTO_When_ProvidedWithValidParameters() {
 
-    List<MessagesDTO> messages = new ArrayList<MessagesDTO>();
-    ResponseEntity<MessageStreamDTO> entity = new ResponseEntity<MessageStreamDTO>(
-        new MessageStreamDTO(messages, Integer.toString(RC_COUNT), Integer.toString(RC_OFFSET), "5",
-            "true", "0"),
-        HttpStatus.OK);
+    List<MessagesDTO> messages = new ArrayList<>();
+    ResponseEntity<MessageStreamDTO> entity =
+        new ResponseEntity<>(
+            new MessageStreamDTO(
+                messages,
+                Integer.toString(RC_COUNT),
+                Integer.toString(RC_OFFSET),
+                "5",
+                "true",
+                "0"),
+            HttpStatus.OK);
 
-    when(restTemplate.exchange(any(), any(HttpMethod.class),
-        any(), ArgumentMatchers.<Class<MessageStreamDTO>>any()))
+    when(restTemplate.exchange(
+            any(), any(HttpMethod.class), any(), ArgumentMatchers.<Class<MessageStreamDTO>>any()))
         .thenReturn(entity);
 
     assertThat(
@@ -203,14 +232,18 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void postGroupMessage_Should_ReturnPostMessageResponseDTO_WhenProvidedWithValidParameters()
-      throws CustomCryptoException {
+  public void
+      postGroupMessage_Should_ReturnPostMessageResponseDTO_When_ProvidedWithValidParameters()
+          throws CustomCryptoException {
 
     PostMessageResponseDTO response =
         new PostMessageResponseDTO(new Date(), RC_GROUP_ID, true, "", "");
 
-    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
-        ArgumentMatchers.<Class<PostMessageResponseDTO>>any())).thenReturn(response);
+    when(restTemplate.postForObject(
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.<Class<PostMessageResponseDTO>>any()))
+        .thenReturn(response);
 
     when(encryptionService.encrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
         .thenReturn(RC_MESSAGE);
@@ -220,19 +253,19 @@ public class RocketChatServiceTest {
         instanceOf(PostMessageResponseDTO.class));
   }
 
-  /**
-   * Method: markGroupAsReadForSystemUser
-   */
-
+  /** Method: markGroupAsReadForSystemUser */
   @Test
-  public void markGroupAsReadForSystemUser_Should_LogError_WhenMarkGroupAsReadFails()
+  public void markGroupAsReadForSystemUser_Should_LogError_When_MarkGroupAsReadFails()
       throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser()).thenReturn(RCC_SYSTEM_USER);
 
     RestClientException ex = new RestClientException(ERROR_MSG);
-    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
-        ArgumentMatchers.<Class<StandardResponseDTO>>any())).thenThrow(ex);
+    when(restTemplate.postForObject(
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.<Class<StandardResponseDTO>>any()))
+        .thenThrow(ex);
 
     try {
       rocketChatService.markGroupAsReadForSystemUser(RC_GROUP_ID);
@@ -243,23 +276,26 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void markGroupAsReadForSystemUser_Should_MarkGroupAsRead_WhenProvidedWithValidGroupId()
+  public void markGroupAsReadForSystemUser_Should_MarkGroupAsRead_When_ProvidedWithValidGroupId()
       throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser()).thenReturn(RCC_SYSTEM_USER);
 
-    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
-        ArgumentMatchers.<Class<StandardResponseDTO>>any()))
+    when(restTemplate.postForObject(
+            ArgumentMatchers.anyString(),
+            any(),
+            ArgumentMatchers.<Class<StandardResponseDTO>>any()))
         .thenReturn(STANDARD_SUCCESS_RESPONSE_DTO);
 
     rocketChatService.markGroupAsReadForSystemUser(RC_GROUP_ID);
-    verify(restTemplate, atLeastOnce()).postForObject(anyString(), any(HttpEntity.class),
-        eq(StandardResponseDTO.class));
+    verify(restTemplate, atLeastOnce())
+        .postForObject(anyString(), any(HttpEntity.class), eq(StandardResponseDTO.class));
   }
 
   @Test
-  public void markGroupAsReadForSystemUser_Should_LogError_WhenProvidedWithInvalidRocketChatSystemUserCredentials()
-      throws SecurityException, RocketChatUserNotInitializedException {
+  public void
+      markGroupAsReadForSystemUser_Should_LogError_When_ProvidedWithInvalidRocketChatSystemUserCredentials()
+          throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser()).thenReturn(INVALID_RCC_SYSTEM_USER);
 
@@ -268,8 +304,9 @@ public class RocketChatServiceTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void markGroupAsReadForSystemUser_Should_ThrowInternalServerError_When_ProvidedWithOutChatSystemUserCredentials()
-      throws SecurityException, RocketChatUserNotInitializedException {
+  public void
+      markGroupAsReadForSystemUser_Should_ThrowInternalServerError_When_ProvidedWithOutChatSystemUserCredentials()
+          throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser())
         .thenThrow(new RocketChatUserNotInitializedException(""));
@@ -283,8 +320,12 @@ public class RocketChatServiceTest {
     ResponseEntity<MessageStreamDTO> mockedResponse = mock(ResponseEntity.class);
     MessageStreamDTO mockedMessageStream = new MessageStreamDTO();
     when(mockedResponse.getBody()).thenReturn(mockedMessageStream);
-    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class), any(HttpEntity.class),
-        eq(MessageStreamDTO.class))).thenReturn(mockedResponse);
+    when(restTemplate.exchange(
+            any(URI.class),
+            any(HttpMethod.class),
+            any(HttpEntity.class),
+            eq(MessageStreamDTO.class)))
+        .thenReturn(mockedResponse);
 
     MessageStreamDTO messageStreamDTO = rocketChatService.getGroupMessages("", "", "", 0, 1);
 
@@ -297,13 +338,16 @@ public class RocketChatServiceTest {
 
     ResponseEntity<MessageStreamDTO> mockedResponse = mock(ResponseEntity.class);
     MessageStreamDTO mockedMessageStream = new MessageStreamDTO();
-    mockedMessageStream.setMessages(asList(
-        createMessagesDto("first"),
-        createMessagesDto("second"),
-        createMessagesDto("third")));
+    mockedMessageStream.setMessages(
+        asList(
+            createMessagesDto("first"), createMessagesDto("second"), createMessagesDto("third")));
     when(mockedResponse.getBody()).thenReturn(mockedMessageStream);
-    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class), any(HttpEntity.class),
-        eq(MessageStreamDTO.class))).thenReturn(mockedResponse);
+    when(restTemplate.exchange(
+            any(URI.class),
+            any(HttpMethod.class),
+            any(HttpEntity.class),
+            eq(MessageStreamDTO.class)))
+        .thenReturn(mockedResponse);
 
     MessageStreamDTO messageStreamDTO = rocketChatService.getGroupMessages("", "", "", 0, 1);
 
@@ -313,8 +357,18 @@ public class RocketChatServiceTest {
   }
 
   private MessagesDTO createMessagesDto(String id) {
-    return new MessagesDTO(id, new ForwardMessageDTO(), "rid", "message", "ts",
-        new UserDTO("id", "username", "name"), false, null, null, "updated", null, null);
+    return new MessagesDTO(
+        id,
+        new ForwardMessageDTO(),
+        "rid",
+        "message",
+        "ts",
+        new UserDTO("id", "username", "name"),
+        false,
+        null,
+        null,
+        "updated",
+        null,
+        null);
   }
-
 }

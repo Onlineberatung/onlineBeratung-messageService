@@ -12,6 +12,7 @@ import de.caritas.cob.messageservice.api.helper.Helper;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
 import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.PostGroupAsReadDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageDTO;
@@ -45,8 +46,8 @@ public class RocketChatService {
   @Value("${rocket.chat.api.post.group.messages.read.url}")
   private String rcPostGroupMessagesRead;
 
-  @Value("${rocket.chat.api.user.login}")
-  private String rcPostUserLoginUrl;
+  @Value("${rocket.chat.api.get.group.info}")
+  private String rcGetGroupInfoUrl;
 
   @Value("${rocket.technical.username}")
   private String rcTechnicalUser;
@@ -84,39 +85,48 @@ public class RocketChatService {
    * @param rcGroupId Rocket.Chat group Id
    * @param rcOffset Number of items where to start in the query (0 = first item)
    * @param rcCount In MVP only 0 (all) or 1(one entry) are allowed - Number of item which are being
-   * returned (0 = all)
+   *     returned (0 = all)
    * @return MessageStreamDTO
    */
-  public MessageStreamDTO getGroupMessages(String rcToken, String rcUserId, String rcGroupId,
-      int rcOffset, int rcCount) {
+  public MessageStreamDTO getGroupMessages(
+      String rcToken, String rcUserId, String rcGroupId, int rcOffset, int rcCount) {
 
     try {
-      URI uri = UriComponentsBuilder.fromUriString(rcGetGroupMessageUrl)
-          .queryParam(rcQueryParamRoomId, rcGroupId).queryParam(rcQueryParamOffset, rcOffset)
-          .queryParam(rcQueryParamCount, 0) // Im MVP immer alles
-          .queryParam(rcQueryParamSort, rcQueryParamSortValue).build().encode().toUri();
+      URI uri =
+          UriComponentsBuilder.fromUriString(rcGetGroupMessageUrl)
+              .queryParam(rcQueryParamRoomId, rcGroupId)
+              .queryParam(rcQueryParamOffset, rcOffset)
+              .queryParam(rcQueryParamCount, 0) // Im MVP immer alles
+              .queryParam(rcQueryParamSort, rcQueryParamSortValue)
+              .build()
+              .encode()
+              .toUri();
       HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
-      HttpEntity<MessageStreamDTO> response = restTemplate.exchange(uri, HttpMethod.GET, entity,
-          MessageStreamDTO.class);
+      HttpEntity<MessageStreamDTO> response =
+          restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class);
 
-      MessageStreamDTO messageStream = decryptMessages(
-          requireNonNull(response.getBody()), rcGroupId);
+      MessageStreamDTO messageStream =
+          decryptMessages(requireNonNull(response.getBody()), rcGroupId);
 
       if (rcCount == 1) {
         updateToFirstMessage(messageStream);
       }
       return messageStream;
     } catch (HttpClientErrorException clientErrorEx) {
-      throw new RocketChatBadRequestException(String.format(
-          "Rocket.Chat API fails due to a bad request (rcUserId: %s, rcGroupId: %s, rcOffset: %s, rcCount: %s)",
-          rcUserId, rcGroupId, rcOffset, rcCount), LogService::logRocketChatBadRequestError);
+      throw new RocketChatBadRequestException(
+          String.format(
+              "Rocket.Chat API fails due to a bad request (rcUserId: %s, rcGroupId: %s, rcOffset: %s, rcCount: %s)",
+              rcUserId, rcGroupId, rcOffset, rcCount),
+          LogService::logRocketChatBadRequestError);
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     } catch (Exception ex) {
-      throw new InternalServerErrorException(String.format(
-          "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s, rcOffset: %s, rcCount: %s)",
-          rcUserId, rcGroupId, rcOffset, rcCount), LogService::logRocketChatServiceError);
+      throw new InternalServerErrorException(
+          String.format(
+              "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s, rcOffset: %s, rcCount: %s)",
+              rcUserId, rcGroupId, rcOffset, rcCount),
+          LogService::logRocketChatServiceError);
     }
   }
 
@@ -165,14 +175,15 @@ public class RocketChatService {
   /**
    * Posts a message via Rocket.Chat API for the provided Rocket.Chat user in the provided group
    *
-   * @param rcToken Rocket.Chat authentication token
-   * @param rcUserId Rocket.Chat user Id
+   * @param rcToken   Rocket.Chat authentication token
+   * @param rcUserId  Rocket.Chat user Id
    * @param rcGroupId Rocket.Chat group Id
-   * @param message Rocket.Chat message
+   * @param message   Rocket.Chat message
    * @return PostMessageResponseDTO
    */
-  public PostMessageResponseDTO postGroupMessage(String rcToken, String rcUserId, String rcGroupId,
-      String message, String alias) throws CustomCryptoException {
+  public PostMessageResponseDTO postGroupMessage(
+      String rcToken, String rcUserId, String rcGroupId, String message, String alias)
+      throws CustomCryptoException {
 
     // XSS-Protection
     message = Helper.removeHTMLFromText(message);
@@ -189,7 +200,6 @@ public class RocketChatService {
     } catch (Exception ex) {
       throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
-
   }
 
   /**
@@ -206,7 +216,7 @@ public class RocketChatService {
   /**
    * Marks the specified Rocket.Chat group as read for the system (message) user.
    *
-   * @param rcGroupId
+   * @param rcGroupId Rocket.Chat group ID
    */
   public void markGroupAsReadForSystemUser(String rcGroupId) {
 
@@ -218,8 +228,10 @@ public class RocketChatService {
     }
 
     if (areRequiredRocketChatParamsNotNull(rocketChatCredentials)) {
-      this.markGroupAsRead(rocketChatCredentials.getRocketChatToken(),
-          rocketChatCredentials.getRocketChatUserId(), rcGroupId);
+      this.markGroupAsRead(
+          rocketChatCredentials.getRocketChatToken(),
+          rocketChatCredentials.getRocketChatUserId(),
+          rcGroupId);
 
     } else {
       LogService.logRocketChatServiceError(
@@ -244,15 +256,41 @@ public class RocketChatService {
     try {
       HttpHeaders headers = getRocketChatHeader(rcToken, rcUserId);
       PostGroupAsReadDTO postGroupAsReadDTO = new PostGroupAsReadDTO(rcGroupId);
-      HttpEntity<PostGroupAsReadDTO> request =
-          new HttpEntity<>(postGroupAsReadDTO, headers);
+      HttpEntity<PostGroupAsReadDTO> request = new HttpEntity<>(postGroupAsReadDTO, headers);
 
-      restTemplate.postForObject(rcPostGroupMessagesRead, request,
-          StandardResponseDTO.class);
+      restTemplate.postForObject(rcPostGroupMessagesRead, request, StandardResponseDTO.class);
 
     } catch (Exception ex) {
       throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
   }
 
+  /**
+   * Returns detailed group information for the given Rocket.Chat group ID.
+   *
+   * @param rcToken   Rocket.Chat token
+   * @param rcUserId  Rocket.Chat user ID
+   * @param rcGroupId Rocket.Chatgroup ID
+   * @return {@link GetGroupInfoDto}
+   */
+  public GetGroupInfoDto getGroupInfo(String rcToken, String rcUserId, String rcGroupId) {
+
+    try {
+      URI uri = UriComponentsBuilder.fromUriString(rcGetGroupInfoUrl)
+          .queryParam(rcQueryParamRoomId, rcGroupId)
+          .build()
+          .encode()
+          .toUri();
+      HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
+
+      return restTemplate.exchange(uri, HttpMethod.GET, entity, GetGroupInfoDto.class).getBody();
+
+    } catch (HttpClientErrorException clientErrorEx) {
+      throw new RocketChatBadRequestException(
+          String.format(
+              "Rocket.Chat API call failed with status %s for parameters rcUserId: %s, rcGroupId: %s)",
+              clientErrorEx.getStatusCode(), rcUserId, rcGroupId),
+          LogService::logRocketChatBadRequestError);
+    }
+  }
 }
