@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.testHelper;
+package de.caritas.cob.messageservice.testhelper;
 
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;

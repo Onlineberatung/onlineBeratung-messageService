@@ -1,6 +1,6 @@
-package de.caritas.cob.messageservice.testHelper;
+package de.caritas.cob.messageservice.testhelper;
 
-public class FieldConstants {
+public class RocketChatFieldConstants {
 
   public static final String FIELD_NAME_RC_POST_GROUP_MESSAGES_READ = "rcPostGroupMessagesRead";
   public static final String FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ =

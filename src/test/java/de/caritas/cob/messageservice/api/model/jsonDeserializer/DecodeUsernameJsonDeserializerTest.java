@@ -1,9 +1,15 @@
 package de.caritas.cob.messageservice.api.model.jsonDeserializer;
 
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_DECODED;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_ENCODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_ENCODED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.helper.UserHelper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,11 +19,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.util.ClassUtils;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.helper.UserHelper;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DecodeUsernameJsonDeserializerTest {

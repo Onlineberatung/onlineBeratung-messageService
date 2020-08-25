@@ -1,16 +1,17 @@
 package de.caritas.cob.messageservice.api.helper;
 
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_DECODED;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_ENCODED;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_INVALID_ENCODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_ENCODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_INVALID_ENCODED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import de.caritas.cob.messageservice.api.exception.HelperException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import de.caritas.cob.messageservice.api.exception.HelperException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserHelperTest {

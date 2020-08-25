@@ -1,12 +1,12 @@
 package de.caritas.cob.messageservice.api.service;
 
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
-import static de.caritas.cob.messageservice.testHelper.FieldConstants.FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_GROUP_ID;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_TOKEN;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_USER_ID;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
+import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.CoreMatchers.instanceOf;

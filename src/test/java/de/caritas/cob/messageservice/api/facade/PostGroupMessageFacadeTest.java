@@ -1,9 +1,9 @@
 package de.caritas.cob.messageservice.api.facade;
 
-import static de.caritas.cob.messageservice.testHelper.TestConstants.GET_GROUP_INFO_DTO;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.GET_GROUP_INFO_DTO_FEEDBACK_CHAT;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_DTO_WITHOUT_NOTIFICATION;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_DTO_WITH_NOTIFICATION;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO_FEEDBACK_CHAT;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO_WITHOUT_NOTIFICATION;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO_WITH_NOTIFICATION;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,15 +36,19 @@ public class PostGroupMessageFacadeTest {
   private final PostMessageResponseDTO POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL =
       new PostMessageResponseDTO(new Date(), CHANNEL, false, "", "");
 
-  @InjectMocks private PostGroupMessageFacade postGroupMessageFacade;
-  @Mock private RocketChatService rocketChatService;
-  @Mock private EmailNotificationFacade emailNotificationFacade;
+  @InjectMocks
+  private PostGroupMessageFacade postGroupMessageFacade;
+  @Mock
+  private RocketChatService rocketChatService;
+  @Mock
+  private EmailNotificationFacade emailNotificationFacade;
 
-  /** Tests for method: postGroupMessage */
+  /**
+   * Tests for method: postGroupMessage
+   */
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatPostMessageFails()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatPostMessageFails()
+      throws CustomCryptoException {
 
     RocketChatPostMessageException rocketChatPostMessageException =
         new RocketChatPostMessageException(new Exception());
@@ -59,9 +63,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsEmptyDTO()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsEmptyDTO()
+      throws CustomCryptoException {
 
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(null);
@@ -73,9 +76,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsUnsuccessful()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsUnsuccessful()
+      throws CustomCryptoException {
 
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL);
@@ -87,9 +89,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postGroupMessage_Should_ReturnRocketChatPostMarkGroupAsReadExceptionAndNotSendNotification_When_RocketChatMarkGroupAsReadFails()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnRocketChatPostMarkGroupAsReadExceptionAndNotSendNotification_When_RocketChatMarkGroupAsReadFails()
+      throws CustomCryptoException {
 
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(null);
@@ -101,9 +102,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test
-  public void
-      postGroupMessage_Should_ReturnCreatedAndSendNotification_When_MessageWasSentAndNotificationIsSetToTrue()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnCreatedAndSendNotification_When_MessageWasSentAndNotificationIsSetToTrue()
+      throws CustomCryptoException {
 
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO);
@@ -115,9 +115,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test
-  public void
-      postGroupMessage_Should_ReturnCreatedAndNotSendNotification_When_MessageWasSentAndNotificationIsSetToFalse()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnCreatedAndNotSendNotification_When_MessageWasSentAndNotificationIsSetToFalse()
+      throws CustomCryptoException {
 
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO);
@@ -128,11 +127,12 @@ public class PostGroupMessageFacadeTest {
     verify(emailNotificationFacade, times(0)).sendEmailNotification(Mockito.anyString());
   }
 
-  /** Tests for method: postFeedbackGroupMessage */
+  /**
+   * Tests for method: postFeedbackGroupMessage
+   */
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postFeebackGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatPostMessageFails()
-          throws CustomCryptoException {
+  public void postFeebackGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatPostMessageFails()
+      throws CustomCryptoException {
 
     RocketChatPostMessageException rocketChatPostMessageException =
         new RocketChatPostMessageException(new Exception());
@@ -140,7 +140,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
     when(rocketChatService.postGroupMessage(
-            RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
         .thenThrow(rocketChatPostMessageException);
 
     postGroupMessageFacade.postFeedbackGroupMessage(
@@ -150,14 +150,13 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postFeedbackGroupMessage_Should_ReturnInternalServerErrorAndNotSendFeedbackNotification_When_RocketChatServiceReturnsEmptyDTO()
-          throws CustomCryptoException {
+  public void postFeedbackGroupMessage_Should_ReturnInternalServerErrorAndNotSendFeedbackNotification_When_RocketChatServiceReturnsEmptyDTO()
+      throws CustomCryptoException {
 
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
     when(rocketChatService.postGroupMessage(
-            RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
         .thenReturn(null);
 
     postGroupMessageFacade.postFeedbackGroupMessage(
@@ -167,9 +166,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postFeedbackGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsUnsuccessful()
-          throws CustomCryptoException {
+  public void postFeedbackGroupMessage_Should_ReturnInternalServerErrorAndNotSendNotification_When_RocketChatServiceReturnsUnsuccessful()
+      throws CustomCryptoException {
 
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
@@ -183,14 +181,13 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      postFeedbackGroupMessage_Should_ReturnRocketChatPostMarkGroupAsReadExceptionAndNotSendFeedbackNotification_When_RocketChatMarkGroupAsReadFails()
-          throws CustomCryptoException {
+  public void postFeedbackGroupMessage_Should_ReturnRocketChatPostMarkGroupAsReadExceptionAndNotSendFeedbackNotification_When_RocketChatMarkGroupAsReadFails()
+      throws CustomCryptoException {
 
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
     when(rocketChatService.postGroupMessage(
-            RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
         .thenReturn(null);
 
     postGroupMessageFacade.postFeedbackGroupMessage(
@@ -200,14 +197,13 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test
-  public void
-      postFeedbackGroupMessage_Should_ReturnCreatedAndSendFeedbackNotification_When_RocketChatServiceSucceeds()
-          throws CustomCryptoException {
+  public void postFeedbackGroupMessage_Should_ReturnCreatedAndSendFeedbackNotification_When_RocketChatServiceSucceeds()
+      throws CustomCryptoException {
 
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
     when(rocketChatService.postGroupMessage(
-            RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
     postGroupMessageFacade.postFeedbackGroupMessage(
@@ -217,9 +213,7 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test(expected = BadRequestException.class)
-  public void
-      postFeedbackGroupMessage_Should_ReturnBadRequestAndNotSendFeedbackNotification_When_GroupIdIsNoFeedbackChat()
-          throws CustomCryptoException {
+  public void postFeedbackGroupMessage_Should_ReturnBadRequestAndNotSendFeedbackNotification_When_GroupIdIsNoFeedbackChat() {
 
     when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_GROUP_ID))
         .thenReturn(GET_GROUP_INFO_DTO);

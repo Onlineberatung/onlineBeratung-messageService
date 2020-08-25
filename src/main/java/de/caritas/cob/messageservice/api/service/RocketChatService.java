@@ -276,12 +276,11 @@ public class RocketChatService {
   public GetGroupInfoDto getGroupInfo(String rcToken, String rcUserId, String rcGroupId) {
 
     try {
-      URI uri =
-          UriComponentsBuilder.fromUriString(rcGetGroupInfoUrl)
-              .queryParam(rcQueryParamRoomId, rcGroupId)
-              .build()
-              .encode()
-              .toUri();
+      URI uri = UriComponentsBuilder.fromUriString(rcGetGroupInfoUrl)
+          .queryParam(rcQueryParamRoomId, rcGroupId)
+          .build()
+          .encode()
+          .toUri();
       HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
       return restTemplate.exchange(uri, HttpMethod.GET, entity, GetGroupInfoDto.class).getBody();

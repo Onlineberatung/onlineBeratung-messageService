@@ -1,15 +1,22 @@
 package de.caritas.cob.messageservice.api.model.jsonDeserializer;
 
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_FORWARD_EMPTY_ALIAS_JSON;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.MESSAGE_FORWARD_NULL_ALIAS_JSON;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.RC_USER_ID;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.TIMESTAMP;
-import static de.caritas.cob.messageservice.testHelper.TestConstants.USERNAME_DECODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_EMPTY_ALIAS_JSON;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_NULL_ALIAS_JSON;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.TIMESTAMP;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.helper.UserHelper;
+import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,12 +26,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.util.ClassUtils;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.helper.UserHelper;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AliasJsonDeserializerTest {

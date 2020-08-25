@@ -21,9 +21,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class PostGroupMessageFacade {
 
+  private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
   private final RocketChatService rocketChatService;
   private final EmailNotificationFacade emailNoticationFacade;
-  private static final String FEEDBACK_GROUP_SUFFIX = "feedback";
 
   /**
    * Constructor
@@ -106,7 +106,7 @@ public class PostGroupMessageFacade {
   private void validateFeedbackChatId(String rcToken, String rcUserId, String rcFeedbackGroupId) {
     GetGroupInfoDto groupDto = rocketChatService.getGroupInfo(rcToken, rcUserId, rcFeedbackGroupId);
 
-    if (isNull(groupDto) || !groupDto.getGroup().getName().contains(FEEDBACK_GROUP_SUFFIX)) {
+    if (!groupDto.getGroup().getName().contains(FEEDBACK_GROUP_IDENTIFIER)) {
       throw new BadRequestException(
           String.format("Provided Rocket.Chat group ID %s is no feedback chat.", rcFeedbackGroupId),
           LogService::logBadRequest);
