@@ -6,7 +6,7 @@
 	<description>Caritas Online Beratung: MessageService</description>
 	
 	<groupId>de.caritas.cob</groupId>
-	<artifactId>MessageService</artifactId>
+	<artifactId>messageservice</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
@@ -146,6 +146,18 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<artifactId>powermock-module-junit4</artifactId>
+			<groupId>org.powermock</groupId>
+			<scope>test</scope>
+			<version>2.0.2</version>
+		</dependency>
+		<dependency>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<groupId>org.powermock</groupId>
+			<scope>test</scope>
+			<version>2.0.2</version>
 		</dependency>
 	</dependencies>
 
