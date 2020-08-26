@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+
 ## 1.2.0 (2020-08-26)
 
 
@@ -15,6 +16,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 * logservice tests to be independent of logback rule ([87905bc](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/87905bc837c35828b69c8b4bc93a75e35aa230d9))
 * removed unused field setter ([f98594b](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/f98594bfede8b50e0404c44edc6a8a015caa4ea1))
+
 
 ## 1.1.0 (2020-07-29)
 
