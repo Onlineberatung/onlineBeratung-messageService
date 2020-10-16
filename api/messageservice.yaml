@@ -25,19 +25,14 @@ paths:
       responses:
         202:
           description: ACCEPTED - key was successfully inserted
-          content: {}
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
-          content: {}
         403:
           description: FORBIDDEN - no/invalid role/authorization
-          content: {}
         409:
           description: CONFLICT - there was a key in the service
-          content: {}
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
-          content: {}
       security:
         - Bearer: []
       x-codegen-request-body-name: key
@@ -74,19 +69,14 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
-          content: {}
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
-          content: {}
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
-          content: {}
         403:
           description: FORBIDDEN - no/invalid role/authorization
-          content: {}
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
-          content: {}
       security:
         - Bearer: []
       x-codegen-request-body-name: Message
@@ -123,19 +113,14 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
-          content: {}
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
-          content: {}
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
-          content: {}
         403:
           description: FORBIDDEN - no/invalid role/authorization
-          content: {}
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
-          content: {}
       security:
         - Bearer: []
       x-codegen-request-body-name: Message
@@ -184,19 +169,14 @@ paths:
                 $ref: '#/components/schemas/MessageStreamDTO'
         204:
           description: NO CONTENT - no messages available
-          content: {}
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
-          content: {}
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
-          content: {}
         403:
           description: FORBIDDEN - no/invalid role/authorization
-          content: {}
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
-          content: {}
       security:
         - Bearer: []
 
@@ -233,19 +213,14 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
-          content: {}
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
-          content: {}
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
-          content: {}
         403:
           description: FORBIDDEN - no/invalid role/authorization
-          content: {}
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
-          content: {}
       security:
         - Bearer: []
       x-codegen-request-body-name: Message
