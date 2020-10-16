@@ -213,13 +213,8 @@ public class RocketChatServiceTest {
     List<MessagesDTO> messages = new ArrayList<>();
     ResponseEntity<MessageStreamDTO> entity =
         new ResponseEntity<>(
-            new MessageStreamDTO(
-                messages,
-                Integer.toString(RC_COUNT),
-                Integer.toString(RC_OFFSET),
-                "5",
-                "true",
-                "0"),
+            new MessageStreamDTO().messages(messages).count(Integer.toString(RC_COUNT))
+              .offset(Integer.toString(RC_OFFSET)).total("5").success("true").cleaned("0"),
             HttpStatus.OK);
 
     when(restTemplate.exchange(

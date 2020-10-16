@@ -37,11 +37,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.AttachmentDTO;
+import de.caritas.cob.messageservice.api.model.FileDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.UserDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.AttachmentDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.FileDTO;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
@@ -76,11 +76,13 @@ public class MessageControllerTestIT {
       + "\"rcUserId\": \"ag89h3tjkerg94t\"}";
   private final String INVALID_MESSAGE_REQUEST_BODY = "{\"in\": \"valid\"}";
   private final FileDTO FILE_DTO =
-      new FileDTO(RC_ATTACHMENT_ID, RC_ATTACHMENT_TITLE, RC_ATTACHMENT_FILE_TYPE);
+      new FileDTO().id(RC_ATTACHMENT_ID).name(RC_ATTACHMENT_TITLE).type(RC_ATTACHMENT_FILE_TYPE);
   private final AttachmentDTO ATTACHMENT_DTO =
-      new AttachmentDTO(RC_ATTACHMENT_TITLE, RC_ATTACHMENT_FILE_TYPE, RC_ATTACHMENT_DESCRIPTION,
-          RC_ATTACHMENT_TITLE_LINK, RC_ATTACHMENT_TITLE_LINK_DOWNLOAD, RC_ATTACHMENT_IMAGE_URL,
-          RC_ATTACHMENT_IMAGE_TYPE, RC_ATTACHMENT_IMAGE_SIZE, RC_ATTACHMENT_IMAGE_PREVIEW);
+      new AttachmentDTO().title(RC_ATTACHMENT_TITLE).type(RC_ATTACHMENT_FILE_TYPE)
+          .description(RC_ATTACHMENT_DESCRIPTION).titleLink(RC_ATTACHMENT_TITLE_LINK)
+          .titleLinkDownload(RC_ATTACHMENT_TITLE_LINK_DOWNLOAD).imageUrl(RC_ATTACHMENT_IMAGE_URL)
+          .imageType(RC_ATTACHMENT_IMAGE_TYPE).imageSize(RC_ATTACHMENT_IMAGE_SIZE)
+          .imagePreview(RC_ATTACHMENT_IMAGE_PREVIEW);
   private final MessagesDTO MESSAGES_DTO = new MessagesDTO("123", null, RC_GROUP_ID, MESSAGE,
       RC_TIMESTAMP, new UserDTO(RC_USER_ID, "test", "name"), false, new String[0], new String[0],
       RC_TIMESTAMP, Arrays.array(ATTACHMENT_DTO), FILE_DTO);
@@ -209,8 +211,8 @@ public class MessageControllerTestIT {
 
     List<MessagesDTO> messages = new ArrayList<>();
     messages.add(MESSAGES_DTO);
-    MessageStreamDTO stream =
-        new MessageStreamDTO(messages, RC_COUNT, RC_OFFSET, RC_COUNT, "true", "0");
+    MessageStreamDTO stream = new MessageStreamDTO().messages(messages).count(RC_COUNT)
+        .offset(RC_OFFSET).total(RC_COUNT). success("true").cleaned("0");
     String streamJson = convertObjectToJson(stream);
 
     when(rocketChatService.getGroupMessages(Mockito.anyString(), Mockito.anyString(),

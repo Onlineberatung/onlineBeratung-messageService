@@ -51,7 +51,7 @@ public class PostGroupMessageFacade {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
 
-    if (message.isSendNotification()) {
+    if (message.getSendNotification()) {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
   }

@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.config;
 
-import java.util.Arrays;
+import static java.util.Collections.singletonList;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -53,35 +54,31 @@ public class SpringFoxConfig {
 
   // White list for path patterns that should be white listed so that swagger UI can be accessed
   // without authorization
-  public final static String[] whiteList =
+  public static final String[] WHITE_LIST =
       new String[] {"/messages/docs", "/messages/docs/**", "/v2/api-docs", "/configuration/ui",
           "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/webjars/**"};
 
   @Bean
   public Docket apiDocket() {
     return new Docket(DocumentationType.SWAGGER_2).select()
-        .apis(RequestHandlerSelectors.basePackage("de.caritas.cob.MessageService.api")).build()
+        .apis(RequestHandlerSelectors.basePackage("de.caritas.cob.messageservice.api")).build()
         .consumes(getContentTypes()).produces(getContentTypes()).apiInfo(getApiInfo())
         .useDefaultResponseMessages(false).protocols(protocols()).securitySchemes(securitySchemes())
         .securityContexts(securityContexts());
   }
 
   private List<SecurityContext> securityContexts() {
-    List<SecurityContext> securityContexts = Arrays.asList(SecurityContext.builder()
+    return singletonList(SecurityContext.builder()
         .forPaths(PathSelectors.any()).securityReferences(securityReferences()).build());
-    return securityContexts;
   }
 
   private List<SecurityReference> securityReferences() {
-    List<SecurityReference> securityReferences = Arrays.asList(
-        SecurityReference.builder().reference("token").scopes(new AuthorizationScope[0]).build());
-    return securityReferences;
+    return singletonList(SecurityReference.builder()
+        .reference("token").scopes(new AuthorizationScope[0]).build());
   }
 
   private List<? extends SecurityScheme> securitySchemes() {
-    List<SecurityScheme> authorizationTypes =
-        Arrays.asList(new ApiKey("Bearer", "Authorization", "header"));
-    return authorizationTypes;
+    return singletonList(new ApiKey("Bearer", "Authorization", "header"));
   }
 
   /**
