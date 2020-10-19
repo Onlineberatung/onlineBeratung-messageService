@@ -18,7 +18,7 @@ paths:
       operationId: updateKey
       requestBody:
         content:
-          '*/*':
+          'application/json':
             schema:
               $ref: '#/components/schemas/MasterKeyDTO'
         required: true
@@ -62,7 +62,7 @@ paths:
             type: string
       requestBody:
         content:
-          '*/*':
+          'application/json':
             schema:
               $ref: '#/components/schemas/MessageDTO'
         required: true
@@ -106,7 +106,7 @@ paths:
             type: string
       requestBody:
         content:
-          '*/*':
+          'application/json':
             schema:
               $ref: '#/components/schemas/MessageDTO'
         required: true
@@ -164,7 +164,7 @@ paths:
         200:
           description: OK - successfull operation
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/MessageStreamDTO'
         204:
@@ -206,7 +206,7 @@ paths:
       requestBody:
         description: Body description
         content:
-          '*/*':
+          'application/json':
             schema:
               $ref: '#/components/schemas/ForwardMessageDTO'
         required: true
