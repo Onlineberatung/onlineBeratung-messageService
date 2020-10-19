@@ -68,7 +68,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
             CsrfFilter.class)
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .sessionAuthenticationStrategy(sessionAuthenticationStrategy()).and().authorizeRequests()
-        .antMatchers(SpringFoxConfig.whiteList).permitAll().antMatchers("/messages/key")
+        .antMatchers(SpringFoxConfig.WHITE_LIST).permitAll().antMatchers("/messages/key")
         .hasAuthority(Authority.TECHNICAL_DEFAULT).antMatchers("/messages")
         .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT)
         .antMatchers("/messages/new")

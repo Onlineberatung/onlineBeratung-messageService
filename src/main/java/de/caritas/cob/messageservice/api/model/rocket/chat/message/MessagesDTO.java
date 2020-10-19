@@ -2,10 +2,10 @@ package de.caritas.cob.messageservice.api.model.rocket.chat.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.caritas.cob.messageservice.api.model.AttachmentDTO;
+import de.caritas.cob.messageservice.api.model.FileDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.jsonDeserializer.AliasJsonDeserializer;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.AttachmentDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.attachment.FileDTO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;

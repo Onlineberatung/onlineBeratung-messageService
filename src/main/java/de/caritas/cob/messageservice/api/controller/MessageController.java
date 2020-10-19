@@ -13,8 +13,6 @@ import de.caritas.cob.messageservice.generated.api.controller.MessagesApi;
 import io.swagger.annotations.Api;
 import java.util.Optional;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -41,8 +39,8 @@ public class MessageController implements MessagesApi {
    */
   @Override
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
-      @RequestHeader String rcUserId, @NotBlank @Valid @RequestParam String rcGroupId,
-      @NotNull @Valid @RequestParam Integer offset, @NotNull @Valid @RequestParam Integer count) {
+      @RequestHeader String rcUserId, @RequestParam String rcGroupId, @RequestParam Integer offset,
+      @RequestParam Integer count) {
 
     MessageStreamDTO message =
         rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId, offset, count);
@@ -73,9 +71,9 @@ public class MessageController implements MessagesApi {
    * Posts a message in the specified Rocket.Chat group
    */
   @Override
-  public ResponseEntity<Void> createMessage(@Valid @RequestBody MessageDTO message,
-      @NotBlank @RequestHeader String rcToken, @NotBlank @NotNull @RequestHeader String rcUserId,
-      @NotBlank @NotNull @RequestHeader String rcGroupId) {
+  public ResponseEntity<Void> createMessage(@RequestHeader String rcToken,
+      @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
+      @Valid @RequestBody MessageDTO message) {
 
     postGroupMessageFacade.postGroupMessage(rcToken, rcUserId, rcGroupId, message);
 
@@ -87,10 +85,9 @@ public class MessageController implements MessagesApi {
    * object in the alias object of the Rocket.Chat message.
    */
   @Override
-  public ResponseEntity<Void> forwardMessage(
-      @Valid @RequestBody ForwardMessageDTO forwardMessageDTO,
-      @NotBlank @RequestHeader String rcToken, @NotBlank @NotNull @RequestHeader String rcUserId,
-      @NotBlank @NotNull @RequestHeader String rcGroupId) {
+  public ResponseEntity<Void> forwardMessage(@RequestHeader String rcToken,
+      @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
+      @Valid @RequestBody ForwardMessageDTO forwardMessageDTO) {
 
     Optional<String> alias = JSONHelper.convertForwardMessageDTOToString(forwardMessageDTO);
 
@@ -108,15 +105,13 @@ public class MessageController implements MessagesApi {
    * Posts a message in the specified Feedback Rocket.Chat group
    */
   @Override
-  public ResponseEntity<Void> createFeedbackMessage(@Valid @RequestBody MessageDTO message,
-      @NotBlank @RequestHeader String rcToken, @NotBlank @NotNull @RequestHeader String rcUserId,
-      @NotBlank @NotNull @RequestHeader String rcFeedbackGroupId) {
+  public ResponseEntity<Void> createFeedbackMessage(@RequestHeader String rcToken,
+      @RequestHeader String rcUserId, @RequestHeader String rcFeedbackGroupId,
+      @Valid @RequestBody MessageDTO message) {
 
     postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
         rcFeedbackGroupId, message.getMessage(), null);
 
     return new ResponseEntity<>(HttpStatus.CREATED);
-
-
   }
 }
