@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.facade;
 
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -51,7 +52,7 @@ public class PostGroupMessageFacade {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
 
-    if (message.getSendNotification()) {
+    if (isTrue(message.getSendNotification())) {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
   }
