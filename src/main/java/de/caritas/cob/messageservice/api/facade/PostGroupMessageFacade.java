@@ -11,32 +11,25 @@ import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageExceptio
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /*
  * Facade to encapsulate the steps for posting a (group) message to Rocket.Chat
  */
 @Service
+@RequiredArgsConstructor
 public class PostGroupMessageFacade {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
-  private final RocketChatService rocketChatService;
-  private final EmailNotificationFacade emailNotificationFacade;
 
-  /**
-   * Constructor
-   *
-   * @param rocketChatService {@link RocketChatService}
-   */
-  @Autowired
-  public PostGroupMessageFacade(RocketChatService rocketChatService,
-      EmailNotificationFacade emailNotificationFacade) {
-    this.rocketChatService = rocketChatService;
-    this.emailNotificationFacade = emailNotificationFacade;
-  }
+  private final @NonNull RocketChatService rocketChatService;
+  private final @NonNull EmailNotificationFacade emailNotificationFacade;
+  private final @NonNull LiveEventNotificationService liveEventNotificationService;
 
   /**
    * Posts a message to the given Rocket.Chat group id and sends out a notification e-mail via the
@@ -51,6 +44,7 @@ public class PostGroupMessageFacade {
       MessageDTO message) {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
+    this.liveEventNotificationService.sendLiveEvent(rcGroupId);
 
     if (isTrue(message.getSendNotification())) {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
@@ -71,6 +65,7 @@ public class PostGroupMessageFacade {
 
     validateFeedbackChatId(rcToken, rcUserId, rcFeedbackGroupId);
     postRocketChatGroupMessage(rcToken, rcUserId, rcFeedbackGroupId, message, alias);
+    this.liveEventNotificationService.sendLiveEvent(rcFeedbackGroupId);
     emailNotificationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
   }
 
