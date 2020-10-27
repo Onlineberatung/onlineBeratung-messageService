@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.config.apiclient;
 
-import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
+import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
