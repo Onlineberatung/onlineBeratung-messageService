@@ -202,7 +202,7 @@
           </execution>
           <!-- Generate client API for user service -->
           <execution>
-            <id>userervice-client-model</id>
+            <id>uservice-client-model</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>generate</goal>
