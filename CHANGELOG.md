@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.2.3...v1.3.0) (2020-10-28)
+
+
+### Features
+
+* add authorization headers for api client ([b88eb89](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/b88eb896aaeb1546e410e3852a9706f370177f2c))
+* generate user service api client ([04486e0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/04486e0d586825d05c337c8645e5ca0eb0d427dd))
+* integrate live event trigger ([ef5b276](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/ef5b276ff2ebf968baf539f63b970ba91e4c78b6))
+* remove unnecessary content declarations ([936735d](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/936735d4a8d43cba47b2ab8e6470b6bbc7f82a63))
+* update swagger to openapi and define api models ([9cb3290](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/9cb3290e6b9d11b401b1219aabeae1ee96fc5f38))
+
+
+### Bug Fixes
+
+* check boolean against null ([c7a4d29](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/c7a4d29e445ab571722f93256bc2846a37139987))
+
 ### [1.2.3](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.2.2...v1.2.3) (2020-10-12)
 
 ### [1.2.2](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.2.1...v1.2.2) (2020-10-12)
