@@ -63,9 +63,9 @@ public class TestConstants {
   public static final boolean SEND_NOTIFICATION = true;
   public static final boolean DONT_SEND_NOTIFICATION = false;
   public static final MessageDTO MESSAGE_DTO_WITH_NOTIFICATION =
-      new MessageDTO(MESSAGE, SEND_NOTIFICATION);
+      new MessageDTO().message(MESSAGE).sendNotification(SEND_NOTIFICATION);
   public static final MessageDTO MESSAGE_DTO_WITHOUT_NOTIFICATION =
-      new MessageDTO(MESSAGE, DONT_SEND_NOTIFICATION);
+      new MessageDTO().message(MESSAGE).sendNotification(DONT_SEND_NOTIFICATION);
 
   /*
    * Groups

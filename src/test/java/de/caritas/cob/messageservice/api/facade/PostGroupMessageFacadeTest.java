@@ -13,6 +13,7 @@ import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.Date;
 import org.junit.Test;
@@ -38,10 +39,15 @@ public class PostGroupMessageFacadeTest {
 
   @InjectMocks
   private PostGroupMessageFacade postGroupMessageFacade;
+
   @Mock
   private RocketChatService rocketChatService;
+
   @Mock
   private EmailNotificationFacade emailNotificationFacade;
+
+  @Mock
+  private LiveEventNotificationService liveEventNotificationService;
 
   /**
    * Tests for method: postGroupMessage
@@ -223,4 +229,32 @@ public class PostGroupMessageFacadeTest {
 
     verify(emailNotificationFacade, times(0)).sendFeedbackEmailNotification(RC_GROUP_ID);
   }
+
+  @Test
+  public void postGroupMessage_Should_sendLiveNotification_When_RocketChatServiceSucceeds()
+      throws CustomCryptoException {
+    when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE_DTO_WITHOUT_NOTIFICATION);
+
+    verify(this.liveEventNotificationService, times(1)).sendLiveEvent(RC_GROUP_ID);
+  }
+
+  @Test
+  public void postFeedbackGroupMessage_Should_sendLiveNotification_When_RocketChatServiceSucceeds()
+      throws CustomCryptoException {
+    when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
+        .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
+    when(rocketChatService.postGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postFeedbackGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
+
+    verify(this.liveEventNotificationService, times(1)).sendLiveEvent(RC_FEEDBACK_GROUP_ID);
+  }
+
 }
