@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.model.entity;
+package de.caritas.cob.messageservice.api.model.draftmessage.entity;
 
 import java.time.LocalDateTime;
 import javax.persistence.Column;
