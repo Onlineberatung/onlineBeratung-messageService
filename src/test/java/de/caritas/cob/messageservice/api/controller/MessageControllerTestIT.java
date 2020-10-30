@@ -22,6 +22,8 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TIMESTAM
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.SEND_NOTIFICATION;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -94,7 +96,7 @@ public class MessageControllerTestIT {
   private final String PATH_CREATE_FEEDBACK_MESSAGE = "/messages/feedback/new";
   private final String PATH_GET_MESSAGES = "/messages";
   private final String PATH_POST_FORWARD_MESSAGE = "/messages/forward";
-  private final String PATH_POST_DRAFT_MESSAGE = "/messages/draft";
+  private final String PATH_DRAFT_MESSAGE = "/messages/draft";
   private final String QUERY_PARAM_OFFSET = "offset";
   private final String QUERY_PARAM_COUNT = "count";
   private final String QUERY_PARAM_RC_USER_ID = "rcUserId";
@@ -400,13 +402,13 @@ public class MessageControllerTestIT {
 
   @Test
   public void saveDraftMessage_Should_returnBadRequest_When_rcGroupIdAndMessageIsMissing() throws Exception {
-    mvc.perform(post(PATH_POST_DRAFT_MESSAGE).contentType(MediaType.APPLICATION_JSON))
+    mvc.perform(post(PATH_DRAFT_MESSAGE).contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   public void saveDraftMessage_Should_returnBadRequest_When_rcGroupIdIsMissing() throws Exception {
-    mvc.perform(post(PATH_POST_DRAFT_MESSAGE)
+    mvc.perform(post(PATH_DRAFT_MESSAGE)
         .content("message")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
@@ -414,7 +416,7 @@ public class MessageControllerTestIT {
 
   @Test
   public void saveDraftMessage_Should_returnBadRequest_When_messageIsMissing() throws Exception {
-    mvc.perform(post(PATH_POST_DRAFT_MESSAGE)
+    mvc.perform(post(PATH_DRAFT_MESSAGE)
         .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
@@ -424,7 +426,7 @@ public class MessageControllerTestIT {
   public void saveDraftMessage_Should_returnCreated_When_messageIsNew() throws Exception {
     when(this.draftMessageService.saveDraftMessage(any(), any())).thenReturn(NEW_MESSAGE);
 
-    mvc.perform(post(PATH_POST_DRAFT_MESSAGE)
+    mvc.perform(post(PATH_DRAFT_MESSAGE)
         .content("message")
         .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .contentType(MediaType.APPLICATION_JSON))
@@ -435,11 +437,40 @@ public class MessageControllerTestIT {
   public void saveDraftMessage_Should_returnOk_When_messageIsOverwritten() throws Exception {
     when(this.draftMessageService.saveDraftMessage(any(), any())).thenReturn(OVERWRITTEN_MESSAGE);
 
-    mvc.perform(post(PATH_POST_DRAFT_MESSAGE)
+    mvc.perform(post(PATH_DRAFT_MESSAGE)
         .content("message")
         .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  public void findDraftMessage_Should_returnBadRequest_When_rcGroupIdIsMissing() throws Exception {
+    mvc.perform(get(PATH_DRAFT_MESSAGE).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void findDraftMessage_Should_returnDraftMessage_When_messageExists() throws Exception {
+    when(this.draftMessageService.findAndDecryptDraftMessage(any())).thenReturn("message");
+
+    String message = mvc.perform(get(PATH_DRAFT_MESSAGE)
+        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    assertThat(message, is("message"));
+  }
+
+  @Test
+  public void findDraftMessage_Should_returnNoContent_When_noDraftMessageExists() throws Exception {
+    mvc.perform(get(PATH_DRAFT_MESSAGE)
+        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNoContent());
   }
 
 }

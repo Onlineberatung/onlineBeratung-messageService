@@ -36,14 +36,18 @@ public class DraftMessageService {
    */
   public SavedDraftType saveDraftMessage(String message, String rcGroupId) {
 
-    Optional<DraftMessage> optionalDraftMessage = this.draftMessageRepository
-        .findByUserIdAndRcGroupId(this.authenticatedUser.getUserId(), rcGroupId);
+    Optional<DraftMessage> optionalDraftMessage = findDraftMessage(rcGroupId);
 
     DraftMessage draftMessage = optionalDraftMessage.orElse(buildNewDraftMessage(rcGroupId));
     updateMessage(message, rcGroupId, draftMessage);
 
     this.draftMessageRepository.save(draftMessage);
     return extractSavedDraftType(optionalDraftMessage);
+  }
+
+  private Optional<DraftMessage> findDraftMessage(String rcGroupId) {
+    return this.draftMessageRepository
+        .findByUserIdAndRcGroupId(this.authenticatedUser.getUserId(), rcGroupId);
   }
 
   private SavedDraftType extractSavedDraftType(Optional<DraftMessage> optionalDraftMessage) {
@@ -73,12 +77,31 @@ public class DraftMessageService {
    * @param rcGroupId the rocket chat group id
    */
   public void deleteDraftMessageIfExist(String rcGroupId) {
-    this.draftMessageRepository.findByUserIdAndRcGroupId(this.authenticatedUser.getUserId(),
-        rcGroupId).ifPresent(this::deleteDraftMessage);
+    this.findDraftMessage(rcGroupId).ifPresent(this::deleteDraftMessage);
   }
 
   private void deleteDraftMessage(DraftMessage draftMessage) {
     this.draftMessageRepository.delete(draftMessage);
+  }
+
+  /**
+   * Searches for a draft message by the authenticated user and given rocket chat group id.
+   *
+   * @param rcGroupId the rocket chat group id
+   * @return an {@link Optional} of the database query result
+   */
+  public String findAndDecryptDraftMessage(String rcGroupId) {
+    Optional<DraftMessage> message = findDraftMessage(rcGroupId);
+    return message.map(draftMessage -> decryptMessage(draftMessage.getMessage(), rcGroupId))
+        .orElse(null);
+  }
+
+  private String decryptMessage(String encryptedMessage, String rcGroupId) {
+    try {
+      return this.encryptionService.decrypt(encryptedMessage, rcGroupId);
+    } catch (CustomCryptoException e) {
+      throw new InternalServerErrorException(e, LogService::logInternalServerError);
+    }
   }
 
 }

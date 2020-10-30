@@ -1,5 +1,7 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.nonNull;
+
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
@@ -123,5 +125,15 @@ public class MessageController implements MessagesApi {
       @Valid @RequestBody String message) {
     SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message, rcGroupId);
     return new ResponseEntity<>(savedDraftType.getHttpStatus());
+  }
+
+  /**
+   * Returnes a saved draft message if present.
+   */
+  @Override
+  public ResponseEntity<String> findDraftMessage(@RequestHeader String rcGroupId) {
+    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(rcGroupId);
+    return nonNull(draftMessage) ? ResponseEntity.ok(draftMessage) :
+        new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

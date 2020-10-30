@@ -4,9 +4,11 @@ import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftTyp
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.OVERWRITTEN_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -87,6 +89,46 @@ public class DraftMessageServiceTest {
         .thenThrow(new CustomCryptoException(new Exception()));
 
     this.draftMessageService.saveDraftMessage("message", "rcGroupId");
+  }
+
+  @Test
+  public void findAndDecryptDraftMessage_Should_returnNull_When_noDraftMessageIsPresent() {
+    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
+
+    assertThat(draftMessage, nullValue());
+    verifyZeroInteractions(this.encryptionService);
+  }
+
+  @Test
+  public void findAndDecryptDraftMessage_Should_returnNull_When_rcGroupIdIsNull() {
+    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(null);
+
+    assertThat(draftMessage, nullValue());
+    verifyZeroInteractions(this.encryptionService);
+  }
+
+  @Test
+  public void findAndDecryptDraftMessage_Should_returnDecryptedMessage_When_draftMessageIsPresent()
+      throws CustomCryptoException {
+    DraftMessage draftMessage = DraftMessage.builder().message("encrypted").build();
+    when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
+        .thenReturn(Optional.of(draftMessage));
+    when(this.encryptionService.decrypt(any(), any())).thenReturn("decrypted");
+
+    String message = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
+
+    assertThat(message, is("decrypted"));
+    verify(this.encryptionService, times(1)).decrypt("encrypted", "rcGroupId");
+  }
+
+  @Test(expected = InternalServerErrorException.class)
+  public void findAndDecryptDraftMessage_Should_throwInternalServerError_When_encryptionServiceThrowsCustomCryptoException()
+      throws CustomCryptoException {
+    when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
+        .thenReturn(Optional.of(new DraftMessage()));
+    when(this.encryptionService.decrypt(any(), any())).thenThrow(new CustomCryptoException(new Exception()));
+
+    this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
   }
 
 }
