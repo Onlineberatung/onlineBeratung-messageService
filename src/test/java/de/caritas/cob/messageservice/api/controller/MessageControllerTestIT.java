@@ -39,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.authorization.RoleAuthorizationAuthorityMapper;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.model.AttachmentDTO;
@@ -69,7 +70,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(MessageController.class)
-@AutoConfigureMockMvc(secure = false)
+@AutoConfigureMockMvc(addFilters = false)
 public class MessageControllerTestIT {
 
   private final String VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION =
@@ -122,6 +123,9 @@ public class MessageControllerTestIT {
 
   @MockBean
   private DraftMessageService draftMessageService;
+
+  @MockBean
+  private RoleAuthorizationAuthorityMapper roleAuthorizationAuthorityMapper;
 
   @Mock
   private Logger logger;

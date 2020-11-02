@@ -41,9 +41,6 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   @Value("${csrf.header.property}")
   private String csrfHeaderProperty;
 
-  @Autowired
-  private Environment environment;
-
   /**
    * Processes HTTP requests and checks for a valid spring security authentication for the
    * (Keycloak) principal (authorization header).
