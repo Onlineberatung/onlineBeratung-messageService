@@ -17,6 +17,7 @@ import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /*
@@ -27,6 +28,9 @@ import org.springframework.stereotype.Service;
 public class PostGroupMessageFacade {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
+
+  @Value("${rocket.systemuser.id}")
+  private String rocketChatSystemUserId;
 
   private final @NonNull RocketChatService rocketChatService;
   private final @NonNull EmailNotificationFacade emailNotificationFacade;
@@ -47,8 +51,10 @@ public class PostGroupMessageFacade {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
     this.draftMessageService.deleteDraftMessageIfExist(rcGroupId);
-    this.liveEventNotificationService.sendLiveEvent(rcGroupId);
 
+    if (!this.rocketChatSystemUserId.equals(rcUserId)) {
+      this.liveEventNotificationService.sendLiveEvent(rcGroupId);
+    }
     if (isTrue(message.getSendNotification())) {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
