@@ -44,7 +44,6 @@ public class TestConstants {
   public static final String ENCODING_PREFIX = "enc.";
   public static final String USERNAME_ENCODED = ENCODING_PREFIX + "OVZWK4TOMFWWK...";
   public static final String USERNAME_DECODED = "username";
-  public static final String USERNAME_INVALID_ENCODED = "enc.223======";
 
   /*
    * Messages
