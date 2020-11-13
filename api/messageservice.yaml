@@ -228,7 +228,7 @@ paths:
     post:
       tags:
         - message-controller
-      summary: 'Save a draft message'
+      summary: 'Save a draft message [Authorization: Role: user, consultant]'
       operationId: saveDraftMessage
       parameters:
         - name: RCGroupId
@@ -261,7 +261,7 @@ paths:
     get:
       tags:
         - message-controller
-      summary: 'Get a draft message by user and rocket chat group id'
+      summary: 'Get a draft message by user and rocket chat group id [Authorization: Role: user, consultant]'
       operationId: findDraftMessage
       parameters:
         - name: RCGroupId
