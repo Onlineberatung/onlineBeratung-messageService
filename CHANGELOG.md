@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.3.1...v2.0.0) (2020-11-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* creating a new database for messageservice is required
+
+### Features
+
+* adapt new database for messageservice ([e60c87a](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/e60c87af3607a61f92b673cea2646f2f827ee21e))
+* define new api andpoints for draft messages ([fb39ee2](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/fb39ee2cc664dfdd79f7269b3fab1bbc657319ca))
+* delete draft when message has been send ([0195342](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/01953428eed44088be61d40b34667d01bbbd228f))
+* prevent live event trigger for rocket chat system user ([55ae8d8](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/55ae8d87fddd96613ad5f21c3810cd8f525e3000))
+* provide controller endpoint to retrieve saved draft message ([fa3820e](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/fa3820ee39822fedde35def34084566700109d3e))
+* provide controller endpoint to save draft messages ([2668490](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/266849009490b35d2580455ab0da84e132c23dab))
+* provide service method to search for draft message ([524d916](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/524d9161e00428aa40b839c043d8fb12944c7bb6))
+* provide service to save, overwrite and delete draft messages ([f8f7988](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/f8f79887d38fe7239bbd52a5fb2c9c906de3e433))
+* restrict release action to relase starting branches ([47925c6](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/47925c6bfe75897e19c0026001fb155826d93308))
+* seperate changelog configurations ([4a2fcee](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/4a2fcee56d60b354a431f0e4acd9a742b98e5474))
+* update keycloak to 11.0.2 ([8d9aa25](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/8d9aa257768c9fd11dbd4fcb605b299c5ade2768))
+* update spring boot and dependencies ([ea09118](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/ea09118bbdd8624c20775b079339904a90e9096e))
+
+
+### Bug Fixes
+
+* add property values to fix integration tests ([a92a6d3](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/a92a6d32ac6ad5f6ef1b468f47cb320246f45f04))
+* update deprecated logging property ([fbf6143](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/fbf614388b342ee4932c87b7de22507734c853b8))
+
 ### [1.3.1](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.3.0...v1.3.1) (2020-10-28)
 
 ## [1.3.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.2.3...v1.3.0) (2020-10-28)
