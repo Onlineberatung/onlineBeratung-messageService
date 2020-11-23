@@ -1,11 +1,15 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.nonNull;
+
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
+import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
+import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
@@ -23,19 +27,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller for message requests
+ * Controller for message requests.
  */
 @RestController
 @RequiredArgsConstructor
 @Api(tags = "message-controller")
 public class MessageController implements MessagesApi {
 
-  private @NonNull RocketChatService rocketChatService;
-  private @NonNull EncryptionService encryptionService;
-  private @NonNull PostGroupMessageFacade postGroupMessageFacade;
+  private final @NonNull RocketChatService rocketChatService;
+  private final @NonNull EncryptionService encryptionService;
+  private final @NonNull PostGroupMessageFacade postGroupMessageFacade;
+  private final @NonNull DraftMessageService draftMessageService;
 
   /**
-   * Returns a list of {@link MessageStreamDTO}s from the specified Rocket.Chat group
+   * Returns a list of {@link MessageStreamDTO}s from the specified Rocket.Chat group.
    */
   @Override
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
@@ -50,10 +55,7 @@ public class MessageController implements MessagesApi {
   }
 
   /**
-   * Upates the Master-Key Fragment for the en-/decryption of messages
-   *
-   * @param masterKey
-   * @return
+   * Upates the Master-Key Fragment for the en-/decryption of messages.
    */
   @Override
   public ResponseEntity<Void> updateKey(@Valid @RequestBody MasterKeyDTO masterKey) {
@@ -68,7 +70,7 @@ public class MessageController implements MessagesApi {
   }
 
   /**
-   * Posts a message in the specified Rocket.Chat group
+   * Posts a message in the specified Rocket.Chat group.
    */
   @Override
   public ResponseEntity<Void> createMessage(@RequestHeader String rcToken,
@@ -102,7 +104,7 @@ public class MessageController implements MessagesApi {
   }
 
   /**
-   * Posts a message in the specified Feedback Rocket.Chat group
+   * Posts a message in the specified Feedback Rocket.Chat group.
    */
   @Override
   public ResponseEntity<Void> createFeedbackMessage(@RequestHeader String rcToken,
@@ -113,5 +115,25 @@ public class MessageController implements MessagesApi {
         rcFeedbackGroupId, message.getMessage(), null);
 
     return new ResponseEntity<>(HttpStatus.CREATED);
+  }
+
+  /**
+   * Saves a draft message identified by current authenticated user and Rocket.Chat group.
+   */
+  @Override
+  public ResponseEntity<Void> saveDraftMessage(@RequestHeader String rcGroupId,
+      @Valid @RequestBody String message) {
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message, rcGroupId);
+    return new ResponseEntity<>(savedDraftType.getHttpStatus());
+  }
+
+  /**
+   * Returnes a saved draft message if present.
+   */
+  @Override
+  public ResponseEntity<String> findDraftMessage(@RequestHeader String rcGroupId) {
+    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(rcGroupId);
+    return nonNull(draftMessage) ? ResponseEntity.ok(draftMessage) :
+        new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

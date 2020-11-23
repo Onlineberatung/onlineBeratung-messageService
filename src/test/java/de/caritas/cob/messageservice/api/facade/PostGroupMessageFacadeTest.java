@@ -6,16 +6,20 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO_WITH_NOTIFICATION;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.Date;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -26,15 +30,16 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class PostGroupMessageFacadeTest {
 
-  private final String RC_TOKEN = "r94qMDk8gtgVNzqCq9zD2hELK-eXGB5VHlUVBgE8a8f";
-  private final String RC_USER_ID = "pptLwARyTMzbTTRdg";
-  private final String RC_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
-  private final String RC_FEEDBACK_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
-  private final String MESSAGE = "Lorem ipsum";
-  private final String CHANNEL = "channel";
-  private final PostMessageResponseDTO POST_MESSAGE_RESPONSE_DTO =
+  private static final String RC_TOKEN = "r94qMDk8gtgVNzqCq9zD2hELK-eXGB5VHlUVBgE8a8f";
+  private static final String RC_USER_ID = "pptLwARyTMzbTTRdg";
+  private static final String RC_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
+  private static final String RC_FEEDBACK_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
+  private static final String MESSAGE = "Lorem ipsum";
+  private static final String CHANNEL = "channel";
+  private static final String RC_SYSTEM_USER_ID = "systemUserId";
+  private static final PostMessageResponseDTO POST_MESSAGE_RESPONSE_DTO =
       new PostMessageResponseDTO(new Date(), CHANNEL, true, "", "");
-  private final PostMessageResponseDTO POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL =
+  private static final PostMessageResponseDTO POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL =
       new PostMessageResponseDTO(new Date(), CHANNEL, false, "", "");
 
   @InjectMocks
@@ -48,6 +53,14 @@ public class PostGroupMessageFacadeTest {
 
   @Mock
   private LiveEventNotificationService liveEventNotificationService;
+
+  @Mock
+  private DraftMessageService draftMessageService;
+
+  @Before
+  public void setup() {
+    setField(this.postGroupMessageFacade, "rocketChatSystemUserId", RC_SYSTEM_USER_ID);
+  }
 
   /**
    * Tests for method: postGroupMessage
@@ -255,6 +268,46 @@ public class PostGroupMessageFacadeTest {
         RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
 
     verify(this.liveEventNotificationService, times(1)).sendLiveEvent(RC_FEEDBACK_GROUP_ID);
+  }
+
+  @Test
+  public void postGroupMessage_Should_notSendLiveNotification_When_userIsRocketChatSystemUser()
+      throws CustomCryptoException {
+    when(rocketChatService.postGroupMessage(
+        RC_TOKEN, RC_SYSTEM_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postGroupMessage(
+        RC_TOKEN, RC_SYSTEM_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE_DTO_WITH_NOTIFICATION);
+
+    verifyNoInteractions(this.liveEventNotificationService);
+  }
+
+  @Test
+  public void postGroupMessage_Should_deleteDraftMessage_When_RocketChatServiceSucceeds()
+      throws CustomCryptoException {
+    when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE_DTO_WITHOUT_NOTIFICATION);
+
+    verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_GROUP_ID);
+  }
+
+  @Test
+  public void postFeedbackGroupMessage_Should_deleteDraftMessage_When_RocketChatServiceSucceeds()
+      throws CustomCryptoException {
+    when(rocketChatService.getGroupInfo(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID))
+        .thenReturn(GET_GROUP_INFO_DTO_FEEDBACK_CHAT);
+    when(rocketChatService.postGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postFeedbackGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
+
+    verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_FEEDBACK_GROUP_ID);
   }
 
 }

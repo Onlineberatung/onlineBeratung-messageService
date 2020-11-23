@@ -11,11 +11,13 @@ import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageExceptio
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /*
@@ -27,9 +29,13 @@ public class PostGroupMessageFacade {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
 
+  @Value("${rocket.systemuser.id}")
+  private String rocketChatSystemUserId;
+
   private final @NonNull RocketChatService rocketChatService;
   private final @NonNull EmailNotificationFacade emailNotificationFacade;
   private final @NonNull LiveEventNotificationService liveEventNotificationService;
+  private final @NonNull DraftMessageService draftMessageService;
 
   /**
    * Posts a message to the given Rocket.Chat group id and sends out a notification e-mail via the
@@ -44,8 +50,11 @@ public class PostGroupMessageFacade {
       MessageDTO message) {
 
     postRocketChatGroupMessage(rcToken, rcUserId, rcGroupId, message.getMessage(), null);
-    this.liveEventNotificationService.sendLiveEvent(rcGroupId);
+    this.draftMessageService.deleteDraftMessageIfExist(rcGroupId);
 
+    if (!this.rocketChatSystemUserId.equals(rcUserId)) {
+      this.liveEventNotificationService.sendLiveEvent(rcGroupId);
+    }
     if (isTrue(message.getSendNotification())) {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
@@ -65,6 +74,7 @@ public class PostGroupMessageFacade {
 
     validateFeedbackChatId(rcToken, rcUserId, rcFeedbackGroupId);
     postRocketChatGroupMessage(rcToken, rcUserId, rcFeedbackGroupId, message, alias);
+    this.draftMessageService.deleteDraftMessageIfExist(rcFeedbackGroupId);
     this.liveEventNotificationService.sendLiveEvent(rcFeedbackGroupId);
     emailNotificationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
   }

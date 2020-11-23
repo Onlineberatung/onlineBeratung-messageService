@@ -41,9 +41,6 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   @Value("${csrf.header.property}")
   private String csrfHeaderProperty;
 
-  @Autowired
-  private Environment environment;
-
   /**
    * Processes HTTP requests and checks for a valid spring security authentication for the
    * (Keycloak) principal (authorization header).
@@ -75,7 +72,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT,
             Authority.TECHNICAL_DEFAULT)
         .antMatchers("/messages/forward").hasAnyAuthority(Authority.USE_FEEDBACK)
-        .antMatchers("/messages/feedback/new").hasAnyAuthority(Authority.USE_FEEDBACK).anyRequest()
+        .antMatchers("/messages/feedback/new").hasAnyAuthority(Authority.USE_FEEDBACK)
+        .antMatchers("/messages/draft").hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT)
+        .anyRequest()
         .denyAll();
   }
 
