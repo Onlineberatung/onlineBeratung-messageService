@@ -4,7 +4,7 @@ import static java.util.Objects.nonNull;
 
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
@@ -89,16 +89,16 @@ public class MessageController implements MessagesApi {
   @Override
   public ResponseEntity<Void> forwardMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
-      @Valid @RequestBody ForwardMessageDTO forwardMessageDTO) {
+      @Valid @RequestBody AliasMessageDTO aliasMessageDTO) {
 
-    Optional<String> alias = JSONHelper.convertForwardMessageDTOToString(forwardMessageDTO);
+    Optional<String> alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO);
 
     if (!alias.isPresent()) {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
-        rcGroupId, forwardMessageDTO.getMessage(), alias.get());
+        rcGroupId, aliasMessageDTO.getMessage(), alias.get());
 
     return new ResponseEntity<>(HttpStatus.CREATED);
   }

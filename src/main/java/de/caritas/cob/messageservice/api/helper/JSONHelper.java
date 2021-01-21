@@ -1,82 +1,52 @@
 package de.caritas.cob.messageservice.api.helper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
+import de.caritas.cob.messageservice.api.service.LogService;
 import java.io.IOException;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
-import de.caritas.cob.messageservice.api.service.LogService;
 
 /**
- * Helper class for JSON specific tasks
- *
+ * Helper class for JSON specific tasks.
  */
 public class JSONHelper {
 
-  private static LogService logService;
-  @Autowired
-  private LogService autowiredLogService;
-
-  @PostConstruct
-  public void init() {
-    JSONHelper.logService = autowiredLogService;
-  }
+  private JSONHelper() {}
 
   /**
-   * Converts a {@link ForwardMessageDTO} to a JSON formatted String
-   * 
-   * @param forwardMessageDTO
+   * Converts a {@link AliasMessageDTO} into an optional of an json string.
+   *
+   * @param aliasMessageDTO the message to be converted
    * @return Optional String as JSON
    */
-  /**
-   * 
-   * @param forwardMessageDTO
-   * @return
-   */
-  public static Optional<String> convertForwardMessageDTOToString(
-      ForwardMessageDTO forwardMessageDTO) {
-
-    ObjectMapper mapper = new ObjectMapper();
+  public static Optional<String> convertAliasMessageDTOToString(AliasMessageDTO aliasMessageDTO) {
     try {
       return Optional
-          .ofNullable(Helper.urlEncodeString(mapper.writeValueAsString(forwardMessageDTO)));
-
+          .ofNullable(
+              Helper.urlEncodeString(new ObjectMapper().writeValueAsString(aliasMessageDTO)));
     } catch (JsonProcessingException jsonEx) {
-      logService.logInternalServerError("Could not convert ForwardMessageDTO to alias String",
+      LogService.logInternalServerError("Could not convert ForwardMessageDTO to alias String",
           jsonEx);
       return Optional.empty();
     }
   }
 
   /**
-   * Maps a given String to a {@link ForwardMessageDTO}
-   * 
+   * Maps a given String to a {@link AliasMessageDTO}.
+   *
    * @param alias String
-   * @return Optional of {@link ForwardMessageDTO}
+   * @return Optional of {@link AliasMessageDTO}
    */
-  public static Optional<ForwardMessageDTO> convertStringToForwardMessageDTO(String alias) {
-    ObjectMapper mapper = new ObjectMapper();
+  public static Optional<AliasMessageDTO> convertStringToForwardMessageDTO(String alias) {
     try {
       return Optional
-          .ofNullable(mapper.readValue(Helper.urlDecodeString(alias), ForwardMessageDTO.class));
+          .ofNullable(
+              new ObjectMapper().readValue(Helper.urlDecodeString(alias), AliasMessageDTO.class));
 
-    } catch (JsonParseException jsonParseEx) {
-      logService.logInternalServerError("Could not convert alias String to ForwardMessageDTO",
+    } catch (IOException jsonParseEx) {
+      LogService.logInternalServerError("Could not convert alias String to ForwardMessageDTO",
           jsonParseEx);
-      return Optional.empty();
-
-    } catch (JsonMappingException jsonMappingEx) {
-      logService.logInternalServerError("Could not convert alias String to ForwardMessageDTO",
-          jsonMappingEx);
-      return Optional.empty();
-
-    } catch (IOException ioEx) {
-      logService.logInternalServerError("Could not convert alias String to ForwardMessageDTO",
-          ioEx);
       return Optional.empty();
     }
   }

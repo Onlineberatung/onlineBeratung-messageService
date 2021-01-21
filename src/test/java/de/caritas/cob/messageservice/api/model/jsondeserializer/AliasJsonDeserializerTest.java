@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.model.jsonDeserializer;
+package de.caritas.cob.messageservice.api.model.jsondeserializer;
 
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME;
@@ -16,7 +16,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.helper.UserHelper;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,8 +48,8 @@ public class AliasJsonDeserializerTest {
 
   @Test
   public void deserialize_Schould_convertAliasWithEncodedUsernameToForwardMessageDTO()
-      throws JsonParseException, IOException {
-    ForwardMessageDTO result = deserializeAlias(MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME);
+      throws IOException {
+    AliasMessageDTO result = deserializeAlias(MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME);
     assertEquals(RC_USER_ID, result.getRcUserId());
     assertEquals(TIMESTAMP, result.getTimestamp());
     assertEquals(USERNAME_DECODED, result.getUsername());
@@ -57,8 +57,8 @@ public class AliasJsonDeserializerTest {
 
   @Test
   public void deserialize_Schould_convertAliasWithDecodedUsernameToForwardMessageDTO()
-      throws JsonParseException, IOException {
-    ForwardMessageDTO result = deserializeAlias(MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME);
+      throws IOException {
+    AliasMessageDTO result = deserializeAlias(MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME);
     assertEquals(RC_USER_ID, result.getRcUserId());
     assertEquals(TIMESTAMP, result.getTimestamp());
     assertEquals(USERNAME_DECODED, result.getUsername());
@@ -66,20 +66,20 @@ public class AliasJsonDeserializerTest {
 
   @Test
   public void deserialize_Schould_ReturnNull_IfAliasIsEmpty()
-      throws JsonParseException, IOException {
-    ForwardMessageDTO result = deserializeAlias(MESSAGE_FORWARD_EMPTY_ALIAS_JSON);
+      throws IOException {
+    AliasMessageDTO result = deserializeAlias(MESSAGE_FORWARD_EMPTY_ALIAS_JSON);
     assertNull(result);
   }
 
   @Test
   public void deserialize_Schould_ReturnNull_IfAliasIsNull()
-      throws JsonParseException, IOException {
-    ForwardMessageDTO result = deserializeAlias(MESSAGE_FORWARD_NULL_ALIAS_JSON);
+      throws IOException {
+    AliasMessageDTO result = deserializeAlias(MESSAGE_FORWARD_NULL_ALIAS_JSON);
     assertNull(result);
   }
 
 
-  private ForwardMessageDTO deserializeAlias(String json) throws JsonParseException, IOException {
+  private AliasMessageDTO deserializeAlias(String json) throws IOException {
     InputStream stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
     JsonParser jsonParser = objectMapper.getFactory().createParser(stream);
     jsonParser.nextToken();

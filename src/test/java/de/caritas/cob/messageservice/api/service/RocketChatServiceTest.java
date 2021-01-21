@@ -29,7 +29,7 @@ import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
 import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
@@ -354,7 +354,7 @@ public class RocketChatServiceTest {
   private MessagesDTO createMessagesDto(String id) {
     return new MessagesDTO(
         id,
-        new ForwardMessageDTO(),
+        new AliasMessageDTO(),
         "rid",
         "message",
         "ts",

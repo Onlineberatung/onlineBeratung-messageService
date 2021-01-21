@@ -125,6 +125,43 @@ paths:
         - Bearer: []
       x-codegen-request-body-name: Message
 
+  /messages/hinttext/new:
+    post:
+      tags:
+        - message-controller
+      summary: 'Add new Rocket.Chat hint text message chat by given eventType [Authorization:
+        Role: user, consultant,]'
+      operationId: createHintTextMessage
+      parameters:
+        - name: RCRoomId
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: eventType
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: username
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: CREATED - hint message was successfully created
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+
   /messages:
     get:
       tags:
@@ -208,7 +245,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/ForwardMessageDTO'
+              $ref: '#/components/schemas/AliasMessageDTO'
         required: true
       responses:
         201:
@@ -350,7 +387,7 @@ components:
           type: string
           example: "M73fE4WhYF4peYB3s"
         alias:
-          $ref: '#/components/schemas/ForwardMessageDTO'
+          $ref: '#/components/schemas/AliasMessageDTO'
         rid:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
@@ -384,7 +421,7 @@ components:
         file:
           $ref: '#/components/schemas/FileDTO'
 
-    ForwardMessageDTO:
+    AliasMessageDTO:
       type: object
       required:
         - message
@@ -405,6 +442,9 @@ components:
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
+        hinttext:
+          type: string
+          example: "Your video call has been rejected"
 
     UserDTO:
       type: object
