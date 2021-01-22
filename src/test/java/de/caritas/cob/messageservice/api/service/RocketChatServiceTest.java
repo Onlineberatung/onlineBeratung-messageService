@@ -10,9 +10,9 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -41,6 +41,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -349,6 +350,18 @@ public class RocketChatServiceTest {
     assertThat(messageStreamDTO.getMessages(), hasSize(1));
     assertThat(messageStreamDTO.getCount(), is("1"));
     assertThat(messageStreamDTO.getMessages().get(0).get_id(), is("third"));
+  }
+
+  @Test
+  public void postGroupVideoHintMessageBySystemUser_Should_postGroupMessage()
+      throws Exception {
+    RocketChatCredentials rocketChatCredentials =
+        new EasyRandom().nextObject(RocketChatCredentials.class);
+    when(this.rcCredentialsHelper.getSystemUser()).thenReturn(rocketChatCredentials);
+
+    this.rocketChatService.postGroupVideoHintMessageBySystemUser("rcGroupId", "alias");
+
+    verify(this.restTemplate, times(1)).postForObject(anyString(), any(HttpEntity.class), any());
   }
 
   private MessagesDTO createMessagesDto(String id) {

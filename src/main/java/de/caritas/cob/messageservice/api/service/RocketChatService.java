@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static com.github.jknack.handlebars.internal.lang3.StringUtils.EMPTY;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
@@ -80,12 +81,12 @@ public class RocketChatService {
   /**
    * Gets the list of messages via Rocket.Chat API for the provided Rocket.Chat user and group
    *
-   * @param rcToken Rocket.Chat authentication token
-   * @param rcUserId Rocket.Chat user Id
+   * @param rcToken   Rocket.Chat authentication token
+   * @param rcUserId  Rocket.Chat user Id
    * @param rcGroupId Rocket.Chat group Id
-   * @param rcOffset Number of items where to start in the query (0 = first item)
-   * @param rcCount In MVP only 0 (all) or 1(one entry) are allowed - Number of item which are being
-   *     returned (0 = all)
+   * @param rcOffset  Number of items where to start in the query (0 = first item)
+   * @param rcCount   In MVP only 0 (all) or 1(one entry) are allowed - Number of item which are
+   *                  being returned (0 = all)
    * @return MessageStreamDTO
    */
   public MessageStreamDTO getGroupMessages(
@@ -203,6 +204,28 @@ public class RocketChatService {
   }
 
   /**
+   * Posts metadata of a video call as hint in Rocket.Chat group with an empty message containing
+   * meta data in the alias object,
+   *
+   * @param rcGroupId the Rocket.Chat group id
+   * @param alias     the alias Json object string
+   */
+  public void postGroupVideoHintMessageBySystemUser(String rcGroupId,
+      String alias) throws CustomCryptoException {
+    RocketChatCredentials systemUser = retrieveSystemUser();
+    postGroupMessage(systemUser.getRocketChatToken(), systemUser.getRocketChatUserId(), rcGroupId,
+        EMPTY, alias);
+  }
+
+  private RocketChatCredentials retrieveSystemUser() {
+    try {
+      return rcCredentialHelper.getSystemUser();
+    } catch (RocketChatUserNotInitializedException e) {
+      throw new InternalServerErrorException(e, LogService::logInternalServerError);
+    }
+  }
+
+  /**
    * Creates and returns the {@link HttpHeaders} with Rocket.Chat Authentication Token and User Id
    */
   private HttpHeaders getRocketChatHeader(String rcToken, String rcUserId) {
@@ -220,12 +243,7 @@ public class RocketChatService {
    */
   public void markGroupAsReadForSystemUser(String rcGroupId) {
 
-    RocketChatCredentials rocketChatCredentials;
-    try {
-      rocketChatCredentials = rcCredentialHelper.getSystemUser();
-    } catch (RocketChatUserNotInitializedException e) {
-      throw new InternalServerErrorException(e, LogService::logInternalServerError);
-    }
+    RocketChatCredentials rocketChatCredentials = retrieveSystemUser();
 
     if (areRequiredRocketChatParamsNotNull(rocketChatCredentials)) {
       this.markGroupAsRead(
@@ -247,8 +265,8 @@ public class RocketChatService {
   /**
    * Marks the specified Rocket.Chat group as read for the given user credentials.
    *
-   * @param rcToken the rocket chat token
-   * @param rcUserId the rocket chat user id
+   * @param rcToken   the rocket chat token
+   * @param rcUserId  the rocket chat user id
    * @param rcGroupId the rocket chat group id
    */
   private void markGroupAsRead(String rcToken, String rcUserId, String rcGroupId) {

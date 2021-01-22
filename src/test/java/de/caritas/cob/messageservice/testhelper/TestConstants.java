@@ -57,8 +57,20 @@ public class TestConstants {
       "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
           + USERNAME_DECODED
           + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
-  public static final String MESSAGE_FORWARD_EMPTY_ALIAS_JSON = "{\"alias\":\"\"";
-  public static final String MESSAGE_FORWARD_NULL_ALIAS_JSON = "{\"alias\":null";
+  public static final String MESSAGE_ALIAS_VIDEOCALL_JSON_WITH_ENCODED_USERNAME =
+      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
+          + USERNAME_ENCODED
+          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
+  public static final String MESSAGE_ALIAS_VIDEOCALL_JSON_WITH_DECODED_USERNAME =
+      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
+          + USERNAME_DECODED
+          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
+  public static final String COMPLETE_MESSAGE_ALIAS_DTO_JSON_WITH_ENCODED_USERNAMES =
+      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
+          + USERNAME_DECODED
+          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
+  public static final String MESSAGE_ALIAS_DTO_EMPTY_ALIAS_JSON = "{\"alias\":\"\"";
+  public static final String MESSAGE_ALIAS_DTO_NULL_ALIAS_JSON = "{\"alias\":null";
   public static final boolean SEND_NOTIFICATION = true;
   public static final boolean DONT_SEND_NOTIFICATION = false;
   public static final MessageDTO MESSAGE_DTO_WITH_NOTIFICATION =

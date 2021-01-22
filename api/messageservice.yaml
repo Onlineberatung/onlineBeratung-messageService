@@ -125,29 +125,24 @@ paths:
         - Bearer: []
       x-codegen-request-body-name: Message
 
-  /messages/hinttext/new:
+  /messages/videohint/new:
     post:
       tags:
         - message-controller
-      summary: 'Add new Rocket.Chat hint text message chat by given eventType [Authorization:
-        Role: user, consultant,]'
-      operationId: createHintTextMessage
+      summary: 'Add new Rocket.Chat system video call event message [Authorization: Role: user,
+      consultant,]'
+      operationId: createVideoHintMessage
       parameters:
-        - name: RCRoomId
+        - name: RCGroupId
           in: header
           required: true
           schema:
             type: string
-        - name: eventType
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: username
-          in: header
-          required: true
-          schema:
-            type: string
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/VideoCallMessageDTO'
       responses:
         201:
           description: CREATED - hint message was successfully created
@@ -245,7 +240,7 @@ paths:
         content:
           'application/json':
             schema:
-              $ref: '#/components/schemas/AliasMessageDTO'
+              $ref: '#/components/schemas/ForwardMessageDTO'
         required: true
       responses:
         201:
@@ -423,6 +418,14 @@ components:
 
     AliasMessageDTO:
       type: object
+      properties:
+        forwardMessageDTO:
+          $ref: '#/components/schemas/ForwardMessageDTO'
+        videoCallMessageDTO:
+          $ref: '#/components/schemas/VideoCallMessageDTO'
+
+    ForwardMessageDTO:
+      type: object
       required:
         - message
         - timestamp
@@ -442,9 +445,24 @@ components:
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
-        hinttext:
+
+    VideoCallMessageDTO:
+      type: object
+      required:
+        - eventType
+        - initiatorUserName
+        - rcUserId
+      properties:
+        eventType:
           type: string
-          example: "Your video call has been rejected"
+          enum:
+            - "IGNORED_CALL"
+        initiatorUserName:
+          type: string
+          example: "consultant23"
+        rcUserId:
+          type: string
+          example: "ag89h3tjkerg94t"
 
     UserDTO:
       type: object
