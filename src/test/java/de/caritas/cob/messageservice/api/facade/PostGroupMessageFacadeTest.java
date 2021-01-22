@@ -4,6 +4,9 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_I
 import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO_FEEDBACK_CHAT;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO_WITHOUT_NOTIFICATION;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_DTO_WITH_NOTIFICATION;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,11 +17,13 @@ import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.Date;
+import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -308,6 +313,27 @@ public class PostGroupMessageFacadeTest {
         RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
 
     verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_FEEDBACK_GROUP_ID);
+  }
+
+  @Test
+  public void createVideoHintMessage_Should_triggerRocketChatPost_When_paramsAreGiven()
+      throws CustomCryptoException {
+    VideoCallMessageDTO callMessageDTO = new EasyRandom().nextObject(VideoCallMessageDTO.class);
+
+    this.postGroupMessageFacade.createVideoHintMessage("rcGroupId", callMessageDTO);
+
+    verify(this.rocketChatService, times(1)).postGroupVideoHintMessageBySystemUser(anyString(),
+        anyString());
+  }
+
+  @Test(expected = InternalServerErrorException.class)
+  public void createVideoHintMessage_Should_throwInternalServerErrorException_When_customCryptoExceptionIsThrown()
+      throws CustomCryptoException {
+    VideoCallMessageDTO callMessageDTO = new EasyRandom().nextObject(VideoCallMessageDTO.class);
+    doThrow(new CustomCryptoException(new Exception())).when(this.rocketChatService)
+        .postGroupVideoHintMessageBySystemUser(any(), anyString());
+
+    this.postGroupMessageFacade.createVideoHintMessage("rcGroupId", callMessageDTO);
   }
 
 }

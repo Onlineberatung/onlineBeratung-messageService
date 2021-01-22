@@ -2,10 +2,10 @@ package de.caritas.cob.messageservice.api.model.rocket.chat.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AttachmentDTO;
 import de.caritas.cob.messageservice.api.model.FileDTO;
-import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
-import de.caritas.cob.messageservice.api.model.jsonDeserializer.AliasJsonDeserializer;
+import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -32,7 +32,7 @@ public class MessagesDTO {
 
   @ApiModelProperty(required = false, example = "%7B%0A%20%20%22message%22%3A%20", position = 1)
   @JsonDeserialize(using = AliasJsonDeserializer.class)
-  private ForwardMessageDTO alias;
+  private AliasMessageDTO alias;
 
   @ApiModelProperty(required = true, example = "fR2Rz7dmWmHdXE8uz", position = 2)
   private String rid;

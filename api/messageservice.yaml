@@ -125,6 +125,38 @@ paths:
         - Bearer: []
       x-codegen-request-body-name: Message
 
+  /messages/videohint/new:
+    post:
+      tags:
+        - message-controller
+      summary: 'Add new Rocket.Chat system video call event message [Authorization: Role: user,
+      consultant]'
+      operationId: createVideoHintMessage
+      parameters:
+        - name: RCGroupId
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/VideoCallMessageDTO'
+      responses:
+        201:
+          description: CREATED - hint message was successfully created
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+
   /messages:
     get:
       tags:
@@ -350,7 +382,7 @@ components:
           type: string
           example: "M73fE4WhYF4peYB3s"
         alias:
-          $ref: '#/components/schemas/ForwardMessageDTO'
+          $ref: '#/components/schemas/AliasMessageDTO'
         rid:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
@@ -384,6 +416,14 @@ components:
         file:
           $ref: '#/components/schemas/FileDTO'
 
+    AliasMessageDTO:
+      type: object
+      properties:
+        forwardMessageDTO:
+          $ref: '#/components/schemas/ForwardMessageDTO'
+        videoCallMessageDTO:
+          $ref: '#/components/schemas/VideoCallMessageDTO'
+
     ForwardMessageDTO:
       type: object
       required:
@@ -402,6 +442,24 @@ components:
         username:
           type: string
           example: "asker23"
+        rcUserId:
+          type: string
+          example: "ag89h3tjkerg94t"
+
+    VideoCallMessageDTO:
+      type: object
+      required:
+        - eventType
+        - initiatorUserName
+        - rcUserId
+      properties:
+        eventType:
+          type: string
+          enum:
+            - "IGNORED_CALL"
+        initiatorUserName:
+          type: string
+          example: "consultant23"
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
