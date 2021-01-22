@@ -130,7 +130,7 @@ paths:
       tags:
         - message-controller
       summary: 'Add new Rocket.Chat system video call event message [Authorization: Role: user,
-      consultant,]'
+      consultant]'
       operationId: createVideoHintMessage
       parameters:
         - name: RCGroupId

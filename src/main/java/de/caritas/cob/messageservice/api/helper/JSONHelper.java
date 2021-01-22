@@ -13,10 +13,11 @@ import java.util.Optional;
  */
 public class JSONHelper {
 
-  private JSONHelper() {}
+  private JSONHelper() {
+  }
 
   /**
-   * Converts a {@link AliasMessageDTO} into an optional of an json string.
+   * Converts a {@link AliasMessageDTO} into an optional of a json string.
    *
    * @param aliasMessageDTO the message to be converted
    * @return Optional String as JSON
@@ -45,8 +46,8 @@ public class JSONHelper {
           .ofNullable(
               new ObjectMapper().readValue(Helper.urlDecodeString(alias), ForwardMessageDTO.class));
     } catch (IOException jsonParseEx) {
-      // This is no error any more due to restructuring of alias object. This method is still
-      // used for created alias objects before of the video adaption.
+      // This is not an error any more due to restructuring of the alias object. This is not a
+      // real error, but necessary due to legacy code
       return Optional.empty();
     }
   }

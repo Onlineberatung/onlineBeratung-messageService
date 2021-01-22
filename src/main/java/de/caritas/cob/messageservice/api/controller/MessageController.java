@@ -125,7 +125,7 @@ public class MessageController implements MessagesApi {
    * Creates a video event hint message.
    *
    * @param rcGroupId           the Rocket.Chat group to post the hint message
-   * @param videoCallMessageDTO the {@link VideoCallMessageDTO} containing the information wo be
+   * @param videoCallMessageDTO the {@link VideoCallMessageDTO} containing the information to be
    *                            written in the alias object
    */
   @Override

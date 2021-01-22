@@ -205,7 +205,7 @@ public class RocketChatService {
 
   /**
    * Posts metadata of a video call as hint in Rocket.Chat group with an empty message containing
-   * meta data in the alias object,
+   * meta data in the alias object.
    *
    * @param rcGroupId the Rocket.Chat group id
    * @param alias     the alias Json object string
