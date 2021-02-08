@@ -8,7 +8,10 @@ import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
+import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
@@ -86,7 +89,7 @@ public class PostGroupMessageFacade {
    * @param rcUserId  Rocket.Chat user ID
    * @param rcGroupId Rocket.Chat group ID
    * @param message   the message
-   * @param alias     alias containing forward message information
+   * @param alias     alias containing additional message information
    */
   private void postRocketChatGroupMessage(String rcToken, String rcUserId, String rcGroupId,
       String message, String alias) {
@@ -116,6 +119,26 @@ public class PostGroupMessageFacade {
       throw new BadRequestException(
           String.format("Provided Rocket.Chat group ID %s is no feedback chat.", rcFeedbackGroupId),
           LogService::logBadRequest);
+    }
+  }
+
+  /**
+   * Creates a {@link VideoCallMessageDTO} and posts it into Rocket.Chat room.
+   *
+   * @param rcGroupId the identifier for the Rocket.Chat room
+   * @param videoCallMessageDTO the {@link VideoCallMessageDTO}
+   */
+  public void createVideoHintMessage(String rcGroupId, VideoCallMessageDTO videoCallMessageDTO) {
+
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO()
+        .videoCallMessageDTO(videoCallMessageDTO);
+
+    String alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
+
+    try {
+      this.rocketChatService.postGroupVideoHintMessageBySystemUser(rcGroupId, alias);
+    } catch (CustomCryptoException e) {
+      throw new InternalServerErrorException(e, LogService::logInternalServerError);
     }
   }
 }

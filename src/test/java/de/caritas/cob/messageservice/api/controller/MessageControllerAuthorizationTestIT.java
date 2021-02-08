@@ -1,10 +1,22 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.authorization.Authority;
+import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
+import de.caritas.cob.messageservice.api.service.EncryptionService;
+import de.caritas.cob.messageservice.api.service.RocketChatService;
 import javax.servlet.http.Cookie;
+import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,10 +29,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import de.caritas.cob.messageservice.api.authorization.Authority;
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
-import de.caritas.cob.messageservice.api.service.EncryptionService;
-import de.caritas.cob.messageservice.api.service.RocketChatService;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(properties = "spring.profiles.active=testing")
@@ -28,14 +36,15 @@ import de.caritas.cob.messageservice.api.service.RocketChatService;
 @AutoConfigureMockMvc
 public class MessageControllerAuthorizationTestIT {
 
-  private final String PATH_GET_MESSAGE_STREAM = "/messages";
-  private final String PATH_POST_CREATE_MESSAGE = "/messages/new";
-  private final String PATH_POST_CREATE_FEEDBACK_MESSAGE = "/messages/feedback/new";
-  private final String PATH_POST_UPDATE_KEY = "/messages/key";
-  private final String PATH_POST_FORWARD_MESSAGE = "/messages/forward";
-  private final String CSRF_COOKIE = "CSRF-TOKEN";
-  private final String CSRF_HEADER = "X-CSRF-TOKEN";
-  private final String CSRF_VALUE = "test";
+  protected final static String PATH_GET_MESSAGE_STREAM = "/messages";
+  protected final static String PATH_POST_CREATE_MESSAGE = "/messages/new";
+  protected final static String PATH_POST_CREATE_FEEDBACK_MESSAGE = "/messages/feedback/new";
+  protected final static String PATH_POST_CREATE_VIDEO_HINT_MESSAGE = "/messages/videohint/new";
+  protected final static String PATH_POST_UPDATE_KEY = "/messages/key";
+  protected final static String PATH_POST_FORWARD_MESSAGE = "/messages/forward";
+  private final static String CSRF_COOKIE = "CSRF-TOKEN";
+  private final static String CSRF_HEADER = "X-CSRF-TOKEN";
+  private final static String CSRF_VALUE = "test";
 
   @Autowired
   private MockMvc mvc;
@@ -58,7 +67,6 @@ public class MessageControllerAuthorizationTestIT {
 
   /**
    * GET on /messages (role: consultant, user)
-   *
    */
 
   @Test
@@ -97,7 +105,6 @@ public class MessageControllerAuthorizationTestIT {
 
   /**
    * POST on /messages/new (role: consultant, user)
-   *
    */
 
   @Test
@@ -140,7 +147,6 @@ public class MessageControllerAuthorizationTestIT {
 
   /**
    * POST on /messages/key (role: technical)
-   *
    */
 
   @Test
@@ -178,7 +184,6 @@ public class MessageControllerAuthorizationTestIT {
 
   /**
    * POST on /messages/forward (Authority.USE_FEEDBACK)
-   *
    */
 
   @Test
@@ -220,7 +225,6 @@ public class MessageControllerAuthorizationTestIT {
 
   /**
    * POST on /messages/feedback/new (authority: USE_FEEDBACK)
-   *
    */
 
   @Test
@@ -260,6 +264,96 @@ public class MessageControllerAuthorizationTestIT {
 
     verifyNoMoreInteractions(rocketChatService);
     verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  public void createVideoHintMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
+      throws Exception {
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser
+  public void createVideoHintMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserOrConsultantAuthority()
+      throws Exception {
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  public void createVideoHintMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
+      throws Exception {
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserAuthority()
+      throws Exception {
+
+    VideoCallMessageDTO videoCallMessageDTO =
+        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+
+    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.CONSULTANT_DEFAULT})
+  public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_ConsultantAuthority()
+      throws Exception {
+
+    VideoCallMessageDTO videoCallMessageDTO =
+        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+
+    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
   }
 
 }

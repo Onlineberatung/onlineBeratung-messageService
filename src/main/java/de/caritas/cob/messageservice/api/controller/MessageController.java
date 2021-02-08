@@ -4,10 +4,12 @@ import static java.util.Objects.nonNull;
 
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
@@ -91,7 +93,9 @@ public class MessageController implements MessagesApi {
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody ForwardMessageDTO forwardMessageDTO) {
 
-    Optional<String> alias = JSONHelper.convertForwardMessageDTOToString(forwardMessageDTO);
+    Optional<String> alias =
+        JSONHelper.convertAliasMessageDTOToString(
+            new AliasMessageDTO().forwardMessageDTO(forwardMessageDTO));
 
     if (!alias.isPresent()) {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -113,6 +117,22 @@ public class MessageController implements MessagesApi {
 
     postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
         rcFeedbackGroupId, message.getMessage(), null);
+
+    return new ResponseEntity<>(HttpStatus.CREATED);
+  }
+
+  /**
+   * Creates a video event hint message.
+   *
+   * @param rcGroupId           the Rocket.Chat group to post the hint message
+   * @param videoCallMessageDTO the {@link VideoCallMessageDTO} containing the information to be
+   *                            written in the alias object
+   */
+  @Override
+  public ResponseEntity<Void> createVideoHintMessage(@RequestHeader String rcGroupId,
+      @Valid @RequestBody VideoCallMessageDTO videoCallMessageDTO) {
+
+    this.postGroupMessageFacade.createVideoHintMessage(rcGroupId, videoCallMessageDTO);
 
     return new ResponseEntity<>(HttpStatus.CREATED);
   }

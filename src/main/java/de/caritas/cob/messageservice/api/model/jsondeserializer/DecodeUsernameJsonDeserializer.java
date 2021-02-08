@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.model.jsonDeserializer;
+package de.caritas.cob.messageservice.api.model.jsondeserializer;
 
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonParser;
