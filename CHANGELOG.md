@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.0.0...v2.1.0) (2021-02-08)
+
+
+### Features
+
+* add api authorization hint and rc systemuser id in properties ([af779bd](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/af779bd504a52b213b7bf8dbfa1408d4265cdecd))
+* provide new endpoint for hinttexts, extend alias object ([b132691](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/b1326911157279f92bbcdbf39021afb9962ae068))
+* restructure and extend alias object for video information ([e0b3ca2](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/e0b3ca2125fb83216161a6c75d544f7d7cdd83c8))
+
 ## [2.0.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v1.3.1...v2.0.0) (2020-11-23)
 
 
