@@ -27,8 +27,10 @@ import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
 import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
@@ -385,14 +387,30 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void postGroupVideoHintMessageBySystemUser_Should_postGroupMessage()
+  public void postAliasOnlyMessageAsSystemUser_Should_postGroupMessage()
       throws Exception {
     RocketChatCredentials rocketChatCredentials =
         new EasyRandom().nextObject(RocketChatCredentials.class);
     when(this.rcCredentialsHelper.getSystemUser()).thenReturn(rocketChatCredentials);
+    AliasMessageDTO aliasMessageDTO =
+        new AliasMessageDTO().videoCallMessageDTO(new VideoCallMessageDTO());
 
-    this.rocketChatService.postGroupVideoHintMessageBySystemUser("rcGroupId", "alias");
+    this.rocketChatService.postAliasOnlyMessageAsSystemUser("rcGroupId", aliasMessageDTO);
 
     verify(this.restTemplate, times(1)).postForObject(anyString(), any(HttpEntity.class), any());
+  }
+
+  @Test(expected = InternalServerErrorException.class)
+  public void postAliasOnlyMessageAsSystemUser_Should_throwInternalServerErrorException_When_CustomCryptoExceptionIsThrown()
+      throws CustomCryptoException, RocketChatUserNotInitializedException {
+    EasyRandom easyRandom = new EasyRandom();
+    RocketChatCredentials rocketChatCredentials = easyRandom
+        .nextObject(RocketChatCredentials.class);
+    AliasMessageDTO aliasMessageDTO = easyRandom.nextObject(AliasMessageDTO.class);
+    when(this.rcCredentialsHelper.getSystemUser()).thenReturn(rocketChatCredentials);
+    when(encryptionService.encrypt(anyString(), anyString()))
+        .thenThrow(new CustomCryptoException(new Exception()));
+
+    this.rocketChatService.postAliasOnlyMessageAsSystemUser(RC_GROUP_ID, aliasMessageDTO);
   }
 }

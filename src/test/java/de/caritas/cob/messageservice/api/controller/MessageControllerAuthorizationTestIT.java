@@ -40,6 +40,7 @@ public class MessageControllerAuthorizationTestIT {
   protected final static String PATH_POST_CREATE_MESSAGE = "/messages/new";
   protected final static String PATH_POST_CREATE_FEEDBACK_MESSAGE = "/messages/feedback/new";
   protected final static String PATH_POST_CREATE_VIDEO_HINT_MESSAGE = "/messages/videohint/new";
+  protected final static String PATH_POST_CREATE_FURTHER_STEPS_MESSAGE = "/messages/furthersteps/new";
   protected final static String PATH_POST_UPDATE_KEY = "/messages/key";
   protected final static String PATH_POST_FORWARD_MESSAGE = "/messages/forward";
   private final static String CSRF_COOKIE = "CSRF-TOKEN";
@@ -356,4 +357,64 @@ public class MessageControllerAuthorizationTestIT {
     verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
   }
 
+  @Test
+  public void saveFurtherStepsMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser
+  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoTechnicalUserAuthority()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
+  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+
+    verifyNoMoreInteractions(postGroupMessageFacade);
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
+  public void saveFurtherStepsMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_TechnicalUserAuthority()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+
+    verify(postGroupMessageFacade, times(1)).postFurtherStepsMessage(any());
+  }
 }

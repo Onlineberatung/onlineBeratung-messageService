@@ -10,6 +10,8 @@ import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.Helper;
+import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
@@ -195,17 +197,22 @@ public class RocketChatService {
   }
 
   /**
-   * Posts metadata of a video call as hint in Rocket.Chat group with an empty message containing
-   * meta data in the alias object.
+   * Posts metadata contained in an {@link AliasMessageDTO} in the given Rocket.Chat group with an
+   * empty message.
    *
-   * @param rcGroupId the Rocket.Chat group id
-   * @param alias     the alias Json object string
+   * @param rcGroupId       the Rocket.Chat group id
+   * @param aliasMessageDTO {@link AliasMessageDTO}
    */
-  public void postGroupVideoHintMessageBySystemUser(String rcGroupId,
-      String alias) throws CustomCryptoException {
+  public void postAliasOnlyMessageAsSystemUser(String rcGroupId, AliasMessageDTO aliasMessageDTO) {
     RocketChatCredentials systemUser = retrieveSystemUser();
-    postGroupMessage(systemUser.getRocketChatToken(), systemUser.getRocketChatUserId(), rcGroupId,
-        EMPTY, alias);
+    String alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
+
+    try {
+      this.postGroupMessage(systemUser.getRocketChatToken(), systemUser.getRocketChatUserId(),
+          rcGroupId, EMPTY, alias);
+    } catch (CustomCryptoException e) {
+      throw new InternalServerErrorException(e, LogService::logInternalServerError);
+    }
   }
 
   private RocketChatCredentials retrieveSystemUser() {
