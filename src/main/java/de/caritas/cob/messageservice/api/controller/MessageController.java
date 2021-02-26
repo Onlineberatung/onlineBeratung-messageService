@@ -46,11 +46,10 @@ public class MessageController implements MessagesApi {
    */
   @Override
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
-      @RequestHeader String rcUserId, @RequestParam String rcGroupId, @RequestParam Integer offset,
-      @RequestParam Integer count) {
+      @RequestHeader String rcUserId, @RequestParam String rcGroupId) {
 
     MessageStreamDTO message =
-        rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId, offset, count);
+        rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
 
     return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
         : new ResponseEntity<>(HttpStatus.NO_CONTENT);
