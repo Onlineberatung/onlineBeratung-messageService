@@ -34,7 +34,7 @@ public class DraftMessageService {
    * @param rcGroupId the rocket chat group id
    * @return a {@link SavedDraftType} for the created type
    */
-  public SavedDraftType saveDraftMessage(String message, String rcGroupId) {
+  public synchronized SavedDraftType saveDraftMessage(String message, String rcGroupId) {
 
     Optional<DraftMessage> optionalDraftMessage = findDraftMessage(rcGroupId);
 
@@ -76,7 +76,7 @@ public class DraftMessageService {
    *
    * @param rcGroupId the rocket chat group id
    */
-  public void deleteDraftMessageIfExist(String rcGroupId) {
+  public synchronized void deleteDraftMessageIfExist(String rcGroupId) {
     this.findDraftMessage(rcGroupId).ifPresent(this::deleteDraftMessage);
   }
 
