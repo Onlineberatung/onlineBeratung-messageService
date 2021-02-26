@@ -8,9 +8,9 @@ import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
-import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
+import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
@@ -129,16 +129,18 @@ public class PostGroupMessageFacade {
    * @param videoCallMessageDTO the {@link VideoCallMessageDTO}
    */
   public void createVideoHintMessage(String rcGroupId, VideoCallMessageDTO videoCallMessageDTO) {
-
     AliasMessageDTO aliasMessageDTO = new AliasMessageDTO()
         .videoCallMessageDTO(videoCallMessageDTO);
+    this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO);
+  }
 
-    String alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
-
-    try {
-      this.rocketChatService.postGroupVideoHintMessageBySystemUser(rcGroupId, alias);
-    } catch (CustomCryptoException e) {
-      throw new InternalServerErrorException(e, LogService::logInternalServerError);
-    }
+  /**
+   * Posts a further steps metadata message in the specified Rocket.Chat group.
+   *
+   * @param rcGroupId (required) Rocket.Chat group ID
+   */
+  public void postFurtherStepsMessage(String rcGroupId) {
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(MessageType.FURTHER_STEPS);
+    this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO);
   }
 }
