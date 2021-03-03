@@ -374,7 +374,7 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser
-  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoTechnicalUserAuthority()
+  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserDefaultAuthority()
       throws Exception {
     mvc.perform(
         post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
@@ -389,7 +389,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
+  @WithMockUser(authorities = {Authority.USER_DEFAULT})
   public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
     mvc.perform(
@@ -403,8 +403,8 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
-  public void saveFurtherStepsMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_TechnicalUserAuthority()
+  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  public void saveFurtherStepsMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
       throws Exception {
     mvc.perform(
         post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)

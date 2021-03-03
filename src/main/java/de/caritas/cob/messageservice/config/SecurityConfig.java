@@ -61,7 +61,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .sessionAuthenticationStrategy(sessionAuthenticationStrategy()).and().authorizeRequests()
         .antMatchers(SpringFoxConfig.WHITE_LIST).permitAll()
-        .antMatchers("/messages/key", "/messages/furthersteps/new")
+        .antMatchers("/messages/key")
         .hasAuthority(Authority.TECHNICAL_DEFAULT)
         .antMatchers("/messages", "/messages/draft", "/messages/videohint/new")
         .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT)
@@ -70,6 +70,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
             Authority.TECHNICAL_DEFAULT)
         .antMatchers("/messages/forward", "/messages/feedback/new")
         .hasAnyAuthority(Authority.USE_FEEDBACK)
+        .antMatchers("/messages/furthersteps/new")
+        .hasAuthority(Authority.USER_DEFAULT)
         .anyRequest()
         .denyAll();
   }
