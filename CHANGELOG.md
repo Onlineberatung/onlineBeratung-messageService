@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.1.0...v2.2.0) (2021-03-22)
+
+
+### Features
+
+* added call to post a further steps message ([2a87bb9](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/2a87bb97d12916642f4125e926cdd7a69b6926e0))
+* added csrf whitelist property ([0034f53](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/0034f53c27dc70d85f8112a797781c2b6b0341a9))
+* added message type to alias ([fdf8ee6](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/fdf8ee6892791ee5e7d55a5f4abaf5df416bda34))
+
+
+### Bug Fixes
+
+* concurrency issue when save and delete a draft message in parallel ([5780497](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/57804978bdc0e460bc7354fa0c403fa739278e64))
+
 ## [2.1.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.0.0...v2.1.0) (2021-02-08)
 
 
