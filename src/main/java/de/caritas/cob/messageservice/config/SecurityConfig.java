@@ -39,6 +39,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   @Value("${csrf.header.property}")
   private String csrfHeaderProperty;
 
+  @Value("${csrf.whitelist.header.property}")
+  private String csrfWhitelistHeaderProperty;
+
   /**
    * Processes HTTP requests and checks for a valid spring security authentication for the
    * (Keycloak) principal (authorization header).
@@ -56,22 +59,22 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
     http.csrf().disable()
-        .addFilterBefore(new StatelessCsrfFilter(csrfCookieProperty, csrfHeaderProperty),
-            CsrfFilter.class)
+        .addFilterBefore(new StatelessCsrfFilter(csrfCookieProperty, csrfHeaderProperty,
+                csrfWhitelistHeaderProperty), CsrfFilter.class)
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .sessionAuthenticationStrategy(sessionAuthenticationStrategy()).and().authorizeRequests()
-        .antMatchers(SpringFoxConfig.WHITE_LIST).permitAll().antMatchers("/messages/key")
-        .hasAuthority(Authority.TECHNICAL_DEFAULT).antMatchers("/messages")
+        .antMatchers(SpringFoxConfig.WHITE_LIST).permitAll()
+        .antMatchers("/messages/key")
+        .hasAuthority(Authority.TECHNICAL_DEFAULT)
+        .antMatchers("/messages", "/messages/draft", "/messages/videohint/new")
         .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT)
         .antMatchers("/messages/new")
         .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT,
             Authority.TECHNICAL_DEFAULT)
-        .antMatchers("/messages/forward").hasAnyAuthority(Authority.USE_FEEDBACK)
-        .antMatchers("/messages/feedback/new").hasAnyAuthority(Authority.USE_FEEDBACK)
-        .antMatchers("/messages/draft")
-        .hasAnyAuthority(Authority.USER_DEFAULT, Authority.CONSULTANT_DEFAULT)
-        .antMatchers("/messages/videohint/new").hasAnyAuthority(Authority.USER_DEFAULT,
-        Authority.CONSULTANT_DEFAULT)
+        .antMatchers("/messages/forward", "/messages/feedback/new")
+        .hasAnyAuthority(Authority.USE_FEEDBACK)
+        .antMatchers("/messages/furthersteps/new")
+        .hasAuthority(Authority.USER_DEFAULT)
         .anyRequest()
         .denyAll();
   }
@@ -108,7 +111,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   }
 
   /**
-   * From the Keycloag documentation: "Spring Boot attempts to eagerly register filter beans with
+   * From the Keycloak documentation: "Spring Boot attempts to eagerly register filter beans with
    * the web application context. Therefore, when running the Keycloak Spring Security adapter in a
    * Spring Boot environment, it may be necessary to add FilterRegistrationBeans to your security
    * configuration to prevent the Keycloak filters from being registered twice."
@@ -127,8 +130,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   }
 
   /**
-   * see above:
-   * {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
+   * see above: {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Bean
@@ -140,8 +142,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   }
 
   /**
-   * see above:
-   * {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
+   * see above: {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Bean
@@ -153,8 +154,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   }
 
   /**
-   * see above:
-   * {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
+   * see above: {@link SecurityConfig#keycloakAuthenticationProcessingFilterRegistrationBean(KeycloakAuthenticationProcessingFilter).
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Bean

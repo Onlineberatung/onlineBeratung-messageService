@@ -2,6 +2,7 @@ package de.caritas.cob.messageservice.api.controller;
 
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_GET_MESSAGE_STREAM;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_FEEDBACK_MESSAGE;
+import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_FURTHER_STEPS_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_VIDEO_HINT_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_FORWARD_MESSAGE;
@@ -231,12 +232,11 @@ public class MessageControllerTestIT {
 
     List<MessagesDTO> messages = new ArrayList<>();
     messages.add(MESSAGES_DTO);
-    MessageStreamDTO stream = new MessageStreamDTO().messages(messages).count(RC_COUNT)
-        .offset(RC_OFFSET).total(RC_COUNT).success("true").cleaned("0");
+    MessageStreamDTO stream = new MessageStreamDTO().messages(messages);
     String streamJson = convertObjectToJson(stream);
 
     when(rocketChatService.getGroupMessages(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(stream);
+        Mockito.anyString())).thenReturn(stream);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
@@ -245,7 +245,7 @@ public class MessageControllerTestIT {
         .andExpect(content().json(streamJson));
 
     verify(rocketChatService, atLeastOnce()).getGroupMessages(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.anyString(), Mockito.anyString());
   }
 
   @Test
@@ -295,7 +295,7 @@ public class MessageControllerTestIT {
       throws Exception {
 
     when(rocketChatService.getGroupMessages(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(null);
+        Mockito.anyString())).thenReturn(null);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
@@ -303,7 +303,7 @@ public class MessageControllerTestIT {
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
 
     verify(rocketChatService, atLeastOnce()).getGroupMessages(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.anyString(), Mockito.anyString());
   }
 
   /**
@@ -549,4 +549,28 @@ public class MessageControllerTestIT {
     verify(this.postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
   }
 
+  @Test
+  public void saveFurtherStepsMessage_Should_ReturnBadRequest_When_rcGroupIdIsMissing()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(this.postGroupMessageFacade);
+  }
+
+  @Test
+  public void saveFurtherStepsMessage_Should_ReturnCreated_When_paramsAreValid()
+      throws Exception {
+    mvc.perform(
+        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+
+    verify(this.postGroupMessageFacade, times(1)).postFurtherStepsMessage(RC_GROUP_ID);
+  }
 }
