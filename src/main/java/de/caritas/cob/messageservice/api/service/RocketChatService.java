@@ -9,7 +9,7 @@ import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
-import de.caritas.cob.messageservice.api.helper.Helper;
+import de.caritas.cob.messageservice.api.helper.XssProtection;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
@@ -181,7 +181,7 @@ public class RocketChatService {
       throws CustomCryptoException {
 
     // XSS-Protection
-    message = Helper.removeHTMLFromText(message);
+    message = XssProtection.escapeHtml(message);
     message = encryptionService.encrypt(message, rcGroupId);
 
     try {
