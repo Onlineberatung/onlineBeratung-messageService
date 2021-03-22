@@ -26,7 +26,7 @@ public class JSONHelper {
     try {
       return Optional
           .ofNullable(
-              Helper.urlEncodeString(new ObjectMapper().writeValueAsString(aliasMessageDTO)));
+              UrlEncodingDecodingUtils.urlEncodeString(new ObjectMapper().writeValueAsString(aliasMessageDTO)));
     } catch (JsonProcessingException jsonEx) {
       LogService.logInternalServerError("Could not convert AliasMessageDTO to alias String",
           jsonEx);
@@ -44,7 +44,7 @@ public class JSONHelper {
     try {
       return Optional
           .ofNullable(
-              new ObjectMapper().readValue(Helper.urlDecodeString(alias), ForwardMessageDTO.class));
+              new ObjectMapper().readValue(UrlEncodingDecodingUtils.urlDecodeString(alias), ForwardMessageDTO.class));
     } catch (IOException jsonParseEx) {
       // This is not an error any more due to restructuring of the alias object. This is not a
       // real error, but necessary due to legacy code
@@ -62,7 +62,7 @@ public class JSONHelper {
     try {
       return Optional
           .ofNullable(
-              new ObjectMapper().readValue(Helper.urlDecodeString(alias), AliasMessageDTO.class));
+              new ObjectMapper().readValue(UrlEncodingDecodingUtils.urlDecodeString(alias), AliasMessageDTO.class));
 
     } catch (IOException jsonParseEx) {
       LogService.logInternalServerError("Could not convert alias String to AliasMessageDTO",
