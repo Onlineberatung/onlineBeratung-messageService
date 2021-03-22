@@ -180,7 +180,6 @@ public class RocketChatService {
       String rcToken, String rcUserId, String rcGroupId, String message, String alias)
       throws CustomCryptoException {
 
-    // XSS-Protection
     message = XssProtection.escapeHtml(message);
     message = encryptionService.encrypt(message, rcGroupId);
 

@@ -14,7 +14,7 @@ public class XssProtection {
   }
 
   /**
-   * Escape HTML code from a text (XSS-Protection)
+   * Escape HTML code from a text (XSS-Protection).
    *
    * @return the given text without html
    */
