@@ -118,13 +118,6 @@
       <version>1.15</version>
     </dependency>
 
-    <!-- Jsoup -->
-    <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>1.10.2</version>
-    </dependency>
-
     <!-- Liquibase -->
     <dependency>
       <groupId>org.liquibase</groupId>
@@ -158,6 +151,23 @@
       <groupId>org.powermock</groupId>
       <scope>test</scope>
       <version>2.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jeasy</groupId>
+      <artifactId>easy-random-core</artifactId>
+      <version>4.3.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.vmlens</groupId>
+      <artifactId>concurrent-junit</artifactId>
+      <version>1.0.2</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

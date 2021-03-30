@@ -1,0 +1,13 @@
+CREATE TABLE DRAFTMESSAGE
+(
+    ID            bigint NOT NULL,
+    USER_ID       varchar(36) NOT NULL,
+    RC_GROUP_ID   varchar(255) NOT NULL,
+    DRAFT_MESSAGE varchar(255) NOT NULL,
+    CREATE_DATE   timestamp,
+    UPDATE_DATE   timestamp,
+    PRIMARY KEY (ID)
+);
+CREATE SEQUENCE SEQUENCE_DRAFTMESSAGE
+    START WITH 100000
+    INCREMENT BY 1;

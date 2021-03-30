@@ -45,17 +45,17 @@ paths:
         technical]'
       operationId: createMessage
       parameters:
-        - name: RCToken
+        - name: rcToken
           in: header
           required: true
           schema:
             type: string
-        - name: RCUserId
+        - name: rcUserId
           in: header
           required: true
           schema:
             type: string
-        - name: RCGroupId
+        - name: rcGroupId
           in: header
           required: true
           schema:
@@ -89,17 +89,17 @@ paths:
         for feedback chat]'
       operationId: createFeedbackMessage
       parameters:
-        - name: RCToken
+        - name: rcToken
           in: header
           required: true
           schema:
             type: string
-        - name: RCUserId
+        - name: rcUserId
           in: header
           required: true
           schema:
             type: string
-        - name: RCFeedbackGroupId
+        - name: rcFeedbackGroupId
           in: header
           required: true
           schema:
@@ -125,6 +125,38 @@ paths:
         - Bearer: []
       x-codegen-request-body-name: Message
 
+  /messages/videohint/new:
+    post:
+      tags:
+        - message-controller
+      summary: 'Add new Rocket.Chat system video call event message [Authorization: Role: user,
+      consultant]'
+      operationId: createVideoHintMessage
+      parameters:
+        - name: rcGroupId
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/VideoCallMessageDTO'
+      responses:
+        201:
+          description: CREATED - hint message was successfully created
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+
   /messages:
     get:
       tags:
@@ -132,12 +164,12 @@ paths:
       summary: 'Get Rocket.Chat message stream [Authorization: Role: user, consultant]'
       operationId: getMessageStream
       parameters:
-        - name: RCToken
+        - name: rcToken
           in: header
           required: true
           schema:
             type: string
-        - name: RCUserId
+        - name: rcUserId
           in: header
           required: true
           schema:
@@ -148,18 +180,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: offset
-          in: query
-          description: Number of items where to start in the query (0 = first item)
-          required: true
-          schema:
-            type: integer
-        - name: count
-          in: query
-          description: Number of item which are being returned (0 = all)
-          required: true
-          schema:
-            type: integer
       responses:
         200:
           description: OK - successfull operation
@@ -188,17 +208,17 @@ paths:
         u25-consultant]'
       operationId: forwardMessage
       parameters:
-        - name: RCToken
+        - name: rcToken
           in: header
           required: true
           schema:
             type: string
-        - name: RCUserId
+        - name: rcUserId
           in: header
           required: true
           schema:
             type: string
-        - name: RCGroupId
+        - name: rcGroupId
           in: header
           required: true
           schema:
@@ -231,7 +251,7 @@ paths:
       summary: 'Save a draft message [Authorization: Role: user, consultant]'
       operationId: saveDraftMessage
       parameters:
-        - name: RCGroupId
+        - name: rcGroupId
           in: header
           required: true
           schema:
@@ -264,7 +284,7 @@ paths:
       summary: 'Get a draft message by user and rocket chat group id [Authorization: Role: user, consultant]'
       operationId: findDraftMessage
       parameters:
-        - name: RCGroupId
+        - name: rcGroupId
           in: header
           required: true
           schema:
@@ -289,6 +309,32 @@ paths:
       security:
         - Bearer: []
 
+  /messages/furthersteps/new:
+    post:
+      tags:
+        - message-controller
+      summary: 'Saves a new further steps system message [Authorization: Role: user, consultant]'
+      operationId: saveFurtherStepsMessage
+      parameters:
+        - name: rcGroupId
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: CREATED - message was successfully created
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+
 components:
   schemas:
     MessageDTO:
@@ -307,31 +353,11 @@ components:
       type: object
       required:
         - messages
-        - count
-        - offset
-        - total
-        - success
-        - cleaned
       properties:
         messages:
           type: array
           items:
             $ref: '#/components/schemas/MessagesDTO'
-        count:
-          type: string
-          example: "2"
-        offset:
-          type: string
-          example: "0"
-        total:
-          type: string
-          example: "2"
-        success:
-          type: string
-          example: "true"
-        cleaned:
-          type: string
-          example: "true"
 
     MessagesDTO:
       type: object
@@ -350,7 +376,7 @@ components:
           type: string
           example: "M73fE4WhYF4peYB3s"
         alias:
-          $ref: '#/components/schemas/ForwardMessageDTO'
+          $ref: '#/components/schemas/AliasMessageDTO'
         rid:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
@@ -384,6 +410,16 @@ components:
         file:
           $ref: '#/components/schemas/FileDTO'
 
+    AliasMessageDTO:
+      type: object
+      properties:
+        forwardMessageDTO:
+          $ref: '#/components/schemas/ForwardMessageDTO'
+        videoCallMessageDTO:
+          $ref: '#/components/schemas/VideoCallMessageDTO'
+        messageType:
+          $ref: '#/components/schemas/MessageType'
+
     ForwardMessageDTO:
       type: object
       required:
@@ -405,6 +441,31 @@ components:
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
+
+    VideoCallMessageDTO:
+      type: object
+      required:
+        - eventType
+        - initiatorUserName
+        - initiatorRcUserId
+      properties:
+        eventType:
+          type: string
+          enum:
+            - "IGNORED_CALL"
+        initiatorUserName:
+          type: string
+          example: "consultant23"
+        initiatorRcUserId:
+          type: string
+          example: "ag89h3tjkerg94t"
+
+    MessageType:
+      type: string
+      enum:
+        - "FURTHER_STEPS"
+        - "FORWARD"
+        - "VIDEOCALL"
 
     UserDTO:
       type: object

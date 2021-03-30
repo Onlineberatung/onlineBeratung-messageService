@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.model.rocket.chat.message;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import de.caritas.cob.messageservice.api.model.jsonDeserializer.DecodeUsernameJsonDeserializer;
+import de.caritas.cob.messageservice.api.model.jsondeserializer.DecodeUsernameJsonDeserializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
