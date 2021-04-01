@@ -330,8 +330,8 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test
-  public void postFurtherStepsMessage_Should_triggerRocketChatPostWithCorrectMessageType_When_RcGroupIdIsGiven() {
-    this.postGroupMessageFacade.postFurtherStepsMessage(RC_GROUP_ID);
+  public void postAliasOnlyMessage_Should_triggerRocketChatPostWithCorrectMessageType_When_RcGroupIdIsGiven() {
+    this.postGroupMessageFacade.postAliasOnlyMessage(RC_GROUP_ID, MessageType.FURTHER_STEPS);
 
     ArgumentCaptor<AliasMessageDTO> captor = ArgumentCaptor.forClass(AliasMessageDTO.class);
     verify(rocketChatService).postAliasOnlyMessageAsSystemUser(anyString(), captor.capture());
