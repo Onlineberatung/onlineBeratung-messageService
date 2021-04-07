@@ -135,12 +135,14 @@ public class PostGroupMessageFacade {
   }
 
   /**
-   * Posts a further steps metadata message in the specified Rocket.Chat group.
+   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
+   * the specified Rocket.Chat group.
    *
-   * @param rcGroupId (required) Rocket.Chat group ID
+   * @param rcGroupId   Rocket.Chat group ID
+   * @param messageType {@link MessageType}
    */
-  public void postFurtherStepsMessage(String rcGroupId) {
-    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(MessageType.FURTHER_STEPS);
+  public void postAliasOnlyMessage(String rcGroupId, MessageType messageType) {
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(messageType);
     this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO);
   }
 }

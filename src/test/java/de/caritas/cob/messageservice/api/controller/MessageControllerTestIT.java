@@ -1,8 +1,8 @@
 package de.caritas.cob.messageservice.api.controller;
 
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_GET_MESSAGE_STREAM;
+import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_ALIAS_ONLY_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_FEEDBACK_MESSAGE;
-import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_FURTHER_STEPS_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_CREATE_VIDEO_HINT_MESSAGE;
 import static de.caritas.cob.messageservice.api.controller.MessageControllerAuthorizationTestIT.PATH_POST_FORWARD_MESSAGE;
@@ -50,9 +50,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.RoleAuthorizationAuthorityMapper;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.AttachmentDTO;
 import de.caritas.cob.messageservice.api.model.FileDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
+import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.UserDTO;
@@ -550,10 +552,27 @@ public class MessageControllerTestIT {
   }
 
   @Test
-  public void saveFurtherStepsMessage_Should_ReturnBadRequest_When_rcGroupIdIsMissing()
+  public void saveAliasOnlyMessage_Should_ReturnBadRequest_When_rcGroupIdIsMissing()
+      throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+
+    mvc.perform(
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(this.postGroupMessageFacade);
+  }
+
+  @Test
+  public void saveAliasOnlyMessage_Should_ReturnBadRequest_When_AliasOnlyMessageDtoIsMissing()
       throws Exception {
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
+            .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
@@ -562,15 +581,21 @@ public class MessageControllerTestIT {
   }
 
   @Test
-  public void saveFurtherStepsMessage_Should_ReturnCreated_When_paramsAreValid()
+  public void saveAliasOnlyMessage_Should_ReturnCreated_When_paramsAreValid()
       throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+    aliasOnlyMessageDTO.setMessageType(MessageType.FORWARD);
+
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(this.postGroupMessageFacade, times(1)).postFurtherStepsMessage(RC_GROUP_ID);
+    verify(this.postGroupMessageFacade, times(1))
+        .postAliasOnlyMessage(RC_GROUP_ID, MessageType.FORWARD);
   }
 }

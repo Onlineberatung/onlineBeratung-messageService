@@ -5,10 +5,12 @@ import static java.util.Objects.nonNull;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
+import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
+import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
@@ -190,14 +192,16 @@ public class MessageController implements MessagesApi {
   }
 
   /**
-   * Posts a further steps message in the specified Rocket.Chat group.
+   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
+   * the specified Rocket.Chat group.
    *
-   * @param rcGroupId (required) Rocket.Chat group ID
+   * @param rcGroupId           (required) Rocket.Chat group ID
+   * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
-  @Override
-  public ResponseEntity<Void> saveFurtherStepsMessage(@RequestHeader String rcGroupId) {
-    postGroupMessageFacade.postFurtherStepsMessage(rcGroupId);
+  @Override public ResponseEntity<Void> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
+      @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
+    postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, aliasOnlyMessageDTO.getMessageType());
 
     return new ResponseEntity<>(HttpStatus.CREATED);
   }
