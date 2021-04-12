@@ -73,7 +73,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
             Authority.TECHNICAL_DEFAULT)
         .antMatchers("/messages/forward", "/messages/feedback/new")
         .hasAnyAuthority(Authority.USE_FEEDBACK)
-        .antMatchers("/messages/furthersteps/new")
+        .antMatchers("/messages/aliasonly/new")
         .hasAuthority(Authority.USER_DEFAULT)
         .anyRequest()
         .denyAll();
