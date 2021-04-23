@@ -9,8 +9,8 @@ import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
-import de.caritas.cob.messageservice.api.helper.XssProtection;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.helper.XssProtection;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
@@ -115,6 +115,7 @@ public class RocketChatService {
       return restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class).getBody();
 
     } catch (RestClientException exception) {
+      LogService.logRocketChatServiceError(exception);
       throw new InternalServerErrorException(String.format(
           "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s)",
           rcUserId, rcGroupId), LogService::logRocketChatServiceError);
@@ -182,15 +183,15 @@ public class RocketChatService {
 
     message = XssProtection.escapeHtml(message);
     message = encryptionService.encrypt(message, rcGroupId);
+    HttpHeaders headers = getRocketChatHeader(rcToken, rcUserId);
+    PostMessageDTO postMessageDTO = new PostMessageDTO(rcGroupId, message, alias);
+    HttpEntity<PostMessageDTO> request = new HttpEntity<>(postMessageDTO, headers);
 
     try {
-      HttpHeaders headers = getRocketChatHeader(rcToken, rcUserId);
-      PostMessageDTO postMessageDTO = new PostMessageDTO(rcGroupId, message, alias);
-      HttpEntity<PostMessageDTO> request = new HttpEntity<>(postMessageDTO, headers);
-
       return restTemplate.postForObject(rcPostMessageUrl, request, PostMessageResponseDTO.class);
-
     } catch (Exception ex) {
+      LogService.logRocketChatServiceError(
+          "Request body which caused the error was " + request.getBody());
       throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
   }
