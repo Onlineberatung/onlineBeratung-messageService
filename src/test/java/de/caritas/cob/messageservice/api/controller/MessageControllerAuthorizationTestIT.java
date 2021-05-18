@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
@@ -40,7 +41,7 @@ public class MessageControllerAuthorizationTestIT {
   protected final static String PATH_POST_CREATE_MESSAGE = "/messages/new";
   protected final static String PATH_POST_CREATE_FEEDBACK_MESSAGE = "/messages/feedback/new";
   protected final static String PATH_POST_CREATE_VIDEO_HINT_MESSAGE = "/messages/videohint/new";
-  protected final static String PATH_POST_CREATE_FURTHER_STEPS_MESSAGE = "/messages/furthersteps/new";
+  protected final static String PATH_POST_CREATE_ALIAS_ONLY_MESSAGE = "/messages/aliasonly/new";
   protected final static String PATH_POST_UPDATE_KEY = "/messages/key";
   protected final static String PATH_POST_FORWARD_MESSAGE = "/messages/forward";
   private final static String CSRF_COOKIE = "CSRF-TOKEN";
@@ -358,14 +359,18 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  public void saveFurtherStepsMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
+  public void saveAliasOnlyMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
       throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .cookie(csrfCookie)
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
 
@@ -374,14 +379,18 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser
-  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserDefaultAuthority()
+  public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserDefaultAuthority()
       throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .cookie(csrfCookie)
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
@@ -390,12 +399,16 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = {Authority.USER_DEFAULT})
-  public void saveFurtherStepsMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
+  public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
@@ -404,17 +417,21 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = {Authority.USER_DEFAULT})
-  public void saveFurtherStepsMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
+  public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
       throws Exception {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO =
+        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+
     mvc.perform(
-        post(PATH_POST_CREATE_FURTHER_STEPS_MESSAGE)
+        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .cookie(csrfCookie)
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).postFurtherStepsMessage(any());
+    verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
   }
 }
