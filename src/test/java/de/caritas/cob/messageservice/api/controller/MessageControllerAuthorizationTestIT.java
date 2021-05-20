@@ -1,6 +1,8 @@
 package de.caritas.cob.messageservice.api.controller;
 
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,9 +12,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.authorization.Authority;
+import de.caritas.cob.messageservice.api.authorization.Authorities.Authority;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
+import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
@@ -67,10 +70,6 @@ public class MessageControllerAuthorizationTestIT {
     csrfCookie = new Cookie(CSRF_COOKIE, CSRF_VALUE);
   }
 
-  /**
-   * GET on /messages (role: consultant, user)
-   */
-
   @Test
   public void getMessageStream_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
       throws Exception {
@@ -104,10 +103,6 @@ public class MessageControllerAuthorizationTestIT {
 
     verifyNoMoreInteractions(rocketChatService);
   }
-
-  /**
-   * POST on /messages/new (role: consultant, user)
-   */
 
   @Test
   public void createMessage_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
@@ -147,10 +142,6 @@ public class MessageControllerAuthorizationTestIT {
     verifyNoMoreInteractions(postGroupMessageFacade);
   }
 
-  /**
-   * POST on /messages/key (role: technical)
-   */
-
   @Test
   public void updateKey_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
       throws Exception {
@@ -183,10 +174,6 @@ public class MessageControllerAuthorizationTestIT {
 
     verifyNoMoreInteractions(encryptionService);
   }
-
-  /**
-   * POST on /messages/forward (Authority.USE_FEEDBACK)
-   */
 
   @Test
   public void forwardMessage_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
@@ -224,10 +211,6 @@ public class MessageControllerAuthorizationTestIT {
     verifyNoMoreInteractions(rocketChatService);
     verifyNoMoreInteractions(postGroupMessageFacade);
   }
-
-  /**
-   * POST on /messages/feedback/new (authority: USE_FEEDBACK)
-   */
 
   @Test
   public void createFeedbackMessage_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
@@ -434,4 +417,60 @@ public class MessageControllerAuthorizationTestIT {
 
     verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
   }
+
+  @Test
+  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_AnonyousAuthority()
+      throws Exception {
+
+    VideoCallMessageDTO videoCallMessageDTO =
+        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+
+    mvc.perform(
+        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("RCGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+
+    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  public void sendNewMessage_Should_ReturnCreated_When_AnonyousAuthority()
+      throws Exception {
+
+    MessageDTO messageDTO = new EasyRandom().nextObject(MessageDTO.class);
+
+    mvc.perform(post(PATH_POST_CREATE_MESSAGE)
+        .cookie(csrfCookie)
+        .header(CSRF_HEADER, CSRF_VALUE)
+        .header("rcToken", RC_TOKEN)
+        .header("rcUserId", RC_USER_ID)
+        .header("rcGroupId", RC_GROUP_ID)
+        .content(new ObjectMapper().writeValueAsString(messageDTO))
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
+  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  public void getMessagesStream_Should_ReturnNoContent_When_AnonyousAuthority()
+      throws Exception {
+    mvc.perform(get(PATH_GET_MESSAGE_STREAM)
+        .cookie(csrfCookie)
+        .header(CSRF_HEADER, CSRF_VALUE)
+        .header("rcToken", RC_TOKEN)
+        .header("rcUserId", RC_USER_ID)
+        .queryParam("rcGroupId", RC_GROUP_ID)
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNoContent());
+  }
+
 }

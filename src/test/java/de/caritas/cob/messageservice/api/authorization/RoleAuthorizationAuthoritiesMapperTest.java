@@ -1,13 +1,14 @@
 package de.caritas.cob.messageservice.api.authorization;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -15,17 +16,17 @@ import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.springsecurity.account.SimpleKeycloakAccount;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
-import org.mockito.internal.util.collections.Sets;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RoleAuthorizationAuthorityMapperTest {
+public class RoleAuthorizationAuthoritiesMapperTest {
 
-  private KeycloakAuthenticationProvider provider = new KeycloakAuthenticationProvider();
-  private Set<String> roles =
-      Sets.newSet(Role.CONSULTANT, Role.U25_CONSULTANT, Role.U25_MAIN_CONSULTANT);
+  private final KeycloakAuthenticationProvider provider = new KeycloakAuthenticationProvider();
+  private final Set<String> roles = Stream.of(Role.values())
+      .map(Role::getRoleName)
+      .collect(Collectors.toSet());
 
   @Test
   public void roleAuthorizationAuthorityMapper_Should_GrantCorrectAuthorities() throws Exception {
@@ -43,15 +44,14 @@ public class RoleAuthorizationAuthorityMapperTest {
 
     Authentication result = provider.authenticate(token);
 
-    List<SimpleGrantedAuthority> expectedGrantendAuthorities =
-        new ArrayList<SimpleGrantedAuthority>();
+    Set<SimpleGrantedAuthority> expectedGrantendAuthorities = new HashSet<>();
     roles.forEach(roleName -> {
-      expectedGrantendAuthorities.addAll(Authority.getAuthoritiesByRoleName(roleName).stream()
-          .map(authority -> new SimpleGrantedAuthority(authority)).collect(Collectors.toList()));
+      expectedGrantendAuthorities.addAll(Authorities
+          .getAuthoritiesByUserRole(Role.getRoleByName(roleName).get()).stream()
+          .map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
     });
 
     assertThat(expectedGrantendAuthorities, containsInAnyOrder(result.getAuthorities().toArray()));
-
   }
 
 }
