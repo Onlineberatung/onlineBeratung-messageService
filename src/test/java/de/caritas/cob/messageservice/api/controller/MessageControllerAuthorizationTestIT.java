@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.authorization.Authorities.Authority;
+import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
@@ -82,7 +82,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.TECHNICAL_DEFAULT})
   public void getMessageStream_Should_ReturnForbiddenAndCallNoMethods_WhenNoUserOrConsultantDefaultAuthority()
       throws Exception {
 
@@ -94,7 +94,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.CONSULTANT_DEFAULT, Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT, AuthorityValue.USER_DEFAULT})
   public void getMessageStream_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
       throws Exception {
 
@@ -130,8 +130,8 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.CONSULTANT_DEFAULT, Authority.USER_DEFAULT,
-      Authority.TECHNICAL_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT, AuthorityValue.USER_DEFAULT,
+      AuthorityValue.TECHNICAL_DEFAULT})
   public void createMessage_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
       throws Exception {
 
@@ -154,7 +154,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.CONSULTANT_DEFAULT, Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT, AuthorityValue.USER_DEFAULT})
   public void updateKey_Should_ReturnForbiddenAndCallNoMethods_WhenNoTechnicalDefaultAuthority()
       throws Exception {
 
@@ -166,7 +166,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.TECHNICAL_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.TECHNICAL_DEFAULT})
   public void updateKey_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens() throws Exception {
 
     mvc.perform(post(PATH_POST_UPDATE_KEY).contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +201,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USE_FEEDBACK})
+  @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
   public void forwardMessage_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
       throws Exception {
 
@@ -240,7 +240,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USE_FEEDBACK})
+  @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
   public void createFeedbackMessage_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
       throws Exception {
 
@@ -285,7 +285,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void createVideoHintMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
 
@@ -300,7 +300,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserAuthority()
       throws Exception {
 
@@ -321,7 +321,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.CONSULTANT_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT})
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_ConsultantAuthority()
       throws Exception {
 
@@ -381,7 +381,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
@@ -399,7 +399,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.USER_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
@@ -419,7 +419,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.ANONYMOUS_DEFAULT})
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_AnonyousAuthority()
       throws Exception {
 
@@ -440,7 +440,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.ANONYMOUS_DEFAULT})
   public void sendNewMessage_Should_ReturnCreated_When_AnonyousAuthority()
       throws Exception {
 
@@ -459,7 +459,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  @WithMockUser(authorities = {Authority.ANONYMOUS_DEFAULT})
+  @WithMockUser(authorities = {AuthorityValue.ANONYMOUS_DEFAULT})
   public void getMessagesStream_Should_ReturnNoContent_When_AnonyousAuthority()
       throws Exception {
     mvc.perform(get(PATH_GET_MESSAGE_STREAM)
