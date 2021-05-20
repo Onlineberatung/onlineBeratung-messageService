@@ -57,7 +57,7 @@ public class AuthoritiesTest {
     assertTrue(result.contains(Authority.ASSIGN_CONSULTANT_TO_SESSION));
     assertTrue(result.contains(Authority.ASSIGN_CONSULTANT_TO_ENQUIRY));
     assertTrue(result.contains(Authority.VIEW_AGENCY_CONSULTANTS));
-    assertEquals(1, result.size());
+    assertEquals(5, result.size());
 
   }
 
