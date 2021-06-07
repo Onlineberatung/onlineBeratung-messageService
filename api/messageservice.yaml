@@ -5,9 +5,6 @@ info:
   description: This information will be replaced by the SpringFox config information
   version: 0.0.1
 
-servers:
-  - url: /
-
 paths:
   /messages/key:
     post:
@@ -314,7 +311,7 @@ paths:
       tags:
         - message-controller
       summary: 'Saves a new empty system message containing the provided message type in the alias.
-      [Authorization: Role: user, consultant]'
+      [Authorization: Role: user, consultant, technical]'
       operationId: saveAliasOnlyMessage
       parameters:
         - name: rcGroupId
@@ -478,9 +475,10 @@ components:
     MessageType:
       type: string
       enum:
+        - "FINISHED_CONVERSATION"
+        - "FORWARD"
         - "FURTHER_STEPS"
         - "UPDATE_SESSION_DATA"
-        - "FORWARD"
         - "VIDEOCALL"
 
     UserDTO:
