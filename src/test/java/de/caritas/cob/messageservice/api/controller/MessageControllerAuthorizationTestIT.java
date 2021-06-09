@@ -493,44 +493,4 @@ public class MessageControllerAuthorizationTestIT {
     verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
   }
 
-  @Test
-  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT})
-  public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_ConsultantDefaultAuthority()
-      throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
-
-    mvc.perform(
-        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
-            .cookie(csrfCookie)
-            .header(CSRF_HEADER, CSRF_VALUE)
-            .header("rcGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isCreated());
-
-    verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
-  }
-
-  @Test
-  @WithMockUser(authorities = {AuthorityValue.ANONYMOUS_DEFAULT})
-  public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_AnonymousDefaultAuthority()
-      throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
-
-    mvc.perform(
-        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
-            .cookie(csrfCookie)
-            .header(CSRF_HEADER, CSRF_VALUE)
-            .header("rcGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isCreated());
-
-    verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
-  }
-
 }
