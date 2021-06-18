@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.4.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.3.0...v2.4.0) (2021-06-18)
+
+
+### Features
+
+* adapt new keycloak version ([5dc10ab](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/5dc10ab280c8ba8594706fd39a10ae08ebd0e2d0))
+* add required authorities for alias only message ([2f7be59](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/2f7be590397a3ee37ecec2cb1c12d8fb77f0da0d))
+* added new alias message type ([f3d07cb](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/f3d07cb8c3350f5953add5836f93d4aec3db4636))
+* extend logging for better analysis ([faadc60](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/faadc60d16d4833bc709fa057fa29c0eaeb35c0c))
+* integrate anonymous authority ([ea2cb45](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/ea2cb45f6f89907167cd277ae68912fe14d98d16))
+
 ## [2.3.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.2.1...v2.3.0) (2021-04-12)
 
 
