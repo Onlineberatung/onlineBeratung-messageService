@@ -1,8 +1,13 @@
 # Caritas Online-Beratung MessageService
-This is the repository containing all logic for the Caritas Online-Beratung MessageService.
+
+The MessageService acts as a middleman between the client and Rocket.Chat to read and write messages, respectively message streams.
+It was introduced because Rocket.Chat did not provide the functionality of encrypting messages when this project started.
+
+To provide the greatest possible security, the encryption key consists of three parts: a key saved within the service itself (or its configuration file), the session identification and a key that is not saved on the system itself (known as the masterkey). This masterkey must be provided after every restart of the MessageService. When this key constellation is changed old messages can't be decrypted anymore and new messages only can be en-/decrypted with this new set-up.
 
 ## Help and Documentation
 In the project [documentation](https://caritasdeutschland.github.io/documentation/docs/setup/setup-backend) you'll find information for setting up and running the project.
+You can find some detailled information of the service architecture and its processes in the repository [documentation](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/tree/master/documentation).
 
 ## License
 The project is licensed under the AGPLv3 which you'll find [here](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/blob/master/LICENSE).
