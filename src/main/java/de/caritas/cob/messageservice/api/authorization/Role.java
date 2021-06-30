@@ -1,17 +1,30 @@
 package de.caritas.cob.messageservice.api.authorization;
 
+import java.util.Arrays;
+import java.util.Optional;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
- * 
- * All used Keycloak roles
- *
+ * All used Keycloak roles.
  */
+@Getter
+@AllArgsConstructor
+public enum Role {
 
-public class Role {
+  TECHNICAL("technical"),
+  USER("user"),
+  CONSULTANT("consultant"),
+  U25_CONSULTANT("u25-consultant"),
+  U25_MAIN_CONSULTANT("u25-main-consultant"),
+  ANONYMOUS("anonymous");
 
-  public static String TECHNICAL = "technical";
-  public static String USER = "user";
-  public static String CONSULTANT = "consultant";
-  public static String U25_CONSULTANT = "u25-consultant";
-  public static String U25_MAIN_CONSULTANT = "u25-main-consultant";
+  private final String roleName;
+
+  public static Optional<Role> getRoleByName(String roleName) {
+    return Arrays.stream(values())
+        .filter(userRole -> userRole.roleName.equals(roleName))
+        .findFirst();
+  }
 
 }
