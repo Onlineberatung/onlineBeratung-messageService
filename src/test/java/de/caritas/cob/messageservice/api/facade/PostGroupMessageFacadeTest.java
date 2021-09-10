@@ -14,10 +14,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import de.caritas.cob.messageservice.api.authorization.Role;
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
+import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
@@ -25,7 +27,12 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageRe
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
+import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
+import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import java.util.Date;
+import java.util.Objects;
+import org.apache.commons.collections4.SetUtils;
+import org.hamcrest.Matchers;
 import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +42,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PostGroupMessageFacadeTest {
@@ -65,6 +73,12 @@ public class PostGroupMessageFacadeTest {
 
   @Mock
   private DraftMessageService draftMessageService;
+
+  @Mock
+  private StatisticsService statisticsService;
+
+  @Mock
+  private AuthenticatedUser authenticatedUser;
 
   @Before
   public void setup() {
@@ -302,6 +316,33 @@ public class PostGroupMessageFacadeTest {
         RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE_DTO_WITHOUT_NOTIFICATION);
 
     verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_GROUP_ID);
+  }
+
+  @Test
+  public void setPostGroupMessage_Should_FireCreateMessageStatisticsEvent()
+      throws CustomCryptoException {
+
+    when(authenticatedUser.getRoles())
+        .thenReturn(SetUtils.unmodifiableSet(Role.CONSULTANT.getRoleName()));
+    when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
+        .thenReturn(POST_MESSAGE_RESPONSE_DTO);
+
+    postGroupMessageFacade.postGroupMessage(
+        RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE_DTO_WITHOUT_NOTIFICATION);
+
+    verify(statisticsService, times(1))
+        .fireEvent(any(CreateMessageStatisticsEvent.class));
+
+    ArgumentCaptor<CreateMessageStatisticsEvent> captor = ArgumentCaptor.forClass(
+        CreateMessageStatisticsEvent.class);
+    verify(statisticsService, times(1)).fireEvent(captor.capture());
+    String rcUserId = Objects.requireNonNull(
+        ReflectionTestUtils.getField(captor.getValue(), "rcUserId")).toString();
+    assertThat(rcUserId, Matchers.is(RC_USER_ID));
+    String rcGroupId = Objects.requireNonNull(
+        ReflectionTestUtils.getField(captor.getValue(), "rcGroupId")).toString();
+    assertThat(rcGroupId, Matchers.is(RC_GROUP_ID));
+
   }
 
   @Test

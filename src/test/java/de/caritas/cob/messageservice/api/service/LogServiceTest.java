@@ -46,14 +46,14 @@ public class LogServiceTest {
   public void logRocketChatServiceError_Should_LogErrorMessage() {
 
     LogService.logRocketChatServiceError(ERROR_MESSAGE);
-    verify(logger, times(1)).error(eq(RC_SERVICE_ERROR_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).error(RC_SERVICE_ERROR_TEXT, ERROR_MESSAGE);
   }
 
   @Test
   public void logRocketChatServiceError_Should_LogErrorMessageAndExceptionStackTrace() {
 
     LogService.logRocketChatServiceError(ERROR_MESSAGE, exception);
-    verify(logger, times(1)).error(eq(RC_SERVICE_ERROR_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).error(RC_SERVICE_ERROR_TEXT, ERROR_MESSAGE);
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 
@@ -68,7 +68,7 @@ public class LogServiceTest {
   public void logInfo_Should_LogMessage() {
 
     LogService.logInfo(ERROR_MESSAGE);
-    verify(logger, times(1)).info(eq(ERROR_MESSAGE));
+    verify(logger, times(1)).info(ERROR_MESSAGE);
   }
 
   @Test
@@ -90,14 +90,14 @@ public class LogServiceTest {
 
     LogService.logRocketChatBadRequestError(ERROR_MESSAGE);
     verify(logger, times(1))
-        .error(eq("Rocket.Chat Bad Request service error: {}"), eq(ERROR_MESSAGE));
+        .error("Rocket.Chat Bad Request service error: {}", ERROR_MESSAGE);
   }
 
   @Test
   public void logInternalServerError_Should_LogErrorMessageAndExceptionStackTrace() {
 
     LogService.logInternalServerError(ERROR_MESSAGE, exception);
-    verify(logger, times(1)).error(eq("{}{}"), eq(INTERNAL_SERVER_ERROR_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).error("{}{}", INTERNAL_SERVER_ERROR_TEXT, ERROR_MESSAGE);
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
   }
 
@@ -105,7 +105,7 @@ public class LogServiceTest {
   public void logBadRequest_Should_LogMessage() {
 
     LogService.logBadRequest(ERROR_MESSAGE);
-    verify(logger, times(1)).warn(eq(BAD_REQUEST_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).warn(BAD_REQUEST_TEXT, ERROR_MESSAGE);
   }
 
   @Test
@@ -138,6 +138,13 @@ public class LogServiceTest {
   public void logDebug_Should_LogMessage() {
 
     LogService.logDebug(ERROR_MESSAGE);
-    verify(logger, times(1)).debug(eq(MESSAGE_API_LOG_TEXT), eq(ERROR_MESSAGE));
+    verify(logger, times(1)).debug(MESSAGE_API_LOG_TEXT, ERROR_MESSAGE);
+  }
+
+  @Test
+  public void logWarning_Should_LogErrorMessage() {
+
+    LogService.logWarning(ERROR_MESSAGE);
+    verify(logger, times(1)).warn(MESSAGE_API_LOG_TEXT, ERROR_MESSAGE);
   }
 }
