@@ -58,7 +58,7 @@ public class JSONHelperTests {
       throws JsonProcessingException {
 
     ObjectMapper om = Mockito.spy(new ObjectMapper());
-    Mockito.when( om.writeValueAsString(Object.class)).thenThrow(new JsonProcessingException("") {});
+    Mockito.when(om.writeValueAsString(Object.class)).thenThrow(new JsonProcessingException("") {});
 
     Optional<String> result =
         JSONHelper.serialize(new Object(), LogService::logInternalServerError);
