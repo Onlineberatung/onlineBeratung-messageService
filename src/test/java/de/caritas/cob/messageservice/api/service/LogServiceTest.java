@@ -24,7 +24,7 @@ public class LogServiceTest {
   private static final String RC_SERVICE_ERROR_TEXT = "Rocket.Chat service error: {}";
   private static final String INTERNAL_SERVER_ERROR_TEXT = "Internal Server Error: ";
   private static final String BAD_REQUEST_TEXT = "Bad Request: {}";
-  private static final String MESSAGE_API_LOG_TEXT = "MessageService API: {}:";
+  private static final String MESSAGE_API_LOG_TEXT = "MessageService API: {}";
 
   @Mock Exception exception;
 
@@ -121,7 +121,7 @@ public class LogServiceTest {
     LogService.logWarning(HttpStatus.INTERNAL_SERVER_ERROR, exception);
     verify(logger, times(1))
         .warn(
-            eq(MESSAGE_API_LOG_TEXT + " {}"),
+            eq(MESSAGE_API_LOG_TEXT + ": {}"),
             eq(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase()),
             anyString());
     verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
