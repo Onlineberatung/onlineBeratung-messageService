@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +26,8 @@ public class LogServiceTest {
   private static final String INTERNAL_SERVER_ERROR_TEXT = "Internal Server Error: ";
   private static final String BAD_REQUEST_TEXT = "Bad Request: {}";
   private static final String MESSAGE_API_LOG_TEXT = "MessageService API: {}";
+  public static final String STATISTICS_EVENT_PROCESSING_ERROR = "StatisticsEventProcessing error: ";
+  public static final String STATISTICS_EVENT_PROCESSING_WARNING = "StatisticsEventProcessing warning: ";
 
   @Mock Exception exception;
 
@@ -146,5 +149,22 @@ public class LogServiceTest {
 
     LogService.logWarning(ERROR_MESSAGE);
     verify(logger, times(1)).warn(MESSAGE_API_LOG_TEXT, ERROR_MESSAGE);
+  }
+
+  @Test
+  public void logStatisticEventError_Should_LogExceptionStackTraceAndErrorMessage() {
+
+    LogService.logStatisticsEventError(exception);
+    verify(exception, atLeastOnce()).printStackTrace(any(PrintWriter.class));
+    verify(logger, times(1))
+        .error(anyString(), eq(STATISTICS_EVENT_PROCESSING_ERROR), anyString());
+  }
+
+  @Test
+  public void logStatisticEventWarning_Should_LogErrorMessageAsWarning() {
+
+    LogService.logStatisticsEventWarning(ERROR_MESSAGE);
+    verify(logger, times(1))
+        .warn(anyString(), eq(STATISTICS_EVENT_PROCESSING_WARNING), eq(ERROR_MESSAGE));
   }
 }

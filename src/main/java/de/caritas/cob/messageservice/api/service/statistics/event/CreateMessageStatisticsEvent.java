@@ -26,7 +26,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
   @Override
   public Optional<String> getPayload() {
     return JSONHelper.serialize(
-        createCreateMessageStatisticsEventMessage(), LogService::logInternalServerError);
+        createCreateMessageStatisticsEventMessage(), LogService::logStatisticsEventError);
   }
 
   /** {@inheritDoc} */

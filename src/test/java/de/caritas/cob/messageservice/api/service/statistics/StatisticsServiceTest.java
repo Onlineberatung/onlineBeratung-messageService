@@ -76,7 +76,7 @@ public class StatisticsServiceTest {
     setField(statisticsService, FIELD_NAME_STATISTICS_ENABLED, true);
     when(createMessageStatisticsEvent.getPayload()).thenReturn(Optional.empty());
     statisticsService.fireEvent(createMessageStatisticsEvent);
-    verify(logger, times(1)).warn(anyString(), anyString());
+    verify(logger, times(1)).warn(anyString(), anyString(), anyString());
   }
 
   @Test
