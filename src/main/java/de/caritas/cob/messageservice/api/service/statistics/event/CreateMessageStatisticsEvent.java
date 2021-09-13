@@ -9,6 +9,9 @@ import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Create message statistics event.
+ */
 @RequiredArgsConstructor
 public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
