@@ -320,7 +320,7 @@ public class PostGroupMessageFacadeTest {
   }
 
   @Test
-  public void setPostGroupMessage_Should_FireCreateMessageStatisticsEvent()
+  public void postGroupMessage_Should_FireCreateMessageStatisticsEvent()
       throws CustomCryptoException {
 
     when(authenticatedUser.getRoles())
