@@ -20,6 +20,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
   private @NonNull String consultantId;
   private @NonNull String rcGroupId;
+  private @NonNull Boolean hasAttachment;
 
   /** {@inheritDoc} */
   @Override
@@ -39,6 +40,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
         .eventType(EVENT_TYPE)
         .consultantId(consultantId)
         .rcGroupId(rcGroupId)
+        .hasAttachment(hasAttachment)
         .timestamp(TIMESTAMP);
   }
 }

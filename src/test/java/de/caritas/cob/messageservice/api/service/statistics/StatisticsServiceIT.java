@@ -44,7 +44,7 @@ public class StatisticsServiceIT {
       throws IOException {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID);
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
     String staticTimestamp =
         Objects.requireNonNull(
                 ReflectionTestUtils.getField(
@@ -57,6 +57,7 @@ public class StatisticsServiceIT {
             .eventType(EventType.CREATE_MESSAGE)
             .consultantId(CONSULTANT_ID)
             .rcGroupId(RC_GROUP_ID)
+            .hasAttachment(false)
             .timestamp(staticTimestamp);
 
     statisticsService.fireEvent(createMessageStatisticsEvent);

@@ -341,10 +341,13 @@ public class PostGroupMessageFacadeTest {
     verify(statisticsService, times(1)).fireEvent(captor.capture());
     String consultantId = Objects.requireNonNull(
         ReflectionTestUtils.getField(captor.getValue(), "consultantId")).toString();
-    assertThat(consultantId, Matchers.is(CONSULTANT_ID));
+    assertThat(consultantId, is(CONSULTANT_ID));
     String rcGroupId = Objects.requireNonNull(
         ReflectionTestUtils.getField(captor.getValue(), "rcGroupId")).toString();
-    assertThat(rcGroupId, Matchers.is(RC_GROUP_ID));
+    assertThat(rcGroupId, is(RC_GROUP_ID));
+    boolean hasAttachment = Boolean.parseBoolean(Objects.requireNonNull(
+        ReflectionTestUtils.getField(captor.getValue(), "hasAttachment")).toString());
+    assertThat(hasAttachment, is(false));
 
   }
 

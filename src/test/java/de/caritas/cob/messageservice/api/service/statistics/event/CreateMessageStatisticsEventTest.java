@@ -24,7 +24,7 @@ public class CreateMessageStatisticsEventTest {
 
   @Before
   public void setup() throws NoSuchFieldException, IllegalAccessException {
-    createMessageStatisticsEvent = new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID);
+    createMessageStatisticsEvent = new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
     staticTimestamp = Objects.requireNonNull(ReflectionTestUtils
             .getField(createMessageStatisticsEvent,
                 CreateMessageStatisticsEvent.class,
@@ -44,6 +44,7 @@ public class CreateMessageStatisticsEventTest {
     String expectedJson = "{"
         + "  \"rcGroupId\":\"" + RC_GROUP_ID + "\","
         + "  \"consultantId\":\"" + CONSULTANT_ID + "\","
+        + "  \"hasAttachment\": false,"
         + "  \"timestamp\":\"" + staticTimestamp + "\","
         + "  \"eventType\":\"" + EventType.CREATE_MESSAGE + "\""
         + "}";
