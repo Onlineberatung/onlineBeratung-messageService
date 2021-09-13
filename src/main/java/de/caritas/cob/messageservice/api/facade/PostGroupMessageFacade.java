@@ -50,6 +50,9 @@ public class PostGroupMessageFacade {
    * Posts a message to the given Rocket.Chat group id and sends out a notification e-mail via the
    * UserService (because we need to get the user information).
    *
+   * If the statistics function is enabled, the assignment of the enquired is processed as
+   * statistical event.
+   *
    * @param rcToken Rocket.Chat token
    * @param rcUserId Rocket.Chat user ID
    * @param rcGroupId Rocket.Chat group ID
