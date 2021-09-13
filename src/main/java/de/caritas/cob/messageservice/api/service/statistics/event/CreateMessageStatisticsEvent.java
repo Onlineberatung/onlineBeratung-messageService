@@ -15,7 +15,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
   private static final EventType EVENT_TYPE = EventType.CREATE_MESSAGE;
   private static final String TIMESTAMP = CustomLocalDateTime.nowAsFullQualifiedTimestamp();
 
-  private @NonNull String rcUserId;
+  private @NonNull String consultantId;
   private @NonNull String rcGroupId;
 
   /** {@inheritDoc} */
@@ -34,7 +34,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
   private CreateMessageStatisticsEventMessage createCreateMessageStatisticsEventMessage() {
     return new CreateMessageStatisticsEventMessage()
         .eventType(EVENT_TYPE)
-        .rcUserId(rcUserId)
+        .consultantId(consultantId)
         .rcGroupId(rcGroupId)
         .timestamp(TIMESTAMP);
   }

@@ -49,6 +49,7 @@ public class PostGroupMessageFacadeTest {
 
   private static final String RC_TOKEN = "r94qMDk8gtgVNzqCq9zD2hELK-eXGB5VHlUVBgE8a8f";
   private static final String RC_USER_ID = "pptLwARyTMzbTTRdg";
+  private static final String CONSULTANT_ID = "d63f4cc0-215d-40e2-a866-2d3e910f0590";
   private static final String RC_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
   private static final String RC_FEEDBACK_GROUP_ID = "fR2Rz7dmWmHdXE8uz";
   private static final String MESSAGE = "Lorem ipsum";
@@ -324,6 +325,8 @@ public class PostGroupMessageFacadeTest {
 
     when(authenticatedUser.getRoles())
         .thenReturn(SetUtils.unmodifiableSet(Role.CONSULTANT.getRoleName()));
+    when(authenticatedUser.getUserId())
+        .thenReturn(CONSULTANT_ID);
     when(rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, MESSAGE, null))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
@@ -336,9 +339,9 @@ public class PostGroupMessageFacadeTest {
     ArgumentCaptor<CreateMessageStatisticsEvent> captor = ArgumentCaptor.forClass(
         CreateMessageStatisticsEvent.class);
     verify(statisticsService, times(1)).fireEvent(captor.capture());
-    String rcUserId = Objects.requireNonNull(
-        ReflectionTestUtils.getField(captor.getValue(), "rcUserId")).toString();
-    assertThat(rcUserId, Matchers.is(RC_USER_ID));
+    String consultantId = Objects.requireNonNull(
+        ReflectionTestUtils.getField(captor.getValue(), "consultantId")).toString();
+    assertThat(consultantId, Matchers.is(CONSULTANT_ID));
     String rcGroupId = Objects.requireNonNull(
         ReflectionTestUtils.getField(captor.getValue(), "rcGroupId")).toString();
     assertThat(rcGroupId, Matchers.is(RC_GROUP_ID));

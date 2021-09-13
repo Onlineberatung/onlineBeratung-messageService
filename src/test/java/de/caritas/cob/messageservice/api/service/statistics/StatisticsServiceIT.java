@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.service.statistics;
 
+import static de.caritas.cob.messageservice.testhelper.TestConstants.CONSULTANT_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
-import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.apache.commons.codec.CharEncoding.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,7 +44,7 @@ public class StatisticsServiceIT {
       throws IOException {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(RC_USER_ID, RC_GROUP_ID);
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID);
     String staticTimestamp =
         Objects.requireNonNull(
                 ReflectionTestUtils.getField(
@@ -55,7 +55,7 @@ public class StatisticsServiceIT {
     CreateMessageStatisticsEventMessage createMessageStatisticsEventMessage =
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
-            .rcUserId(RC_USER_ID)
+            .consultantId(CONSULTANT_ID)
             .rcGroupId(RC_GROUP_ID)
             .timestamp(staticTimestamp);
 

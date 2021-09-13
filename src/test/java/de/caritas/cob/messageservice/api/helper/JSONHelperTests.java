@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.helper;
 
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
-import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.CONSULTANT_ID;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -42,7 +42,7 @@ public class JSONHelperTests {
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
             .rcGroupId(RC_GROUP_ID)
-            .rcUserId(RC_USER_ID)
+            .consultantId(CONSULTANT_ID)
             .timestamp(CustomLocalDateTime.nowAsFullQualifiedTimestamp());
 
     Optional<String> result =

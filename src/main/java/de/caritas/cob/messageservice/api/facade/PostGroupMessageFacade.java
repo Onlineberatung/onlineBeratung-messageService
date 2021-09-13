@@ -69,7 +69,8 @@ public class PostGroupMessageFacade {
     }
 
     if (AuthenticatedUserHelper.isConsultant(authenticatedUser)) {
-      statisticsService.fireEvent(new CreateMessageStatisticsEvent(rcUserId, rcGroupId));
+      statisticsService.fireEvent(
+          new CreateMessageStatisticsEvent(authenticatedUser.getUserId(), rcGroupId));
     }
   }
 
