@@ -13,6 +13,7 @@ import de.caritas.cob.messageservice.statisticsservice.generated.web.model.Event
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
 import de.caritas.cob.messageservice.testConfig.RabbitMqTestConfig;
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -45,13 +46,12 @@ public class StatisticsServiceIT {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
         new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
-    String staticTimestamp =
-        Objects.requireNonNull(
+    OffsetDateTime staticTimestamp =
+        (OffsetDateTime) Objects.requireNonNull(
                 ReflectionTestUtils.getField(
                     createMessageStatisticsEvent,
                     CreateMessageStatisticsEvent.class,
-                    TIMESTAMP_FIELD_NAME))
-            .toString();
+                    TIMESTAMP_FIELD_NAME));
     CreateMessageStatisticsEventMessage createMessageStatisticsEventMessage =
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
@@ -64,9 +64,27 @@ public class StatisticsServiceIT {
     Message message =
         amqpTemplate.receive(RabbitMqTestConfig.QUEUE_NAME_ASSIGN_SESSION, MAX_TIMEOUT_MILLIS);
     assert message != null;
+
+    String expectedJson =
+        "{"
+            + "  \"rcGroupId\":\""
+            + RC_GROUP_ID
+            + "\","
+            + "  \"consultantId\":\""
+            + CONSULTANT_ID
+            + "\","
+            + "  \"timestamp\":\""
+            + staticTimestamp
+            + "\","
+            + "  \"eventType\":\""
+            + EventType.CREATE_MESSAGE
+            + "\","
+            + "  \"hasAttachment\": false"
+            + "}";
+
     assertThat(
         extractBodyFromAmpQMessage(message),
-        jsonEquals(new ObjectMapper().writeValueAsString(createMessageStatisticsEventMessage)));
+        jsonEquals(expectedJson));
   }
 
   private String extractBodyFromAmpQMessage(Message message) throws IOException {

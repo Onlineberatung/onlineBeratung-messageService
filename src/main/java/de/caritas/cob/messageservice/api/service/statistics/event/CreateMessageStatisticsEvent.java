@@ -1,10 +1,11 @@
 package de.caritas.cob.messageservice.api.service.statistics.event;
 
-import de.caritas.cob.messageservice.api.helper.CustomLocalDateTime;
+import de.caritas.cob.messageservice.api.helper.CustomOffsetDateTime;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
   private static final EventType EVENT_TYPE = EventType.CREATE_MESSAGE;
-  private static final String TIMESTAMP = CustomLocalDateTime.nowAsFullQualifiedTimestamp();
+  private static final OffsetDateTime TIMESTAMP = CustomOffsetDateTime.nowInUtc();
 
   private @NonNull String consultantId;
   private @NonNull String rcGroupId;
@@ -25,8 +26,8 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
   /** {@inheritDoc} */
   @Override
   public Optional<String> getPayload() {
-    return JSONHelper.serialize(
-        createCreateMessageStatisticsEventMessage(), LogService::logStatisticsEventError);
+    return JSONHelper.serializeWithOffsetDateTimeAsString(createCreateMessageStatisticsEventMessage(),
+        LogService::logStatisticsEventError);
   }
 
   /** {@inheritDoc} */

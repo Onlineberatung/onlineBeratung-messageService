@@ -1,9 +1,12 @@
 package de.caritas.cob.messageservice;
 
+import static java.util.Objects.nonNull;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.collections4.CollectionUtils;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.representations.AccessToken;
@@ -38,7 +41,6 @@ public class MessageServiceApplication {
    * Returns the @KeycloakAuthenticationToken which represents the token for a Keycloak
    * authentication.
    *
-   *
    * @return KeycloakAuthenticationToken
    */
   @Bean
@@ -56,7 +58,8 @@ public class MessageServiceApplication {
   @Scope(scopeName = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
   public KeycloakSecurityContext getKeycloakSecurityContext() {
     return ((KeycloakAuthenticationToken) getRequest().getUserPrincipal())
-        .getAccount().getKeycloakSecurityContext();
+        .getAccount()
+        .getKeycloakSecurityContext();
   }
 
   /**
@@ -70,7 +73,8 @@ public class MessageServiceApplication {
 
     // Get current KeycloakSecurityContext
     KeycloakSecurityContext keycloakSecContext =
-        ((KeycloakAuthenticationToken) getRequest().getUserPrincipal()).getAccount()
+        ((KeycloakAuthenticationToken) getRequest().getUserPrincipal())
+            .getAccount()
             .getKeycloakSecurityContext();
 
     Map<String, Object> claimMap = keycloakSecContext.getToken().getOtherClaims();
@@ -80,7 +84,8 @@ public class MessageServiceApplication {
     if (claimMap.containsKey(CLAIM_NAME_USER_ID)) {
       authenticatedUser.setUserId(claimMap.get(CLAIM_NAME_USER_ID).toString());
     } else {
-      throw new KeycloakException("Keycloak user attribute '" + CLAIM_NAME_USER_ID + "' not found.");
+      throw new KeycloakException(
+          "Keycloak user attribute '" + CLAIM_NAME_USER_ID + "' not found.");
     }
 
     if (claimMap.containsKey(CLAIM_NAME_USERNAME)) {
@@ -88,25 +93,28 @@ public class MessageServiceApplication {
     }
 
     // Set user roles
-    AccessToken.Access realmAccess = ((KeycloakAuthenticationToken) getRequest().getUserPrincipal())
-        .getAccount().getKeycloakSecurityContext().getToken().getRealmAccess();
+    AccessToken.Access realmAccess =
+        ((KeycloakAuthenticationToken) getRequest().getUserPrincipal())
+            .getAccount()
+            .getKeycloakSecurityContext()
+            .getToken()
+            .getRealmAccess();
     Set<String> roles = realmAccess.getRoles();
-    if (roles != null && roles.isEmpty()) {
+    if (CollectionUtils.isNotEmpty(roles)) {
       authenticatedUser.setRoles(roles);
     } else {
       throw new KeycloakException(
-          "Keycloak roles null or not set for user: " + authenticatedUser.getUserId() != null
-              ? authenticatedUser.getUserId()
-              : "unknown");
+          String.format(
+              "Keycloak roles null or not set for user: %s", authenticatedUser.getUserId()));
     }
 
     // Set granted authorities
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    authenticatedUser.setGrantedAuthorities(authentication.getAuthorities().stream()
-        .map(Object::toString).collect(Collectors.toSet()));
+    authenticatedUser.setGrantedAuthorities(
+        authentication.getAuthorities().stream().map(Object::toString).collect(Collectors.toSet()));
 
     // Set Keycloak token to authenticated user object
-    if (keycloakSecContext.getTokenString() != null) {
+    if (nonNull(keycloakSecContext.getTokenString())) {
       authenticatedUser.setAccessToken(keycloakSecContext.getTokenString());
     } else {
       throw new KeycloakException("No valid Keycloak access token string found.");
