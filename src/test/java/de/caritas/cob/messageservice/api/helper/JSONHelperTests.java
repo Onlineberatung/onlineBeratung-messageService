@@ -13,6 +13,7 @@ import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.jeasy.random.EasyRandom;
 import org.junit.Test;
@@ -39,12 +40,14 @@ public class JSONHelperTests {
   @Test
   public void serialize_Should_returnOptionalWithSerializedObject() {
 
+    OffsetDateTime offsetDateTime = CustomOffsetDateTime.nowInUtc();
+
     CreateMessageStatisticsEventMessage createMessageStatisticsEventMessage =
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
             .rcGroupId(RC_GROUP_ID)
             .consultantId(CONSULTANT_ID)
-            .timestamp(CustomOffsetDateTime.nowInUtc())
+            .timestamp(offsetDateTime)
             .hasAttachment(false);
 
     Optional<String> result =
@@ -62,7 +65,7 @@ public class JSONHelperTests {
             + CONSULTANT_ID
             + "\","
             + "  \"timestamp\":\""
-            + CustomOffsetDateTime.nowInUtc()
+            + offsetDateTime.format(DateTimeFormatter.ISO_DATE_TIME)
             + "\","
             + "  \"eventType\":\""
             + EventType.CREATE_MESSAGE
