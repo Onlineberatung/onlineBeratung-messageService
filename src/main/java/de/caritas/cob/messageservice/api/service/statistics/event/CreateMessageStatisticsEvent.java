@@ -5,7 +5,6 @@ import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
   private static final EventType EVENT_TYPE = EventType.CREATE_MESSAGE;
-  private static final OffsetDateTime TIMESTAMP = CustomOffsetDateTime.nowInUtc();
 
   private @NonNull String consultantId;
   private @NonNull String rcGroupId;
@@ -42,6 +40,6 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
         .consultantId(consultantId)
         .rcGroupId(rcGroupId)
         .hasAttachment(hasAttachment)
-        .timestamp(TIMESTAMP);
+        .timestamp(CustomOffsetDateTime.nowInUtc());
   }
 }

@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.MessageServiceApplication;
+import de.caritas.cob.messageservice.api.helper.CustomOffsetDateTime;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
@@ -35,7 +36,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class StatisticsServiceIT {
 
   private static final long MAX_TIMEOUT_MILLIS = 5000;
-  private static final String TIMESTAMP_FIELD_NAME = "TIMESTAMP";
 
   @Autowired StatisticsService statisticsService;
   @Autowired AmqpTemplate amqpTemplate;
@@ -46,19 +46,13 @@ public class StatisticsServiceIT {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
         new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
-    OffsetDateTime staticTimestamp =
-        (OffsetDateTime) Objects.requireNonNull(
-                ReflectionTestUtils.getField(
-                    createMessageStatisticsEvent,
-                    CreateMessageStatisticsEvent.class,
-                    TIMESTAMP_FIELD_NAME));
     CreateMessageStatisticsEventMessage createMessageStatisticsEventMessage =
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
             .consultantId(CONSULTANT_ID)
             .rcGroupId(RC_GROUP_ID)
             .hasAttachment(false)
-            .timestamp(staticTimestamp);
+            .timestamp(CustomOffsetDateTime.nowInUtc());
 
     statisticsService.fireEvent(createMessageStatisticsEvent);
     Message message =
@@ -74,7 +68,7 @@ public class StatisticsServiceIT {
             + CONSULTANT_ID
             + "\","
             + "  \"timestamp\":\""
-            + staticTimestamp
+            + CustomOffsetDateTime.nowInUtc()
             + "\","
             + "  \"eventType\":\""
             + EventType.CREATE_MESSAGE
@@ -84,7 +78,7 @@ public class StatisticsServiceIT {
 
     assertThat(
         extractBodyFromAmpQMessage(message),
-        jsonEquals(expectedJson));
+        jsonEquals(expectedJson).whenIgnoringPaths("timestamp"));
   }
 
   private String extractBodyFromAmpQMessage(Message message) throws IOException {
