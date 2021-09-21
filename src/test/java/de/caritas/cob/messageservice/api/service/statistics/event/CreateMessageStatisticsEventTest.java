@@ -8,13 +8,12 @@ import static org.hamcrest.Matchers.is;
 
 import de.caritas.cob.messageservice.api.helper.CustomOffsetDateTime;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
-import java.util.Objects;
+import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CreateMessageStatisticsEventTest {
@@ -23,7 +22,8 @@ public class CreateMessageStatisticsEventTest {
 
   @Before
   public void setup() throws NoSuchFieldException, IllegalAccessException {
-    createMessageStatisticsEvent = new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
+    createMessageStatisticsEvent =
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false);
   }
 
   @Test
@@ -37,7 +37,8 @@ public class CreateMessageStatisticsEventTest {
 
     String expectedJson = "{"
         + "  \"rcGroupId\":\"" + RC_GROUP_ID + "\","
-        + "  \"consultantId\":\"" + CONSULTANT_ID + "\","
+        + "  \"userId\":\"" + CONSULTANT_ID + "\","
+        + "  \"userRole\":\"" + UserRole.CONSULTANT + "\","
         + "  \"hasAttachment\": false,"
         + "  \"timestamp\":\"" + CustomOffsetDateTime.nowInUtc() + "\","
         + "  \"eventType\":\"" + EventType.CREATE_MESSAGE + "\""

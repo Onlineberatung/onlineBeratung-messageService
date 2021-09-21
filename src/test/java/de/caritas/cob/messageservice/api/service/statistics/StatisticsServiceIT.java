@@ -12,6 +12,7 @@ import de.caritas.cob.messageservice.api.helper.CustomOffsetDateTime;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
+import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import de.caritas.cob.messageservice.testConfig.RabbitMqTestConfig;
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -45,14 +46,7 @@ public class StatisticsServiceIT {
       throws IOException {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(CONSULTANT_ID, RC_GROUP_ID, false);
-    CreateMessageStatisticsEventMessage createMessageStatisticsEventMessage =
-        new CreateMessageStatisticsEventMessage()
-            .eventType(EventType.CREATE_MESSAGE)
-            .consultantId(CONSULTANT_ID)
-            .rcGroupId(RC_GROUP_ID)
-            .hasAttachment(false)
-            .timestamp(CustomOffsetDateTime.nowInUtc());
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false);
 
     statisticsService.fireEvent(createMessageStatisticsEvent);
     Message message =
@@ -64,8 +58,11 @@ public class StatisticsServiceIT {
             + "  \"rcGroupId\":\""
             + RC_GROUP_ID
             + "\","
-            + "  \"consultantId\":\""
+            + "  \"userId\":\""
             + CONSULTANT_ID
+            + "\","
+            + "  \"userRole\":\""
+            + UserRole.CONSULTANT
             + "\","
             + "  \"timestamp\":\""
             + CustomOffsetDateTime.nowInUtc()

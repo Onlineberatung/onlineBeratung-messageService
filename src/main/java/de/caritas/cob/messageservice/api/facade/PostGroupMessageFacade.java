@@ -22,6 +22,7 @@ import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
+import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,10 +72,17 @@ public class PostGroupMessageFacade {
       emailNotificationFacade.sendEmailNotification(rcGroupId);
     }
 
-    if (AuthenticatedUserHelper.isConsultant(authenticatedUser)) {
-      statisticsService.fireEvent(
-          new CreateMessageStatisticsEvent(authenticatedUser.getUserId(), rcGroupId, false));
-    }
+    statisticsService.fireEvent(
+        new CreateMessageStatisticsEvent(
+            authenticatedUser.getUserId(),
+            resolveUserRole(authenticatedUser),
+            rcGroupId,
+            false));
+  }
+
+  private UserRole resolveUserRole(AuthenticatedUser authenticatedUser) {
+    return
+        (AuthenticatedUserHelper.isConsultant(authenticatedUser)) ? UserRole.CONSULTANT : UserRole.ASKER;
   }
 
   /**

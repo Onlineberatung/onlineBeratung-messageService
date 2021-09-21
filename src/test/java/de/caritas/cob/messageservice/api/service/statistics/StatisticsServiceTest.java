@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.service.statistics;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -11,6 +12,7 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,6 +23,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.messaging.Message;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StatisticsServiceTest {
@@ -29,16 +34,11 @@ public class StatisticsServiceTest {
   private static final String FIELD_NAME_RABBIT_EXCHANGE_NAME = "rabbitMqExchangeName";
   private static final String RABBIT_EXCHANGE_NAME = "exchange";
   private static final String PAYLOAD = "payload";
-
+  @Mock Logger logger;
   private CreateMessageStatisticsEvent createMessageStatisticsEvent;
   private EventType eventType = EventType.ASSIGN_SESSION;
-
-  @InjectMocks
-  private StatisticsService statisticsService;
-  @Mock
-  private AmqpTemplate amqpTemplate;
-  @Mock
-  Logger logger;
+  @InjectMocks private StatisticsService statisticsService;
+  @Mock private AmqpTemplate amqpTemplate;
 
   @Before
   public void setup() {
@@ -55,7 +55,7 @@ public class StatisticsServiceTest {
     setField(statisticsService, FIELD_NAME_STATISTICS_ENABLED, false);
     statisticsService.fireEvent(createMessageStatisticsEvent);
     verify(amqpTemplate, times(0))
-        .convertAndSend(eq(RABBIT_EXCHANGE_NAME), anyString(), anyString());
+        .convertAndSend(eq(RABBIT_EXCHANGE_NAME), anyString(), any(Message.class));
   }
 
   @Test
@@ -67,7 +67,11 @@ public class StatisticsServiceTest {
 
     statisticsService.fireEvent(createMessageStatisticsEvent);
     verify(amqpTemplate, times(1))
-        .convertAndSend(eq(RABBIT_EXCHANGE_NAME), anyString(), anyString());
+        .convertAndSend(
+            eq(RABBIT_EXCHANGE_NAME),
+            anyString(),
+            eq(
+                buildPayloadMessage()));
   }
 
   @Test
@@ -85,7 +89,16 @@ public class StatisticsServiceTest {
     setField(statisticsService, FIELD_NAME_STATISTICS_ENABLED, true);
     statisticsService.fireEvent(createMessageStatisticsEvent);
     verify(amqpTemplate, times(1))
-        .convertAndSend(RABBIT_EXCHANGE_NAME, eventType.toString(), PAYLOAD);
+        .convertAndSend(
+            RABBIT_EXCHANGE_NAME,
+            eventType.toString(),
+            buildPayloadMessage());
+  }
+
+  private org.springframework.amqp.core.Message buildPayloadMessage() {
+    return MessageBuilder.withBody(PAYLOAD.getBytes(StandardCharsets.UTF_8))
+        .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+        .build();
   }
 
 }

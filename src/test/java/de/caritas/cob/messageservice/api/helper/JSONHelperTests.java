@@ -12,6 +12,7 @@ import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.EventType;
+import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -46,7 +47,8 @@ public class JSONHelperTests {
         new CreateMessageStatisticsEventMessage()
             .eventType(EventType.CREATE_MESSAGE)
             .rcGroupId(RC_GROUP_ID)
-            .consultantId(CONSULTANT_ID)
+            .userId(CONSULTANT_ID)
+            .userRole(UserRole.CONSULTANT)
             .timestamp(offsetDateTime)
             .hasAttachment(false);
 
@@ -61,8 +63,11 @@ public class JSONHelperTests {
             + "  \"rcGroupId\":\""
             + RC_GROUP_ID
             + "\","
-            + "  \"consultantId\":\""
+            + "  \"userId\":\""
             + CONSULTANT_ID
+            + "\","
+            + "  \"userRole\":\""
+            + UserRole.CONSULTANT
             + "\","
             + "  \"timestamp\":\""
             + offsetDateTime.format(DateTimeFormatter.ISO_DATE_TIME)
