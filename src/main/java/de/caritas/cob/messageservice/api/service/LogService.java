@@ -11,6 +11,7 @@ public class LogService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LogService.class);
 
+  private static final String MESSAGESERVICE_API = "MessageService API: {}";
   private static final String RC_SERVICE_ERROR = "Rocket.Chat service error: ";
   private static final String RC_ENCRYPTION_SERVICE_ERROR = "Encryption service error: ";
   private static final String RC_ENCRYPTION_BAD_KEY_SERVICE_ERROR =
@@ -19,6 +20,8 @@ public class LogService {
   private static final String RC_BAD_REQUEST_ERROR = "Rocket.Chat Bad Request service error: ";
   private static final String INTERNAL_SERVER_ERROR_TEXT = "Internal Server Error: ";
   private static final String BAD_REQUEST_TEXT = "Bad Request: ";
+  private static final String STATISTICS_EVENT_PROCESSING_ERROR = "StatisticsEventProcessing error: ";
+  private static final String STATISTICS_EVENT_PROCESSING_WARNING = "StatisticsEventProcessing warning: ";
 
   private LogService() {}
 
@@ -132,7 +135,7 @@ public class LogService {
    * @param ex the exception to be logged
    */
   public static void logWarning(final HttpStatus status, final Exception ex) {
-    LOGGER.warn("MessageService API: {}: {}", status.getReasonPhrase(), getStackTrace(ex));
+    LOGGER.warn(MESSAGESERVICE_API + ": {}", status.getReasonPhrase(), getStackTrace(ex));
   }
 
   /**
@@ -141,7 +144,16 @@ public class LogService {
    * @param ex the exception to be logged
    */
   public static void logWarning(final Exception ex) {
-    LOGGER.warn("MessageService API: {}:", getStackTrace(ex));
+    LOGGER.warn(MESSAGESERVICE_API, getStackTrace(ex));
+  }
+
+  /**
+   * Logs a warning.
+   *
+   * @param message the message to be logged
+   */
+  public static void logWarning(final String message) {
+    LOGGER.warn(MESSAGESERVICE_API, message);
   }
 
   /**
@@ -150,6 +162,24 @@ public class LogService {
    * @param message the message to be logged
    */
   public static void logDebug(final String message) {
-    LOGGER.debug("MessageService API: {}:", message);
+    LOGGER.debug(MESSAGESERVICE_API, message);
+  }
+
+  /**
+   * Error while processing statistics event.
+   *
+   * @param exception Exception
+   */
+  public static void logStatisticsEventError(Exception exception) {
+    LOGGER.error("{}{}", STATISTICS_EVENT_PROCESSING_ERROR, getStackTrace(exception));
+  }
+
+  /**
+   * Warning while processing statistics event.
+   *
+   * @param message error message
+   */
+  public static void logStatisticsEventWarning(String message) {
+    LOGGER.warn("{}{}", STATISTICS_EVENT_PROCESSING_WARNING, message);
   }
 }
