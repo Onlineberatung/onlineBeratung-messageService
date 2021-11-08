@@ -15,8 +15,6 @@ public enum Role {
   TECHNICAL("technical"),
   USER("user"),
   CONSULTANT("consultant"),
-  U25_CONSULTANT("u25-consultant"),
-  U25_MAIN_CONSULTANT("u25-main-consultant"),
   ANONYMOUS("anonymous");
 
   private final String roleName;
