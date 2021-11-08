@@ -15,6 +15,7 @@ public enum Role {
   TECHNICAL("technical"),
   USER("user"),
   CONSULTANT("consultant"),
+  PEER_CONSULTANT("peer-consultant"),
   ANONYMOUS("anonymous");
 
   private final String roleName;
