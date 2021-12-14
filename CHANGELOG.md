@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.4.0...v2.5.0) (2021-12-14)
+
+
+### Features
+
+* adapt documentation ([e48e117](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/e48e1174a2ba28da82af21144b08ce5cbc0b36a4))
+* implementation of statistic trigger and tests ([fb998de](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/fb998dec1d31970261caa301309f484b7fab21a2))
+* implementation own log methods for statistics events ([e05c705](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/e05c705a6aa7970dde737155d2939dccbd27c895))
+* new message format ([4dc0c15](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/4dc0c15658a696e8989585c4992acd6ca595726b))
+* new statisticsservice.yaml with changes in create message statistics event ([3ddfd15](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/3ddfd15fc8aa9383f0d5bc3acf20eb00f97a64fb))
+* new statisticsservice.yaml with changes in create message statistics event ([63c7265](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/63c7265649644a73f7a785fe5a5635ee03b258e3))
+* optimizations ([e1b60b1](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/e1b60b1dcb793171c0d0a3f2cd3dd780eb27b2f4))
+* remove unused role authorization mapping ([641fbe2](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/641fbe2a209675bbf97341be4bc7b931b144d0dc))
+* update of statisticsservice.yaml ([c512da7](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/c512da720349fe40ee511f7d22e4060a359fb896))
+* update of statisticsservice.yaml and corresponding changes ([0afd784](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/0afd784abb45ba8247dda7cbd432d0eaebd71c02))
+* updated dockerImage.yml ([bfa61ab](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/bfa61abb188e1162234ca0f4fd3e6f807c7ab2e0))
+* updated service api descriptions ([c2693e3](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/c2693e3cb3324ebb743efaa32d26760ef604b759))
+
+
+### Bug Fixes
+
+* added java doc ([a31f8a7](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/a31f8a7c7596ceffbfd71ab31a4314962b081f78))
+* codestyle issue ([67b14bb](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/67b14bb262bc0b0d7bbebb26a57209326175f553))
+* fixed unit test ([79812c5](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/79812c5ad9f17111ad0f3d33c475d47c1611d4d8))
+* replaced deprecated method ([b994f78](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/b994f78e4f13b5c37f54d27f0530a462203047ee))
+* test failure ([97947cb](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/97947cb8431d6f37c2111a4f67195536d8b165ee))
+* typo ([b5babea](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/commit/b5babea12508b0495d07a302472c2734b617be4d))
+
 ## [2.4.0](https://github.com/CaritasDeutschland/caritas-onlineBeratung-messageService/compare/v2.3.0...v2.4.0) (2021-06-18)
 
 
