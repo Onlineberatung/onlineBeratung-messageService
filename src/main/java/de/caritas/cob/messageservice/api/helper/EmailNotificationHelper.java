@@ -36,10 +36,10 @@ public class EmailNotificationHelper {
       String userServiceApiSendNewMessageNotificationUrl) {
 
     try {
-      HttpHeaders header = serviceHelper.getKeycloakAndCsrfHttpHeaders();
+      HttpHeaders headers = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
       NewMessageNotificationDTO notificationDTO = new NewMessageNotificationDTO(rcGroupId);
       HttpEntity<NewMessageNotificationDTO> request =
-          new HttpEntity<NewMessageNotificationDTO>(notificationDTO, header);
+          new HttpEntity<>(notificationDTO, headers);
 
       restTemplate.exchange(userServiceApiSendNewMessageNotificationUrl, HttpMethod.POST, request,
           Void.class);
