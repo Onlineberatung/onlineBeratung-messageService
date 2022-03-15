@@ -4,6 +4,8 @@ import static com.github.jknack.handlebars.internal.lang3.StringUtils.EMPTY;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
@@ -28,6 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +42,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RocketChatService {
 
@@ -112,9 +116,15 @@ public class RocketChatService {
     HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
     try {
-      return restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class).getBody();
+      LogService.logInfo("Request groups.message: " + uri);
+      var body = restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class)
+          .getBody();
+      var bodyString = new ObjectMapper().writeValueAsString(body);
+      LogService.logInfo("Response groups.message: " + bodyString);
 
-    } catch (RestClientException exception) {
+      return body;
+
+    } catch (RestClientException | JsonProcessingException exception) {
       LogService.logRocketChatServiceError(exception);
       throw new InternalServerErrorException(String.format(
           "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s)",
