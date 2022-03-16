@@ -1,7 +1,5 @@
 package de.caritas.cob.messageservice.api.helper;
 
-import static java.util.Objects.nonNull;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -9,8 +7,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.caritas.cob.messageservice.api.helper.json.OffsetDateTimeToStringSerializer;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
-import de.caritas.cob.messageservice.api.model.MessageType;
-import de.caritas.cob.messageservice.api.model.MessagesDTO;
 import de.caritas.cob.messageservice.api.service.LogService;
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -75,26 +71,6 @@ public class JSONHelper {
           "Could not convert alias String to AliasMessageDTO", jsonParseEx);
       return Optional.empty();
     }
-  }
-
-  public static Optional<AliasMessageDTO> convertMuteStringToAliasMessageDTO(String alias) {
-    MessagesDTO messagesDTO;
-    try {
-      var content = UrlEncodingDecodingUtils.urlDecodeString(alias);
-      messagesDTO = buildObjectMapper().readValue(content, MessagesDTO.class);
-    } catch (IOException jsonParseEx) {
-      return Optional.empty();
-    }
-
-    var t = messagesDTO.getT();
-    if (nonNull(t) && t.equalsIgnoreCase("user-muted")) {
-      var aliasMessage = new AliasMessageDTO();
-      aliasMessage.setMessageType(MessageType.USER_MUTED);
-
-      return Optional.of(aliasMessage);
-    }
-
-    return Optional.empty();
   }
 
   /**
