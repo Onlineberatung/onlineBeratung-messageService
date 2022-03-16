@@ -116,11 +116,11 @@ public class RocketChatService {
     HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
     try {
-      LogService.logInfo("Request groups.message: " + uri);
+      log.info("Request groups.message: {}", uri);
       var body = restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class)
           .getBody();
       var bodyString = new ObjectMapper().writeValueAsString(body);
-      LogService.logInfo("Response groups.message: " + bodyString);
+      log.info("Response groups.message: {}", bodyString);
 
       return body;
 
