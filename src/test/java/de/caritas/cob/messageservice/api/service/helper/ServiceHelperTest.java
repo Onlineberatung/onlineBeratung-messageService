@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import de.caritas.cob.messageservice.api.service.TenantHeaderSupplier;
 import java.util.Enumeration;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +34,9 @@ public class ServiceHelperTest {
 
   @Mock
   private AuthenticatedUser authenticatedUser;
+
+  @Spy
+  private TenantHeaderSupplier tenantHeaderSupplier;
 
   private HttpServletRequest httpServletRequest  = new MockHttpServletRequest();
 
