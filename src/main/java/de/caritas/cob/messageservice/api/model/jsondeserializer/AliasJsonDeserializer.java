@@ -56,12 +56,7 @@ public class AliasJsonDeserializer extends JsonDeserializer<AliasMessageDTO> {
       return buildAliasMessageDTOByOldForwardDTO(forwardMessageDTO.get());
     }
 
-    var videoCallMessage = buildAliasMessageDTOWithPossibleVideoCallMessageDTO(aliasValue);
-    if (nonNull(videoCallMessage)) {
-      return videoCallMessage;
-    }
-
-    return JSONHelper.convertMuteStringToAliasMessageDTO(aliasValue).orElse(null);
+    return buildAliasMessageDTOWithPossibleVideoCallMessageDTO(aliasValue);
   }
 
   private AliasMessageDTO buildAliasMessageDTOByOldForwardDTO(ForwardMessageDTO forwardMessageDTO) {

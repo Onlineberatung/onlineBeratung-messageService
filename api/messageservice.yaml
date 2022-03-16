@@ -379,9 +379,6 @@ components:
         _id:
           type: string
           example: "M73fE4WhYF4peYB3s"
-        t:
-          type: string
-          example: room_changed_privacy
         alias:
           $ref: '#/components/schemas/AliasMessageDTO'
         rid:
@@ -483,7 +480,6 @@ components:
         - "FURTHER_STEPS"
         - "UPDATE_SESSION_DATA"
         - "VIDEOCALL"
-        - "USER_MUTED"
 
     UserDTO:
       type: object
