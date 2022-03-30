@@ -429,7 +429,7 @@ components:
       required:
         - message
         - timestamp
-        - username
+        - displayName
         - rcUserId
       properties:
         message:
@@ -439,7 +439,7 @@ components:
           type: string
           description: "Full qualified timestamp"
           example: "2018-11-15T09:33:00.057Z"
-        username:
+        displayName:
           type: string
           example: "asker23"
         rcUserId:

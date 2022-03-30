@@ -60,7 +60,7 @@ public class AliasJsonDeserializer extends JsonDeserializer<AliasMessageDTO> {
   }
 
   private AliasMessageDTO buildAliasMessageDTOByOldForwardDTO(ForwardMessageDTO forwardMessageDTO) {
-    forwardMessageDTO.setUsername(userHelper.decodeUsername(forwardMessageDTO.getUsername()));
+    forwardMessageDTO.setDisplayName(userHelper.decodeUsername(forwardMessageDTO.getDisplayName()));
     return new AliasMessageDTO().forwardMessageDTO(forwardMessageDTO);
   }
 
@@ -76,7 +76,7 @@ public class AliasJsonDeserializer extends JsonDeserializer<AliasMessageDTO> {
   private void decodeUsernameOfForwardMessageDTOIfNonNull(AliasMessageDTO alias) {
     if (nonNull(alias.getForwardMessageDTO())) {
       alias.getForwardMessageDTO()
-          .setUsername(userHelper.decodeUsername(alias.getForwardMessageDTO().getUsername()));
+          .setDisplayName(userHelper.decodeUsername(alias.getForwardMessageDTO().getDisplayName()));
     }
   }
 

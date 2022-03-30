@@ -90,7 +90,7 @@ public class MessageControllerTestIT {
   private final String VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION =
       "{\"message\": \"Lorem ipsum\", \"sendNotification\": " + SEND_NOTIFICATION + "}";
   private final String VALID_FORWARD_MESSAGE_REQUEST_BODY = "{\"message\": \"" + MESSAGE + "\","
-      + "\"timestamp\": \"2018-11-15T09:33:00.057Z\", \"username\": \"asker23\",\r\n"
+      + "\"timestamp\": \"2018-11-15T09:33:00.057Z\", \"displayName\": \"asker23\",\r\n"
       + "\"rcUserId\": \"ag89h3tjkerg94t\"}";
   private final String INVALID_MESSAGE_REQUEST_BODY = "{\"in\": \"valid\"}";
   private final FileDTO FILE_DTO =

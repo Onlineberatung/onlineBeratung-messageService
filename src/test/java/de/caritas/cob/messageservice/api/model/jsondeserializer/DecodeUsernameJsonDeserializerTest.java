@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.model.jsondeserializer;
 
-import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
-import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_ENCODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.DISPLAYNAME_DECODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.DISPLAYNAME_ENCODED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -41,17 +41,17 @@ public class DecodeUsernameJsonDeserializerTest {
 
   @Test
   public void deserialize_Schould_DecodeEncodedUsername() throws JsonParseException, IOException {
-    String json = "{\"username:\":\"" + USERNAME_ENCODED + "\"}";
+    String json = "{\"username:\":\"" + DISPLAYNAME_ENCODED + "\"}";
     String result = deserializeUsername(json);
-    assertEquals(USERNAME_DECODED, result);
+    assertEquals(DISPLAYNAME_DECODED, result);
   }
 
   @Test
   public void deserialize_SchouldNot_DecodeNotEncodedUsername()
       throws JsonParseException, IOException {
-    String json = "{\"username:\":\"" + USERNAME_DECODED + "\"}";
+    String json = "{\"username:\":\"" + DISPLAYNAME_DECODED + "\"}";
     String result = deserializeUsername(json);
-    assertEquals(USERNAME_DECODED, result);
+    assertEquals(DISPLAYNAME_DECODED, result);
   }
 
   private String deserializeUsername(String json) throws JsonParseException, IOException {

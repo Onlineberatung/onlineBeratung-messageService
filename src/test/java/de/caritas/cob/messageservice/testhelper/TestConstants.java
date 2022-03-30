@@ -42,8 +42,8 @@ public class TestConstants {
    * User
    */
   public static final String ENCODING_PREFIX = "enc.";
-  public static final String USERNAME_ENCODED = ENCODING_PREFIX + "OVZWK4TOMFWWK...";
-  public static final String USERNAME_DECODED = "username";
+  public static final String DISPLAYNAME_ENCODED = ENCODING_PREFIX + "MRUXG4DMMF4U4YLNMU......";
+  public static final String DISPLAYNAME_DECODED = "displayName";
 
   /* Consultant */
   public static final String CONSULTANT_ID = "d63f4cc0-215d-40e2-a866-2d3e910f0590";
@@ -53,24 +53,12 @@ public class TestConstants {
    */
   public static final String MESSAGE = "Lorem ipsum";
   public static final String MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME =
-      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_ENCODED
+      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22displayName%22%3A%22"
+          + DISPLAYNAME_ENCODED
           + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
   public static final String MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME =
-      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_DECODED
-          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
-  public static final String MESSAGE_ALIAS_VIDEOCALL_JSON_WITH_ENCODED_USERNAME =
-      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_ENCODED
-          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
-  public static final String MESSAGE_ALIAS_VIDEOCALL_JSON_WITH_DECODED_USERNAME =
-      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_DECODED
-          + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
-  public static final String COMPLETE_MESSAGE_ALIAS_DTO_JSON_WITH_ENCODED_USERNAMES =
-      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22username%22%3A%22"
-          + USERNAME_DECODED
+      "{\"alias\":\"%7B%22timestamp%22%3A%221568128850636%22%2C%22displayName%22%3A%22"
+          + DISPLAYNAME_DECODED
           + "%22%2C%22rcUserId%22%3A%22p5NdZSxc2Kh7GfXdB%22%7D\"";
   public static final String MESSAGE_ALIAS_DTO_EMPTY_ALIAS_JSON = "{\"alias\":\"\"";
   public static final String MESSAGE_ALIAS_DTO_NULL_ALIAS_JSON = "{\"alias\":null";

@@ -1,13 +1,13 @@
 package de.caritas.cob.messageservice.api.model.jsondeserializer;
 
 import static de.caritas.cob.messageservice.api.model.VideoCallMessageDTO.EventTypeEnum.IGNORED_CALL;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.DISPLAYNAME_DECODED;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_ALIAS_DTO_EMPTY_ALIAS_JSON;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_ALIAS_DTO_NULL_ALIAS_JSON;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_DECODED_USERNAME;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.MESSAGE_FORWARD_ALIAS_JSON_WITH_ENCODED_USERNAME;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.TIMESTAMP;
-import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -57,7 +57,7 @@ public class AliasJsonDeserializerTest {
             .getForwardMessageDTO();
     assertEquals(RC_USER_ID, result.getRcUserId());
     assertEquals(TIMESTAMP, result.getTimestamp());
-    assertEquals(USERNAME_DECODED, result.getUsername());
+    assertEquals(DISPLAYNAME_DECODED, result.getDisplayName());
   }
 
   @Test
@@ -68,7 +68,7 @@ public class AliasJsonDeserializerTest {
             .getForwardMessageDTO();
     assertEquals(RC_USER_ID, result.getRcUserId());
     assertEquals(TIMESTAMP, result.getTimestamp());
-    assertEquals(USERNAME_DECODED, result.getUsername());
+    assertEquals(DISPLAYNAME_DECODED, result.getDisplayName());
   }
 
   @Test
@@ -127,7 +127,7 @@ public class AliasJsonDeserializerTest {
             .message("message")
             .rcUserId("rcUserId")
             .timestamp("timestamp")
-            .username(encodedUsername))
+            .displayName(encodedUsername))
         .videoCallMessageDTO(new VideoCallMessageDTO()
             .eventType(IGNORED_CALL)
             .initiatorUserName(encodedUsername)
@@ -139,7 +139,7 @@ public class AliasJsonDeserializerTest {
     assertThat(result.getForwardMessageDTO().getMessage(), is("message"));
     assertThat(result.getForwardMessageDTO().getRcUserId(), is("rcUserId"));
     assertThat(result.getForwardMessageDTO().getTimestamp(), is("timestamp"));
-    assertThat(result.getForwardMessageDTO().getUsername(), is(decodedUsername));
+    assertThat(result.getForwardMessageDTO().getDisplayName(), is(decodedUsername));
     assertThat(result.getVideoCallMessageDTO(), notNullValue());
     assertThat(result.getVideoCallMessageDTO().getEventType(), is(IGNORED_CALL));
     assertThat(result.getVideoCallMessageDTO().getInitiatorUserName(), is(decodedUsername));

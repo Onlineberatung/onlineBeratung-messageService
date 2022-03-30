@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.helper;
 
-import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_DECODED;
-import static de.caritas.cob.messageservice.testhelper.TestConstants.USERNAME_ENCODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.DISPLAYNAME_DECODED;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.DISPLAYNAME_ENCODED;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
@@ -21,22 +21,22 @@ public class UserHelperTest {
 
   @Test
   public void encodeUsername_Should_ReturnEncodedUsernameWithReplacedPaddingAndAddedPrefix_WhenDecodedUsernameIsGiven() {
-    assertEquals(USERNAME_ENCODED, userHelper.encodeUsername(USERNAME_DECODED));
+    assertEquals(DISPLAYNAME_ENCODED, userHelper.encodeUsername(DISPLAYNAME_DECODED));
   }
 
   @Test
   public void encodeUsername_Should_ReturnEncodedUsername_WhenEncodedUsernameIsGiven() {
-    assertEquals(USERNAME_ENCODED, userHelper.encodeUsername(USERNAME_ENCODED));
+    assertEquals(DISPLAYNAME_ENCODED, userHelper.encodeUsername(DISPLAYNAME_ENCODED));
   }
 
   @Test
   public void decodeUsername_Should_ReturnDecodedUsername_WhenEncodedUsernameIsGiven() {
-    assertEquals(USERNAME_DECODED, userHelper.decodeUsername(USERNAME_ENCODED));
+    assertEquals(DISPLAYNAME_DECODED, userHelper.decodeUsername(DISPLAYNAME_ENCODED));
   }
 
   @Test
   public void decodeUsername_Should_ReturnDecodedUsername_WhenDecodedUsernameIsGiven() {
-    assertEquals(USERNAME_DECODED, userHelper.decodeUsername(USERNAME_DECODED));
+    assertEquals(DISPLAYNAME_DECODED, userHelper.decodeUsername(DISPLAYNAME_DECODED));
   }
 
 }
