@@ -39,7 +39,7 @@ public class LiveEventNotificationService {
   }
 
   private void addDefaultHeaders(ApiClient apiClient) {
-    HttpHeaders headers = this.serviceHelper.getKeycloakAndCsrfHttpHeaders();
+    HttpHeaders headers = this.serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
     headers.forEach((key, value) -> apiClient.addDefaultHeader(key, value.iterator().next()));
   }
 

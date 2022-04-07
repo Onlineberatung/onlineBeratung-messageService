@@ -61,12 +61,12 @@ public class LiveEventNotificationServiceTest {
     HttpHeaders headers = new HttpHeaders();
     headers.add("header 1", "value 1");
     headers.add("header 2", "value 2");
-    when(this.serviceHelper.getKeycloakAndCsrfHttpHeaders()).thenReturn(headers);
+    when(this.serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders()).thenReturn(headers);
 
     this.liveEventNotificationService.sendLiveEvent("valid");
 
     verify(this.liveproxyControllerApi, times(1)).sendLiveEvent("valid");
-    verify(this.serviceHelper, times(1)).getKeycloakAndCsrfHttpHeaders();
+    verify(this.serviceHelper, times(1)).getKeycloakAndCsrfAndOriginHttpHeaders();
     verify(apiClient, times(2)).addDefaultHeader(anyString(), anyString());
   }
 
@@ -76,7 +76,7 @@ public class LiveEventNotificationServiceTest {
         .when(this.liveproxyControllerApi)
         .sendLiveEvent(anyString());
     when(this.liveproxyControllerApi.getApiClient()).thenReturn(mock(ApiClient.class));
-    when(this.serviceHelper.getKeycloakAndCsrfHttpHeaders()).thenReturn(new HttpHeaders());
+    when(this.serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders()).thenReturn(new HttpHeaders());
 
     this.liveEventNotificationService.sendLiveEvent("valid");
 
