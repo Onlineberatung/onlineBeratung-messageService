@@ -81,6 +81,7 @@ public class RocketChatService {
   private final @NonNull RestTemplate restTemplate;
   private final @NonNull EncryptionService encryptionService;
   private final @NonNull RocketChatCredentialsHelper rcCredentialHelper;
+  private final MessageMapper mapper;
 
   // MVP: count and offset are always 0 to get all messages
   private static final int DEFAULT_COUNT = 0;
@@ -102,6 +103,7 @@ public class RocketChatService {
         .stream()
         .filter(userDTO -> !userDTO.getU().getUsername().equals(rcTechnicalUser))
         .map(msg -> decryptMessageAndSetMessageType(msg, rcGroupId))
+        .map(mapper::typedMessageOf)
         .collect(Collectors.toList()));
 
     return messageStream;

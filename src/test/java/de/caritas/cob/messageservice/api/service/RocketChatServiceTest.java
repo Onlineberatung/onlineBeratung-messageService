@@ -87,6 +87,9 @@ public class RocketChatServiceTest {
   RocketChatCredentialsHelper rcCredentialsHelper;
 
   @Mock
+  private MessageMapper messageMapper;
+
+  @Mock
   private Logger logger;
 
   @Before
@@ -210,6 +213,10 @@ public class RocketChatServiceTest {
     messageStreamDTO.getMessages().get(0).getAlias().setMessageType(null);
     messageStreamDTO.getMessages().get(0).getAlias().setVideoCallMessageDTO(null);
 
+    messageStreamDTO.getMessages().forEach(messagesDTO ->
+        when(messageMapper.typedMessageOf(eq(messagesDTO)))
+            .thenReturn(messagesDTO));
+
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))
         .thenReturn(new ResponseEntity<>(messageStreamDTO,
@@ -232,6 +239,10 @@ public class RocketChatServiceTest {
         .collect(Collectors.toList()));
     messageStreamDTO.getMessages().get(0).getAlias().setMessageType(null);
     messageStreamDTO.getMessages().get(0).getAlias().setForwardMessageDTO(null);
+
+    messageStreamDTO.getMessages().forEach(messagesDTO ->
+        when(messageMapper.typedMessageOf(eq(messagesDTO)))
+            .thenReturn(messagesDTO));
 
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))
@@ -256,6 +267,10 @@ public class RocketChatServiceTest {
     messageStreamDTO.getMessages().get(0).getAlias().setMessageType(MessageType.FURTHER_STEPS);
     messageStreamDTO.getMessages().get(0).getAlias().setForwardMessageDTO(null);
     messageStreamDTO.getMessages().get(0).getAlias().setVideoCallMessageDTO(null);
+
+    messageStreamDTO.getMessages().forEach(messagesDTO ->
+        when(messageMapper.typedMessageOf(eq(messagesDTO)))
+            .thenReturn(messagesDTO));
 
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))

@@ -442,6 +442,8 @@ components:
         username:
           type: string
           example: "asker23"
+        displayName:
+          type: string
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
@@ -460,6 +462,8 @@ components:
         initiatorUserName:
           type: string
           example: "consultant23"
+        rcUserId:
+          type: string
         initiatorRcUserId:
           type: string
           example: "ag89h3tjkerg94t"
@@ -480,6 +484,8 @@ components:
         - "FURTHER_STEPS"
         - "UPDATE_SESSION_DATA"
         - "VIDEOCALL"
+        - "USER_MUTED"
+        - "USER_UNMUTED"
 
     UserDTO:
       type: object
