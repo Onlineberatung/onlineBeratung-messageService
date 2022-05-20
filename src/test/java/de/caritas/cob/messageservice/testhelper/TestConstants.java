@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.testhelper;
 
+import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GroupDto;
@@ -90,4 +91,14 @@ public class TestConstants {
       new GroupDto(RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_NAME);
   public static final GetGroupInfoDto GET_GROUP_INFO_DTO_FEEDBACK_CHAT =
       new GetGroupInfoDto(GROUP_DTO_FEEDBACK_CHAT, true);
+
+  public static ChatMessage createGroupMessage() {
+    return ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
+        .rcGroupId(RC_GROUP_ID).text(MESSAGE).build();
+  }
+
+  public static ChatMessage createFeedbackGroupMessage() {
+    return ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
+        .rcGroupId(RC_FEEDBACK_GROUP_ID).text(MESSAGE).build();
+  }
 }

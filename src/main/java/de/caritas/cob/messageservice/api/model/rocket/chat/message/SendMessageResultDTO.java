@@ -1,29 +1,26 @@
 package de.caritas.cob.messageservice.api.model.rocket.chat.message;
 
-import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 
- * Response object for Rocket.Chat API Call for posting a message
- * https://rocket.chat/docs/developer-guides/rest-api/chat/postmessage/
- * 
- */
-@Setter
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostMessageResponseDTO {
+public class SendMessageResultDTO {
 
+  @JsonProperty("_id")
+  private String id;
+  private String rid;
+  private String msg;
+  private String t;
+  private String e2e;
   @JsonProperty("ts")
   private Date timestamp;
-  private String channel;
-  private boolean success;
-  private String error;
-  private String errorType;
-
+  @JsonProperty("_updatedAt")
+  private Date updatedAt;
 }

@@ -39,4 +39,6 @@ public class DraftMessage {
   @Column(name = "create_date", nullable = false)
   private LocalDateTime createDate;
 
+  @Column(name = "t")
+  private String t;
 }
