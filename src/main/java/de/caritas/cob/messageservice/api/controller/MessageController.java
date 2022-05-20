@@ -96,7 +96,7 @@ public class MessageController implements MessagesApi {
 
     var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcGroupId)
         .text(message.getMessage()).sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
-        .t(message.getT()).build();
+        .type(message.getT()).build();
 
     postGroupMessageFacade.postGroupMessage(groupMessage);
 
@@ -127,7 +127,7 @@ public class MessageController implements MessagesApi {
     }
 
     var forwardMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
-        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage()).t(forwardMessageDTO.getT())
+        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage()).type(forwardMessageDTO.getT())
         .alias(alias.get()).build();
 
     postGroupMessageFacade.postFeedbackGroupMessage(forwardMessage);
@@ -150,7 +150,7 @@ public class MessageController implements MessagesApi {
       @Valid @RequestBody MessageDTO message) {
 
     var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
-        .rcGroupId(rcFeedbackGroupId).t(message.getT()).text(message.getMessage()).build();
+        .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
 
     postGroupMessageFacade.postFeedbackGroupMessage(feedbackMessage);
 

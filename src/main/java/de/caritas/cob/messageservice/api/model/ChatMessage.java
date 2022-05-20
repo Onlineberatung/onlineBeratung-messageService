@@ -12,7 +12,7 @@ public class ChatMessage {
   private String rcGroupId;
   private String text;
   private String alias;
-  private String t;
+  private String type;
   private boolean sendNotification;
 
 }

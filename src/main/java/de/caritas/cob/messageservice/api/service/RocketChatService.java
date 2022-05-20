@@ -185,7 +185,7 @@ public class RocketChatService {
     var headers = getRocketChatHeader(chatMessage.getRcToken(), chatMessage.getRcUserId());
     var encryptedText = encryptText(chatMessage.getText(), chatMessage.getRcGroupId());
     var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), encryptedText,
-        chatMessage.getAlias(), chatMessage.getT());
+        chatMessage.getAlias(), chatMessage.getType());
     var payload = new SendMessageWrapper(sendMessage);
     var request = new HttpEntity<>(payload, headers);
 
