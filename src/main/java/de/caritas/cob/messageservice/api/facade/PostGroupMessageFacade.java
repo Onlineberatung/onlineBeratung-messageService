@@ -12,6 +12,7 @@ import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUserHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ChatMessage;
+import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
@@ -19,6 +20,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.LogService;
+import de.caritas.cob.messageservice.api.service.MessageMapper;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
@@ -43,6 +45,7 @@ public class PostGroupMessageFacade {
   private final @NonNull DraftMessageService draftMessageService;
   private final @NonNull StatisticsService statisticsService;
   private final @NonNull AuthenticatedUser authenticatedUser;
+  private final @NonNull MessageMapper mapper;
 
   @Value("${rocket.systemuser.id}")
   private String rocketChatSystemUserId;
@@ -56,9 +59,27 @@ public class PostGroupMessageFacade {
    *
    * @param chatMessage the message
    */
-  public void postGroupMessage(ChatMessage chatMessage) {
+  public MessageResponseDTO postGroupMessage(ChatMessage chatMessage) {
+    var response = postRocketChatGroupMessage(chatMessage);
+    notifyAndClearDraft(chatMessage);
+    return response;
+  }
 
-    postRocketChatGroupMessage(chatMessage);
+  /**
+   * Posts a message to the given Rocket.Chat feedback group id and sends out a notification e-mail
+   * via the UserService (because we need to get the user information).
+   *
+   * @param feedbackGroupMessage the message
+   */
+  public MessageResponseDTO postFeedbackGroupMessage(ChatMessage feedbackGroupMessage) {
+    var rcFeedbackGroupId = feedbackGroupMessage.getRcGroupId();
+    validateFeedbackChatId(feedbackGroupMessage);
+    var response = postRocketChatGroupMessage(feedbackGroupMessage);
+    notifyAndClearDraftForFeedbackGroup(rcFeedbackGroupId);
+    return response;
+  }
+
+  private void notifyAndClearDraft(ChatMessage chatMessage) {
     this.draftMessageService.deleteDraftMessageIfExist(chatMessage.getRcGroupId());
 
     if (!this.rocketChatSystemUserId.equals(chatMessage.getRcUserId())) {
@@ -77,16 +98,7 @@ public class PostGroupMessageFacade {
         : UserRole.ASKER;
   }
 
-  /**
-   * Posts a message to the given Rocket.Chat feedback group id and sends out a notification e-mail
-   * via the UserService (because we need to get the user information).
-   *
-   * @param feedbackGroupMessage the message
-   */
-  public void postFeedbackGroupMessage(ChatMessage feedbackGroupMessage) {
-    var rcFeedbackGroupId = feedbackGroupMessage.getRcGroupId();
-    validateFeedbackChatId(feedbackGroupMessage);
-    postRocketChatGroupMessage(feedbackGroupMessage);
+  private void notifyAndClearDraftForFeedbackGroup(String rcFeedbackGroupId) {
     draftMessageService.deleteDraftMessageIfExist(rcFeedbackGroupId);
     liveEventNotificationService.sendLiveEvent(rcFeedbackGroupId);
     emailNotificationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
@@ -97,18 +109,16 @@ public class PostGroupMessageFacade {
    *
    * @param groupMessage the message
    */
-  private void postRocketChatGroupMessage(ChatMessage groupMessage) {
-
+  private MessageResponseDTO postRocketChatGroupMessage(ChatMessage groupMessage) {
     try {
       // Send message to Rocket.Chat via RocketChatService
       SendMessageResponseDTO response = rocketChatService.postGroupMessage(groupMessage);
       if (isNull(response) || !response.isSuccess()) {
         throw new InternalServerErrorException();
       }
-
       // Set all messages as read for system message user
       rocketChatService.markGroupAsReadForSystemUser(groupMessage.getRcGroupId());
-
+      return mapper.messageResponseOf(response);
     } catch (RocketChatSendMessageException
              | RocketChatPostMarkGroupAsReadException
              | CustomCryptoException ex) {
@@ -132,11 +142,15 @@ public class PostGroupMessageFacade {
    *
    * @param rcGroupId           the identifier for the Rocket.Chat room
    * @param videoCallMessageDTO the {@link VideoCallMessageDTO}
+   * @return {@link MessageResponseDTO}
    */
-  public void createVideoHintMessage(String rcGroupId, VideoCallMessageDTO videoCallMessageDTO) {
-    AliasMessageDTO aliasMessageDTO =
-        new AliasMessageDTO().videoCallMessageDTO(videoCallMessageDTO);
-    this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO);
+  public MessageResponseDTO createVideoHintMessage(String rcGroupId,
+      VideoCallMessageDTO videoCallMessageDTO) {
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().videoCallMessageDTO(
+        videoCallMessageDTO);
+    var response = this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId,
+        aliasMessageDTO);
+    return mapper.messageResponseOf(response);
   }
 
   /**
@@ -145,9 +159,12 @@ public class PostGroupMessageFacade {
    *
    * @param rcGroupId   Rocket.Chat group ID
    * @param messageType {@link MessageType}
+   * @return {@link MessageResponseDTO}
    */
-  public void postAliasOnlyMessage(String rcGroupId, MessageType messageType) {
+  public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType) {
     AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(messageType);
-    this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO);
+    var response = this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId,
+        aliasMessageDTO);
+    return mapper.messageResponseOf(response);
   }
 }

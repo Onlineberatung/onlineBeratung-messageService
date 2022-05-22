@@ -4,6 +4,10 @@ import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GroupDto;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResultDTO;
+import java.util.Date;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class TestConstants {
 
@@ -100,5 +104,18 @@ public class TestConstants {
   public static ChatMessage createFeedbackGroupMessage() {
     return ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
         .rcGroupId(RC_FEEDBACK_GROUP_ID).text(MESSAGE).build();
+  }
+
+  public static SendMessageResponseDTO createSuccessfulMessageResult(String type, String roomId) {
+    var result = new SendMessageResultDTO();
+    result.setId(RandomStringUtils.randomAlphabetic(16));
+    result.setTimestamp(new Date());
+    result.setUpdatedAt(new Date());
+    result.setRid(roomId);
+    result.setT(type);
+    var successfulResponse = new SendMessageResponseDTO();
+    successfulResponse.setMessage(result);
+    successfulResponse.setSuccess(true);
+    return successfulResponse;
   }
 }

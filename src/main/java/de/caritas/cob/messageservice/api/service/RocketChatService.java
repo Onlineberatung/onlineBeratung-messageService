@@ -209,14 +209,16 @@ public class RocketChatService {
    *
    * @param rcGroupId       the Rocket.Chat group id
    * @param aliasMessageDTO {@link AliasMessageDTO}
+   * @return {@link SendMessageResponseDTO}
    */
-  public void postAliasOnlyMessageAsSystemUser(String rcGroupId, AliasMessageDTO aliasMessageDTO) {
+  public SendMessageResponseDTO postAliasOnlyMessageAsSystemUser(String rcGroupId,
+      AliasMessageDTO aliasMessageDTO) {
     var systemUser = retrieveSystemUser();
     var alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
     var aliasMessage = createAliasMessage(rcGroupId, systemUser, alias);
 
     try {
-      this.postGroupMessage(aliasMessage);
+      return this.postGroupMessage(aliasMessage);
     } catch (CustomCryptoException e) {
       throw new InternalServerErrorException(e, LogService::logInternalServerError);
     }

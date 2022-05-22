@@ -4,6 +4,7 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.DONT_SEND_N
 import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO_FEEDBACK_CHAT;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.SEND_NOTIFICATION;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.createSuccessfulMessageResult;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +30,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResultDTO;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
+import de.caritas.cob.messageservice.api.service.MessageMapper;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
@@ -43,6 +45,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -80,6 +83,10 @@ public class PostGroupMessageFacadeTest {
 
   @Mock
   private AuthenticatedUser authenticatedUser;
+
+  @SuppressWarnings("unused")
+  @Spy
+  private MessageMapper mapper = new MessageMapper();
 
   @Before
   public void setup() {
@@ -365,6 +372,9 @@ public class PostGroupMessageFacadeTest {
   @Test
   public void createVideoHintMessage_Should_triggerRocketChatPost_When_paramsAreGiven() {
     VideoCallMessageDTO callMessageDTO = new EasyRandom().nextObject(VideoCallMessageDTO.class);
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().videoCallMessageDTO(callMessageDTO);
+    when(rocketChatService.postAliasOnlyMessageAsSystemUser("rcGroupId",
+        aliasMessageDTO)).thenReturn(createSuccessfulMessageResult(null, "rcGroupId"));
 
     this.postGroupMessageFacade.createVideoHintMessage("rcGroupId", callMessageDTO);
 
@@ -374,6 +384,10 @@ public class PostGroupMessageFacadeTest {
 
   @Test
   public void postAliasOnlyMessage_Should_triggerRocketChatPostWithCorrectMessageType_When_RcGroupIdIsGiven() {
+    when(rocketChatService.postAliasOnlyMessageAsSystemUser(RC_GROUP_ID,
+        new AliasMessageDTO().messageType(MessageType.FURTHER_STEPS))).thenReturn(
+        createSuccessfulMessageResult(null, RC_GROUP_ID));
+
     this.postGroupMessageFacade.postAliasOnlyMessage(RC_GROUP_ID, MessageType.FURTHER_STEPS);
 
     ArgumentCaptor<AliasMessageDTO> captor = ArgumentCaptor.forClass(AliasMessageDTO.class);
