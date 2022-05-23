@@ -6,11 +6,13 @@ import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftTyp
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
+import de.caritas.cob.messageservice.api.model.DraftMessageDTO;
 import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
 import de.caritas.cob.messageservice.api.model.draftmessage.entity.DraftMessage;
 import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.function.Function;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,15 +32,16 @@ public class DraftMessageService {
    * Encrypts and saves a draft message. The message will be overwritten if a message for the given
    * user and rocket chat group id already exists.
    *
-   * @param message the message to encrypt and persist
+   * @param message   the message to encrypt and persist
    * @param rcGroupId the rocket chat group id
+   * @param t type of the message
    * @return a {@link SavedDraftType} for the created type
    */
-  public synchronized SavedDraftType saveDraftMessage(String message, String rcGroupId) {
+  public synchronized SavedDraftType saveDraftMessage(String message, String rcGroupId, String t) {
 
     Optional<DraftMessage> optionalDraftMessage = findDraftMessage(rcGroupId);
 
-    DraftMessage draftMessage = optionalDraftMessage.orElse(buildNewDraftMessage(rcGroupId));
+    DraftMessage draftMessage = optionalDraftMessage.orElse(buildNewDraftMessage(rcGroupId, t));
     updateMessage(message, rcGroupId, draftMessage);
 
     this.draftMessageRepository.save(draftMessage);
@@ -54,11 +57,12 @@ public class DraftMessageService {
     return optionalDraftMessage.isPresent() ? OVERWRITTEN_MESSAGE : NEW_MESSAGE;
   }
 
-  private DraftMessage buildNewDraftMessage(String rcGroupId) {
+  private DraftMessage buildNewDraftMessage(String rcGroupId, String t) {
     return DraftMessage.builder()
         .createDate(LocalDateTime.now())
         .userId(this.authenticatedUser.getUserId())
         .rcGroupId(rcGroupId)
+        .t(t)
         .build();
   }
 
@@ -90,10 +94,26 @@ public class DraftMessageService {
    * @param rcGroupId the rocket chat group id
    * @return an {@link Optional} of the database query result
    */
-  public String findAndDecryptDraftMessage(String rcGroupId) {
-    Optional<DraftMessage> message = findDraftMessage(rcGroupId);
-    return message.map(draftMessage -> decryptMessage(draftMessage.getMessage(), rcGroupId))
-        .orElse(null);
+  public Optional<DraftMessageDTO> findAndDecryptDraftMessage(String rcGroupId) {
+    return findDraftMessage(rcGroupId)
+        .map(toDecryptedMessage(rcGroupId))
+        .map(toDraftMessageDTO());
+  }
+
+  private Function<DraftMessage, DraftMessageDTO> toDraftMessageDTO() {
+    return dm -> {
+      var dto = new DraftMessageDTO();
+      dto.setMessage(dm.getMessage());
+      dto.setT(dm.getT());
+      return dto;
+    };
+  }
+
+  private Function<DraftMessage, DraftMessage> toDecryptedMessage(String rcGroupId) {
+    return dm -> {
+      dm.setMessage(decryptMessage(dm.getMessage(), rcGroupId));
+      return dm;
+    };
   }
 
   private String decryptMessage(String encryptedMessage, String rcGroupId) {

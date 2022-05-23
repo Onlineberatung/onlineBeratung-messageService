@@ -1,14 +1,15 @@
 package de.caritas.cob.messageservice.api.controller;
 
-import static java.util.Objects.nonNull;
-
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
+import de.caritas.cob.messageservice.api.model.ChatMessage;
+import de.caritas.cob.messageservice.api.model.DraftMessageDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
+import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
@@ -90,13 +91,19 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> createMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> createMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    postGroupMessageFacade.postGroupMessage(rcToken, rcUserId, rcGroupId, message);
+    var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+        .rcGroupId(rcGroupId)
+        .text(message.getMessage())
+        .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
+        .type(message.getT()).build();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = postGroupMessageFacade.postGroupMessage(groupMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -110,7 +117,7 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> forwardMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> forwardMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody ForwardMessageDTO forwardMessageDTO) {
 
@@ -118,14 +125,17 @@ public class MessageController implements MessagesApi {
         JSONHelper.convertAliasMessageDTOToString(
             new AliasMessageDTO().forwardMessageDTO(forwardMessageDTO));
 
-    if (!alias.isPresent()) {
+    if (alias.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
-        rcGroupId, forwardMessageDTO.getMessage(), alias.get());
+    var forwardMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage()).type(forwardMessageDTO.getT())
+        .alias(alias.get()).build();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = postGroupMessageFacade.postFeedbackGroupMessage(forwardMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -138,14 +148,16 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> createFeedbackMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> createFeedbackMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcFeedbackGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
-        rcFeedbackGroupId, message.getMessage(), null);
+    var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+        .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = postGroupMessageFacade.postFeedbackGroupMessage(feedbackMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -156,12 +168,13 @@ public class MessageController implements MessagesApi {
    *                            written in the alias object
    */
   @Override
-  public ResponseEntity<Void> createVideoHintMessage(@RequestHeader String rcGroupId,
+  public ResponseEntity<MessageResponseDTO> createVideoHintMessage(@RequestHeader String rcGroupId,
       @Valid @RequestBody VideoCallMessageDTO videoCallMessageDTO) {
 
-    this.postGroupMessageFacade.createVideoHintMessage(rcGroupId, videoCallMessageDTO);
+    var response = this.postGroupMessageFacade.createVideoHintMessage(rcGroupId,
+        videoCallMessageDTO);
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -173,8 +186,11 @@ public class MessageController implements MessagesApi {
    */
   @Override
   public ResponseEntity<Void> saveDraftMessage(@RequestHeader String rcGroupId,
-      @Valid @RequestBody String message) {
-    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message, rcGroupId);
+      @Valid @RequestBody DraftMessageDTO message) {
+
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message.getMessage(),
+        rcGroupId, message.getT());
+
     return new ResponseEntity<>(savedDraftType.getHttpStatus());
   }
 
@@ -185,10 +201,11 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<String> findDraftMessage(@RequestHeader String rcGroupId) {
-    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(rcGroupId);
-    return nonNull(draftMessage) ? ResponseEntity.ok(draftMessage) :
-        new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  public ResponseEntity<DraftMessageDTO> findDraftMessage(@RequestHeader String rcGroupId) {
+    Optional<DraftMessageDTO> draftMessage = this.draftMessageService.findAndDecryptDraftMessage(
+        rcGroupId);
+    return draftMessage.map(ResponseEntity::ok)
+        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
   }
 
   /**
@@ -199,10 +216,13 @@ public class MessageController implements MessagesApi {
    * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
-  @Override public ResponseEntity<Void> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
+  @Override
+  public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
-    postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, aliasOnlyMessageDTO.getMessageType());
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId,
+        aliasOnlyMessageDTO.getMessageType());
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 }

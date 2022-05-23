@@ -4,7 +4,6 @@ import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftTyp
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.OVERWRITTEN_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,6 +33,7 @@ public class DraftMessageServiceTest {
   private DraftMessageRepository draftMessageRepository;
 
   @Mock
+  @SuppressWarnings("unused")
   private AuthenticatedUser authenticatedUser;
 
   @Mock
@@ -43,8 +43,8 @@ public class DraftMessageServiceTest {
   public void saveDraftMessage_Should_returnNewMessageType_When_noMessageForUserAndRcGroupExists()
       throws CustomCryptoException {
 
-    SavedDraftType savedDraftType = this.draftMessageService
-        .saveDraftMessage("message", "rcGroupId");
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message",
+        "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(NEW_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
@@ -58,7 +58,7 @@ public class DraftMessageServiceTest {
         .thenReturn(Optional.of(new DraftMessage()));
 
     SavedDraftType savedDraftType = this.draftMessageService
-        .saveDraftMessage("message", "rcGroupId");
+        .saveDraftMessage("message", "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
@@ -88,36 +88,37 @@ public class DraftMessageServiceTest {
     when(this.encryptionService.encrypt(any(), any()))
         .thenThrow(new CustomCryptoException(new Exception()));
 
-    this.draftMessageService.saveDraftMessage("message", "rcGroupId");
+    this.draftMessageService.saveDraftMessage("message", "rcGroupId", "e2e");
   }
 
   @Test
   public void findAndDecryptDraftMessage_Should_returnNull_When_noDraftMessageIsPresent() {
-    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
+    var draftMessage = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
 
-    assertThat(draftMessage, nullValue());
+    assertThat(draftMessage.isEmpty(), is(true));
     verifyNoInteractions(this.encryptionService);
   }
 
   @Test
   public void findAndDecryptDraftMessage_Should_returnNull_When_rcGroupIdIsNull() {
-    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(null);
+    var draftMessage = this.draftMessageService.findAndDecryptDraftMessage(null);
 
-    assertThat(draftMessage, nullValue());
+    assertThat(draftMessage.isEmpty(), is(true));
     verifyNoInteractions(this.encryptionService);
   }
 
   @Test
   public void findAndDecryptDraftMessage_Should_returnDecryptedMessage_When_draftMessageIsPresent()
       throws CustomCryptoException {
-    DraftMessage draftMessage = DraftMessage.builder().message("encrypted").build();
+    var draftMessage = DraftMessage.builder().message("encrypted").build();
     when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
         .thenReturn(Optional.of(draftMessage));
     when(this.encryptionService.decrypt(any(), any())).thenReturn("decrypted");
 
-    String message = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
+    var message = this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
 
-    assertThat(message, is("decrypted"));
+    assertThat(message.isPresent(), is(true));
+    assertThat(message.get().getMessage(), is("decrypted"));
     verify(this.encryptionService, times(1)).decrypt("encrypted", "rcGroupId");
   }
 
@@ -126,7 +127,8 @@ public class DraftMessageServiceTest {
       throws CustomCryptoException {
     when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
         .thenReturn(Optional.of(new DraftMessage()));
-    when(this.encryptionService.decrypt(any(), any())).thenThrow(new CustomCryptoException(new Exception()));
+    when(this.encryptionService.decrypt(any(), any())).thenThrow(
+        new CustomCryptoException(new Exception()));
 
     this.draftMessageService.findAndDecryptDraftMessage("rcGroupId");
   }
