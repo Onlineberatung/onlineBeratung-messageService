@@ -1,9 +1,13 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.createSuccessfulMessageResult;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,10 +21,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
+import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
+import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO.EventTypeEnum;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
+import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
+import de.caritas.cob.messageservice.api.model.rocket.chat.group.GroupDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
@@ -28,6 +37,8 @@ import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
+import java.net.URI;
+import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
@@ -142,14 +153,11 @@ public class MessageControllerE2EIT {
   public void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
-    givenSuccessfulSendMessageResponse();
+    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
+    givenSuccessfulSendMessageResponse("e2e", rcGroupId);
     when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
 
-    var encryptedMessage = new MessageDTO();
-    encryptedMessage.setMessage("enc.secret_message");
-    encryptedMessage.setT("e2e");
-
-    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
+    MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
 
     mockMvc.perform(
             post("/messages/new")
@@ -170,6 +178,118 @@ public class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getAlias()).isNull();
     assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
     assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
+  public void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
+    givenSuccessfulSendMessageResponse("e2e", rcGroupId);
+    when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
+
+    MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
+
+    mockMvc.perform(
+            post("/messages/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .header("rcGroupId", rcGroupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(encryptedMessage))
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("ts").isNotEmpty())
+        .andExpect(jsonPath("_updatedAt").isNotEmpty())
+        .andExpect(jsonPath("t", is("e2e")))
+        .andExpect(jsonPath("rid", is(rcGroupId)))
+        .andExpect(jsonPath("_id").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT})
+  public void createVideoHintMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
+    givenSuccessfulSendMessageResponse(null, rcGroupId);
+    VideoCallMessageDTO vcm = createVideoCallMessage();
+
+    mockMvc.perform(
+            post("/messages/videohint/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcGroupId", rcGroupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(vcm))
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("ts").isNotEmpty())
+        .andExpect(jsonPath("_updatedAt").isNotEmpty())
+        .andExpect(jsonPath("rid", is(rcGroupId)))
+        .andExpect(jsonPath("t", is(nullValue())))
+        .andExpect(jsonPath("_id").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
+  public void createFeedbackMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    givenAFeedbackGroupResponse();
+    var rcFeedbackGroupId = RandomStringUtils.randomAlphabetic(16);
+    givenSuccessfulSendMessageResponse(null, rcFeedbackGroupId);
+    MessageDTO feedbackMessage = createMessage("a feedback message", null);
+
+    mockMvc.perform(
+            post("/messages/feedback/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .header("rcFeedbackGroupId", rcFeedbackGroupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(feedbackMessage))
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("ts").isNotEmpty())
+        .andExpect(jsonPath("_updatedAt").isNotEmpty())
+        .andExpect(jsonPath("rid", is(rcFeedbackGroupId)))
+        .andExpect(jsonPath("t", is(nullValue())))
+        .andExpect(jsonPath("_id").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
+  public void forwardMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    givenAFeedbackGroupResponse();
+    givenSuccessfulSendMessageResponse("e2e", RC_GROUP_ID);
+    ForwardMessageDTO forwardMessage = createForwardMessage();
+
+    mockMvc.perform(
+            post("/messages/forward")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(forwardMessage))
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("ts").isNotEmpty())
+        .andExpect(jsonPath("_updatedAt").isNotEmpty())
+        .andExpect(jsonPath("rid", is(RC_GROUP_ID)))
+        .andExpect(jsonPath("t", is("e2e")))
+        .andExpect(jsonPath("_id").isNotEmpty());
   }
 
   private void givenSomeMessagesWithMutedUnmutedType() {
@@ -213,10 +333,49 @@ public class MessageControllerE2EIT {
     when(chatCredentialsHelper.getSystemUser()).thenReturn(rcCredentials);
   }
 
-  private void givenSuccessfulSendMessageResponse() {
-    var successfulResponse = new SendMessageResponseDTO();
-    successfulResponse.setSuccess(true);
+  private void givenSuccessfulSendMessageResponse(String type, String roomId) {
+    var successfulResponse = createSuccessfulMessageResult(type, roomId);
     when(restTemplate.postForObject(anyString(), sendMessagePayloadCaptor.capture(),
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
+  }
+
+  private void givenAFeedbackGroupResponse() {
+    var getGroupInfoDto = new GetGroupInfoDto();
+    var feedbackGroup = new GroupDto();
+    feedbackGroup.setName("feedback chat Akajsdhn");
+    getGroupInfoDto.setGroup(feedbackGroup);
+    var getGroupInfoDtoHttpEntity = new ResponseEntity<>(getGroupInfoDto, HttpStatus.OK);
+    when(
+        restTemplate.exchange(any(URI.class), eq(HttpMethod.GET), any(),
+            eq(GetGroupInfoDto.class))).thenReturn(
+        getGroupInfoDtoHttpEntity);
+  }
+
+  private MessageDTO createMessage(String text, String type) {
+    var feedbackMessage = new MessageDTO();
+    feedbackMessage.setMessage(text);
+    feedbackMessage.setT(type);
+    return feedbackMessage;
+  }
+
+  private VideoCallMessageDTO createVideoCallMessage() {
+    var consultantId = RandomStringUtils.randomAlphabetic(16);
+    var vcm = new VideoCallMessageDTO();
+    vcm.setRcUserId(RC_USER_ID);
+    vcm.setInitiatorUserName("Heinrich");
+    vcm.setInitiatorRcUserId(consultantId);
+    vcm.setEventType(EventTypeEnum.IGNORED_CALL);
+    return vcm;
+  }
+
+  private ForwardMessageDTO createForwardMessage() {
+    var forwardMessage = new ForwardMessageDTO();
+    forwardMessage.setMessage("plx forward");
+    forwardMessage.setTimestamp(new Date().toString());
+    forwardMessage.setT("e2e");
+    forwardMessage.setUsername("Heinrich");
+    forwardMessage.setRcUserId(RC_USER_ID);
+    forwardMessage.setDisplayName("hk");
+    return forwardMessage;
   }
 }
