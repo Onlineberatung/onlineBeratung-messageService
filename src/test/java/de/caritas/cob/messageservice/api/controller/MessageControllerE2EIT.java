@@ -304,7 +304,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
-  public void saveAliasOnlyMessageShouldReturnSendMessageResult() throws Exception {
+  void saveAliasOnlyMessageShouldReturnSendMessageResult() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     givenAnAliasOnlyMessage(false);
@@ -330,7 +330,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
-  public void saveAliasOnlyMessageShouldReturnBadRequestIfTypeIsProtected() throws Exception {
+  void saveAliasOnlyMessageShouldReturnBadRequestIfTypeIsProtected() throws Exception {
     givenAuthenticatedUser();
     givenAnAliasOnlyMessage(true);
 
