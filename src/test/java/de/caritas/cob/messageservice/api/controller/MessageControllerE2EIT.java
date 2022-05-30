@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -102,6 +103,13 @@ public class MessageControllerE2EIT {
 
   @Captor
   private ArgumentCaptor<HttpEntity<SendMessageWrapper>> sendMessagePayloadCaptor;
+
+  private AliasOnlyMessageDTO aliasOnlyMessage;
+
+  @AfterEach
+  void reset() {
+    aliasOnlyMessage = null;
+  }
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
@@ -299,9 +307,8 @@ public class MessageControllerE2EIT {
   public void saveAliasOnlyMessageShouldReturnSendMessageResult() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
+    givenAnAliasOnlyMessage(false);
     givenSuccessfulSendMessageResponse(null, RC_GROUP_ID);
-
-    var aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mockMvc.perform(
             post("/messages/aliasonly/new")
@@ -319,6 +326,23 @@ public class MessageControllerE2EIT {
         .andExpect(jsonPath("t", is(nullValue())))
         .andExpect(jsonPath("e2e", is(nullValue())))
         .andExpect(jsonPath("_id").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  public void saveAliasOnlyMessageShouldReturnBadRequestIfTypeIsProtected() throws Exception {
+    givenAuthenticatedUser();
+    givenAnAliasOnlyMessage(true);
+
+    mockMvc.perform(
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON)
+    ).andExpect(status().isBadRequest());
   }
 
   private void givenSomeMessagesWithMutedUnmutedType() {
@@ -366,6 +390,19 @@ public class MessageControllerE2EIT {
     var successfulResponse = createSuccessfulMessageResult(type, roomId);
     when(restTemplate.postForObject(anyString(), sendMessagePayloadCaptor.capture(),
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
+  }
+
+  private void givenAnAliasOnlyMessage(boolean muteUnmute) {
+    if (muteUnmute) {
+      var type = easyRandom.nextBoolean() ? MessageType.USER_MUTED : MessageType.USER_UNMUTED;
+      aliasOnlyMessage = new AliasOnlyMessageDTO();
+      aliasOnlyMessage.setMessageType(type);
+    } else {
+      do {
+        aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+      } while (aliasOnlyMessage.getMessageType().equals(MessageType.USER_MUTED)
+          || aliasOnlyMessage.getMessageType().equals(MessageType.USER_UNMUTED));
+    }
   }
 
   private void givenAFeedbackGroupResponse() {
