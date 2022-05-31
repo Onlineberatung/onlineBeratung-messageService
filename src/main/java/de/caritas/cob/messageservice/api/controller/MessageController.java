@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -219,9 +220,13 @@ public class MessageController implements MessagesApi {
   @Override
   public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
+    var type = aliasOnlyMessageDTO.getMessageType();
+    if (type.equals(MessageType.USER_MUTED) || type.equals(MessageType.USER_UNMUTED)) {
+      var message = String.format("Message type (%s) is protected.", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId,
-        aliasOnlyMessageDTO.getMessageType());
+    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
