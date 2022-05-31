@@ -393,16 +393,20 @@ public class MessageControllerE2EIT {
   }
 
   private void givenAnAliasOnlyMessage(boolean muteUnmute) {
+    aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+
+    MessageType messageType;
     if (muteUnmute) {
-      var type = easyRandom.nextBoolean() ? MessageType.USER_MUTED : MessageType.USER_UNMUTED;
-      aliasOnlyMessage = new AliasOnlyMessageDTO();
-      aliasOnlyMessage.setMessageType(type);
+      messageType = easyRandom.nextBoolean() ? MessageType.USER_MUTED : MessageType.USER_UNMUTED;
     } else {
       do {
-        aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
-      } while (aliasOnlyMessage.getMessageType().equals(MessageType.USER_MUTED)
-          || aliasOnlyMessage.getMessageType().equals(MessageType.USER_UNMUTED));
+        messageType = easyRandom.nextObject(MessageType.class);
+      } while (
+          messageType.equals(MessageType.USER_MUTED) || messageType.equals(MessageType.USER_UNMUTED)
+      );
     }
+
+    aliasOnlyMessage.setMessageType(messageType);
   }
 
   private void givenAFeedbackGroupResponse() {
