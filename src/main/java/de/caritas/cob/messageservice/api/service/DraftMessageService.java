@@ -13,6 +13,7 @@ import de.caritas.cob.messageservice.api.model.draftmessage.entity.DraftMessage;
 import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -42,13 +43,29 @@ public class DraftMessageService {
   public synchronized SavedDraftType saveDraftMessage(String message, String originalMessage,
       String rcGroupId, String t) {
 
-    Optional<DraftMessage> optionalDraftMessage = findDraftMessage(rcGroupId);
-
-    DraftMessage draftMessage = optionalDraftMessage.orElse(buildNewDraftMessage(rcGroupId, t));
+    var optionalDraftMessage = findDraftMessage(rcGroupId);
+    var draftMessage = createOrUpdateDraftMessage(rcGroupId, t, optionalDraftMessage);
     updateMessage(message, originalMessage, rcGroupId, draftMessage);
-
     this.draftMessageRepository.save(draftMessage);
+
     return extractSavedDraftType(optionalDraftMessage);
+  }
+
+  private DraftMessage createOrUpdateDraftMessage(String rcGroupId, String t,
+      Optional<DraftMessage> optionalDraftMessage) {
+    var draftMessageRef = new AtomicReference<DraftMessage>();
+    optionalDraftMessage.ifPresentOrElse(
+        dm -> {
+          dm.setT(t);
+          draftMessageRef.set(dm);
+        },
+        () -> {
+          var dm = buildNewDraftMessage(rcGroupId, t);
+          draftMessageRef.set(dm);
+        }
+    );
+
+    return draftMessageRef.get();
   }
 
   private Optional<DraftMessage> findDraftMessage(String rcGroupId) {
