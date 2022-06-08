@@ -12,6 +12,7 @@ import de.caritas.cob.messageservice.api.model.draftmessage.entity.DraftMessage;
 import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -34,18 +35,34 @@ public class DraftMessageService {
    *
    * @param message   the message to encrypt and persist
    * @param rcGroupId the rocket chat group id
-   * @param t type of the message
+   * @param t         type of the message
    * @return a {@link SavedDraftType} for the created type
    */
   public synchronized SavedDraftType saveDraftMessage(String message, String rcGroupId, String t) {
 
-    Optional<DraftMessage> optionalDraftMessage = findDraftMessage(rcGroupId);
-
-    DraftMessage draftMessage = optionalDraftMessage.orElse(buildNewDraftMessage(rcGroupId, t));
+    var optionalDraftMessage = findDraftMessage(rcGroupId);
+    var draftMessage = createOrUpdateDraftMessage(rcGroupId, t, optionalDraftMessage);
     updateMessage(message, rcGroupId, draftMessage);
-
     this.draftMessageRepository.save(draftMessage);
+
     return extractSavedDraftType(optionalDraftMessage);
+  }
+
+  private DraftMessage createOrUpdateDraftMessage(String rcGroupId, String t,
+      Optional<DraftMessage> optionalDraftMessage) {
+    var draftMessageRef = new AtomicReference<DraftMessage>();
+    optionalDraftMessage.ifPresentOrElse(
+        dm -> {
+          dm.setT(t);
+          draftMessageRef.set(dm);
+        },
+        () -> {
+          var dm = buildNewDraftMessage(rcGroupId, t);
+          draftMessageRef.set(dm);
+        }
+    );
+
+    return draftMessageRef.get();
   }
 
   private Optional<DraftMessage> findDraftMessage(String rcGroupId) {

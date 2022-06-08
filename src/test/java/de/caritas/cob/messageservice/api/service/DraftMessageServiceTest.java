@@ -19,6 +19,8 @@ import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,6 +40,9 @@ public class DraftMessageServiceTest {
 
   @Mock
   private EncryptionService encryptionService;
+
+  @Captor
+  ArgumentCaptor<DraftMessage> captor;
 
   @Test
   public void saveDraftMessage_Should_returnNewMessageType_When_noMessageForUserAndRcGroupExists()
@@ -61,8 +66,10 @@ public class DraftMessageServiceTest {
         .saveDraftMessage("message", "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
-    verify(this.draftMessageRepository, times(1)).save(any());
-    verify(this.encryptionService, times(1)).encrypt(any(), any());
+    verify(this.encryptionService).encrypt(any(), any());
+
+    verify(this.draftMessageRepository).save(captor.capture());
+    assertThat("e2e", is(captor.getValue().getT()));
   }
 
   @Test
