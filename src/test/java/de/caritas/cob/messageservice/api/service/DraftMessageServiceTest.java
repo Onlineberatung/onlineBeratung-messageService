@@ -66,7 +66,7 @@ public class DraftMessageServiceTest {
         "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
-    verify(this.encryptionService).encrypt(any(), any());
+    verify(this.encryptionService, times(2)).encrypt(any(), any());
 
     verify(this.draftMessageRepository).save(captor.capture());
     assertThat("e2e", is(captor.getValue().getT()));
