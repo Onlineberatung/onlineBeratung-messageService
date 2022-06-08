@@ -69,4 +69,7 @@ public class MessagesDTO {
 
   @ApiModelProperty
   private String t;
+
+  @ApiModelProperty
+  private String org;
 }

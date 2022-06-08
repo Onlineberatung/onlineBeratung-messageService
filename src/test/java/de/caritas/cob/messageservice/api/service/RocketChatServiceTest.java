@@ -198,7 +198,7 @@ public class RocketChatServiceTest {
 
     rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID);
 
-    verify(encryptionService, times(5)).decrypt(anyString(), anyString());
+    verify(encryptionService, times(10)).decrypt(anyString(), anyString());
   }
 
   @Test

@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.service;
 
 import static com.github.jknack.handlebars.internal.lang3.StringUtils.EMPTY;
+import static com.github.jknack.handlebars.internal.lang3.StringUtils.isNotBlank;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -19,10 +20,10 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials
 import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.PostGroupAsReadDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.net.URI;
 import java.util.Collections;
@@ -154,7 +155,7 @@ public class RocketChatService {
   private void decryptMessage(MessagesDTO msg, String rcGroupId) {
     try {
       msg.setMsg(encryptionService.decrypt(msg.getMsg(), rcGroupId));
-
+      msg.setOrg(encryptionService.decrypt(msg.getOrg(), rcGroupId));
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     }
@@ -184,8 +185,13 @@ public class RocketChatService {
 
     var headers = getRocketChatHeader(chatMessage.getRcToken(), chatMessage.getRcUserId());
     var encryptedText = encryptText(chatMessage.getText(), chatMessage.getRcGroupId());
+    String encryptedOrgText = null;
+    if (isNotBlank(chatMessage.getOrgText())) {
+      encryptedOrgText = encryptText(chatMessage.getOrgText(), chatMessage.getRcGroupId());
+    }
+
     var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), encryptedText,
-        chatMessage.getAlias(), chatMessage.getType());
+        encryptedOrgText, chatMessage.getAlias(), chatMessage.getType());
     var payload = new SendMessageWrapper(sendMessage);
     var request = new HttpEntity<>(payload, headers);
 

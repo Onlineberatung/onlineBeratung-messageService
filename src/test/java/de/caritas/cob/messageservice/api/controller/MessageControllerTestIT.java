@@ -107,7 +107,7 @@ public class MessageControllerTestIT {
           .imagePreview(RC_ATTACHMENT_IMAGE_PREVIEW);
   private final MessagesDTO MESSAGES_DTO = new MessagesDTO("123", null, RC_GROUP_ID, MESSAGE,
       RC_TIMESTAMP, new UserDTO(RC_USER_ID, "test", "name"), false, new String[0], new String[0],
-      RC_TIMESTAMP, Arrays.array(ATTACHMENT_DTO), FILE_DTO, null);
+      RC_TIMESTAMP, Arrays.array(ATTACHMENT_DTO), FILE_DTO, null, null);
   private final String PATH_UPDATE_KEY = "/messages/key?key=";
   private final String PATH_DRAFT_MESSAGE = "/messages/draft";
   private final String QUERY_PARAM_OFFSET = "offset";
@@ -440,7 +440,8 @@ public class MessageControllerTestIT {
   public void saveDraftMessage_Should_returnCreated_When_messageIsNew() throws Exception {
     var draftMessageDTO = new DraftMessageDTO();
     draftMessageDTO.setMessage("message");
-    when(this.draftMessageService.saveDraftMessage(any(), any(), any())).thenReturn(NEW_MESSAGE);
+    when(this.draftMessageService.saveDraftMessage(any(), any(), any(), any())).thenReturn(
+        NEW_MESSAGE);
 
     mvc.perform(post(PATH_DRAFT_MESSAGE)
             .content(new ObjectMapper().writeValueAsString(draftMessageDTO))
@@ -451,7 +452,7 @@ public class MessageControllerTestIT {
 
   @Test
   public void saveDraftMessage_Should_returnOk_When_messageIsOverwritten() throws Exception {
-    when(this.draftMessageService.saveDraftMessage(any(), any(), any())).thenReturn(
+    when(this.draftMessageService.saveDraftMessage(any(), any(), any(), any())).thenReturn(
         OVERWRITTEN_MESSAGE);
     var draftMessage = new DraftMessageDTO();
     draftMessage.setMessage("message");

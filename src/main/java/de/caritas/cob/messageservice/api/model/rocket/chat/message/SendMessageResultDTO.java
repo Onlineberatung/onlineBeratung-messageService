@@ -19,6 +19,7 @@ public class SendMessageResultDTO {
   private String msg;
   private String t;
   private String e2e;
+  private String org;
   @JsonProperty("ts")
   private Date timestamp;
   @JsonProperty("_updatedAt")

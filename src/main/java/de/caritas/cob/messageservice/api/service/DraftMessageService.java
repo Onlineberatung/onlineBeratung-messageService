@@ -2,6 +2,7 @@ package de.caritas.cob.messageservice.api.service;
 
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.NEW_MESSAGE;
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.OVERWRITTEN_MESSAGE;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
@@ -33,16 +34,18 @@ public class DraftMessageService {
    * Encrypts and saves a draft message. The message will be overwritten if a message for the given
    * user and rocket chat group id already exists.
    *
-   * @param message   the message to encrypt and persist
-   * @param rcGroupId the rocket chat group id
-   * @param t         type of the message
+   * @param message         the message to encrypt and persist
+   * @param originalMessage the original (unencrypted e2e) message
+   * @param rcGroupId       the rocket chat group id
+   * @param t               type of the message
    * @return a {@link SavedDraftType} for the created type
    */
-  public synchronized SavedDraftType saveDraftMessage(String message, String rcGroupId, String t) {
+  public synchronized SavedDraftType saveDraftMessage(String message, String originalMessage,
+      String rcGroupId, String t) {
 
     var optionalDraftMessage = findDraftMessage(rcGroupId);
     var draftMessage = createOrUpdateDraftMessage(rcGroupId, t, optionalDraftMessage);
-    updateMessage(message, rcGroupId, draftMessage);
+    updateMessage(message, originalMessage, rcGroupId, draftMessage);
     this.draftMessageRepository.save(draftMessage);
 
     return extractSavedDraftType(optionalDraftMessage);
@@ -83,9 +86,15 @@ public class DraftMessageService {
         .build();
   }
 
-  private void updateMessage(String message, String rcGroupId, DraftMessage draftMessage) {
+  private void updateMessage(String message, String orgMessage, String rcGroupId,
+      DraftMessage draftMessage) {
     try {
       String encryptedMessage = this.encryptionService.encrypt(message, rcGroupId);
+      // org messages can be null, encryptionService can't handle this
+      if (isNotBlank(orgMessage)) {
+        String encryptedOriginalMessage = this.encryptionService.encrypt(orgMessage, rcGroupId);
+        draftMessage.setOrg(encryptedOriginalMessage);
+      }
       draftMessage.setMessage(encryptedMessage);
     } catch (CustomCryptoException e) {
       throw new InternalServerErrorException(e, LogService::logInternalServerError);
@@ -122,6 +131,7 @@ public class DraftMessageService {
       var dto = new DraftMessageDTO();
       dto.setMessage(dm.getMessage());
       dto.setT(dm.getT());
+      dto.setOrg(dm.getOrg());
       return dto;
     };
   }
@@ -129,6 +139,7 @@ public class DraftMessageService {
   private Function<DraftMessage, DraftMessage> toDecryptedMessage(String rcGroupId) {
     return dm -> {
       dm.setMessage(decryptMessage(dm.getMessage(), rcGroupId));
+      dm.setOrg(decryptMessage(dm.getOrg(), rcGroupId));
       return dm;
     };
   }
