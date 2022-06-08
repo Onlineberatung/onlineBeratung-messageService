@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -160,6 +161,35 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
+  public void getMessagesShouldContainOrgMessage() throws Exception {
+    givenMessages();
+    doAnswer(decryptArgs -> decryptArgs.getArgument(0))
+        .when(encryptionService).decrypt(anyString(), anyString());
+
+    mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("messages", hasSize(5)))
+        .andExpect(jsonPath("messages[0].org").isNotEmpty())
+        .andExpect(jsonPath("messages[0].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[1].org").isNotEmpty())
+        .andExpect(jsonPath("messages[1].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[2].org").isNotEmpty())
+        .andExpect(jsonPath("messages[2].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[3].org").isNotEmpty())
+        .andExpect(jsonPath("messages[3].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[4].org").isNotEmpty())
+        .andExpect(jsonPath("messages[4].msg").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -188,6 +218,41 @@ public class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getAlias()).isNull();
     assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
     assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+  }
+
+  @Test
+  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
+  public void sendMessageShouldTransmitOrgMessage() throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
+    givenSuccessfulSendMessageResponse("e2e", rcGroupId);
+    when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
+    when(encryptionService.encrypt(eq("plain text message"), anyString())).thenReturn(
+        "UNENCRYPTED_MESSAGE");
+    MessageDTO encMessageWithOrg = createMessage("enc.secret_message", "e2e")
+        .org("plain text message");
+
+    mockMvc.perform(
+            post("/messages/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .header("rcGroupId", rcGroupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(encMessageWithOrg))
+        )
+        .andExpect(status().isCreated());
+
+    var body = sendMessagePayloadCaptor.getValue().getBody();
+    assertThat(body).isNotNull();
+    var sendMessageRequest = body.getMessage();
+    assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
+    assertThat(sendMessageRequest.getAlias()).isNull();
+    assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
+    assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+    assertThat(sendMessageRequest.getOrg()).isEqualTo("UNENCRYPTED_MESSAGE");
   }
 
   @Test
@@ -371,6 +436,14 @@ public class MessageControllerE2EIT {
     var messageStreamDTO = new MessageStreamDTO();
     messageStreamDTO.setMessages(messages);
 
+    when(restTemplate.exchange(any(), any(HttpMethod.class), any(), eq(MessageStreamDTO.class)))
+        .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
+  }
+
+  private void givenMessages() {
+    var messages = easyRandom.objects(MessagesDTO.class, 5).collect(Collectors.toList());
+    var messageStreamDTO = new MessageStreamDTO();
+    messageStreamDTO.setMessages(messages);
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(), eq(MessageStreamDTO.class)))
         .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
   }

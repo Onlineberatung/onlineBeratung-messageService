@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import de.caritas.cob.messageservice.MessageServiceApplication;
@@ -29,6 +30,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @TestPropertySource(properties = "spring.profiles.active=testing")
 public class DraftMessageServiceIT {
 
+  public static final String ENC_PREFIX = "enc.";
   @Autowired
   private DraftMessageService draftMessageService;
 
@@ -40,7 +42,10 @@ public class DraftMessageServiceIT {
 
   @Before
   public void setup() throws CustomCryptoException {
-    when(this.encryptionService.encrypt(any(), any())).thenReturn("encrypted");
+    doAnswer(encryptArgs -> ENC_PREFIX + encryptArgs.getArguments()[0]).when(encryptionService)
+        .encrypt(anyString(), anyString());
+    doAnswer(decryptArgs -> String.valueOf(decryptArgs.getArguments()[0]).substring(ENC_PREFIX.length())).when(
+        encryptionService).decrypt(anyString(), anyString());
     when(this.authenticatedUser.getUserId()).thenReturn("userId");
   }
 
@@ -53,7 +58,7 @@ public class DraftMessageServiceIT {
 
     runMultithreaded(() -> {
       try {
-        draftMessageService.saveDraftMessage("message", rcGroupId, "e2e");
+        draftMessageService.saveDraftMessage("message", "original", rcGroupId, "e2e");
         draftMessageService.deleteDraftMessageIfExist(rcGroupId);
       } catch (Exception e) {
         errorCount.incrementAndGet();
@@ -64,15 +69,15 @@ public class DraftMessageServiceIT {
   }
 
   @Test
-  public void should_store_and_load_draft_messages() throws CustomCryptoException {
-    when(encryptionService.decrypt(eq("encrypted"), anyString())).thenReturn("message");
+  public void should_store_and_load_draft_messages() {
     var rcGroupId = "gvkUGHASLÖD";
 
-    draftMessageService.saveDraftMessage("message", rcGroupId, "e2e");
+    draftMessageService.saveDraftMessage("message", "original", rcGroupId, "e2e");
     var loadedDraftMessage = draftMessageService.findAndDecryptDraftMessage(rcGroupId);
 
     assertThat(loadedDraftMessage.isPresent(), is(true));
     assertThat(loadedDraftMessage.get().getMessage(), is(("message")));
     assertThat(loadedDraftMessage.get().getT(), is(("e2e")));
+    assertThat(loadedDraftMessage.get().getOrg(), is(("original")));
   }
 }

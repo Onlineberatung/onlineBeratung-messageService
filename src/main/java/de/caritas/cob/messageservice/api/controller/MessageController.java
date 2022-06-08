@@ -57,8 +57,7 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestParam String rcGroupId) {
 
-    MessageStreamDTO message =
-        rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
+    MessageStreamDTO message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
 
     return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
         : new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -99,6 +98,7 @@ public class MessageController implements MessagesApi {
     var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
         .rcGroupId(rcGroupId)
         .text(message.getMessage())
+        .orgText(message.getOrg())
         .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
         .type(message.getT()).build();
 
@@ -131,9 +131,9 @@ public class MessageController implements MessagesApi {
     }
 
     var forwardMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
-        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage()).type(forwardMessageDTO.getT())
-        .alias(alias.get()).build();
-
+        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage())
+        .orgText(forwardMessageDTO.getOrg()).type(forwardMessageDTO.getT()).alias(alias.get())
+        .build();
     var response = postGroupMessageFacade.postFeedbackGroupMessage(forwardMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -190,7 +190,7 @@ public class MessageController implements MessagesApi {
       @Valid @RequestBody DraftMessageDTO message) {
 
     SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message.getMessage(),
-        rcGroupId, message.getT());
+        message.getOrg(), rcGroupId, message.getT());
 
     return new ResponseEntity<>(savedDraftType.getHttpStatus());
   }

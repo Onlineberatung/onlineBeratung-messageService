@@ -46,6 +46,7 @@ public class MessageMapper {
         .updatedAt(message.getUpdatedAt() != null ? message.getUpdatedAt().toString()
             : new Date().toString())
         .e2e(message.getE2e())
-        .t(message.getT());
+        .t(message.getT())
+        .org(message.getOrg());
   }
 }

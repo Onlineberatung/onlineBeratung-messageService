@@ -41,4 +41,7 @@ public class DraftMessage {
 
   @Column(name = "t")
   private String t;
+
+  @Column(name = "org")
+  private String org;
 }

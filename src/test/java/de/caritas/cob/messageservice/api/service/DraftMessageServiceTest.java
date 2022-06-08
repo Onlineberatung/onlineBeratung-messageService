@@ -43,12 +43,12 @@ public class DraftMessageServiceTest {
   public void saveDraftMessage_Should_returnNewMessageType_When_noMessageForUserAndRcGroupExists()
       throws CustomCryptoException {
 
-    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message",
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
         "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(NEW_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
-    verify(this.encryptionService, times(1)).encrypt(any(), any());
+    verify(this.encryptionService, times(2)).encrypt(any(), any());
   }
 
   @Test
@@ -57,12 +57,12 @@ public class DraftMessageServiceTest {
     when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
         .thenReturn(Optional.of(new DraftMessage()));
 
-    SavedDraftType savedDraftType = this.draftMessageService
-        .saveDraftMessage("message", "rcGroupId", "e2e");
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
+        "rcGroupId", "e2e");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
-    verify(this.encryptionService, times(1)).encrypt(any(), any());
+    verify(this.encryptionService, times(2)).encrypt(any(), any());
   }
 
   @Test
@@ -88,7 +88,7 @@ public class DraftMessageServiceTest {
     when(this.encryptionService.encrypt(any(), any()))
         .thenThrow(new CustomCryptoException(new Exception()));
 
-    this.draftMessageService.saveDraftMessage("message", "rcGroupId", "e2e");
+    this.draftMessageService.saveDraftMessage("message", "original", "rcGroupId", "e2e");
   }
 
   @Test
