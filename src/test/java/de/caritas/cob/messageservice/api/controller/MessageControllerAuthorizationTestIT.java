@@ -50,6 +50,8 @@ public class MessageControllerAuthorizationTestIT {
   private final static String CSRF_COOKIE = "CSRF-TOKEN";
   private final static String CSRF_HEADER = "X-CSRF-TOKEN";
   private final static String CSRF_VALUE = "test";
+  private static final ObjectMapper objectMapper = new ObjectMapper();
+  private static final EasyRandom easyRandom = new EasyRandom();
 
   @Autowired
   private MockMvc mvc;
@@ -305,7 +307,7 @@ public class MessageControllerAuthorizationTestIT {
       throws Exception {
 
     VideoCallMessageDTO videoCallMessageDTO =
-        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+        easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -313,7 +315,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("RCGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .content(objectMapper.writeValueAsString(videoCallMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
@@ -326,7 +328,7 @@ public class MessageControllerAuthorizationTestIT {
       throws Exception {
 
     VideoCallMessageDTO videoCallMessageDTO =
-        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+        easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -334,7 +336,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("RCGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .content(objectMapper.writeValueAsString(videoCallMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
@@ -345,7 +347,7 @@ public class MessageControllerAuthorizationTestIT {
   public void saveAliasOnlyMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -353,7 +355,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
 
@@ -365,7 +367,7 @@ public class MessageControllerAuthorizationTestIT {
   public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserDefaultAuthority()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -373,7 +375,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
@@ -385,13 +387,13 @@ public class MessageControllerAuthorizationTestIT {
   public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
@@ -403,7 +405,7 @@ public class MessageControllerAuthorizationTestIT {
   public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -411,11 +413,28 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
     verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  public void saveAliasOnlyMessageShouldReturnCreatedWhenConsultantDefaultAuthority()
+      throws Exception {
+    var aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+
+    mvc.perform(
+            post("/messages/aliasonly/new")
+                .cookie(csrfCookie)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated());
   }
 
   @Test
@@ -424,7 +443,7 @@ public class MessageControllerAuthorizationTestIT {
       throws Exception {
 
     VideoCallMessageDTO videoCallMessageDTO =
-        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+        easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -432,7 +451,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("RCGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+            .content(objectMapper.writeValueAsString(videoCallMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
@@ -444,7 +463,7 @@ public class MessageControllerAuthorizationTestIT {
   public void sendNewMessage_Should_ReturnCreated_When_AnonyousAuthority()
       throws Exception {
 
-    MessageDTO messageDTO = new EasyRandom().nextObject(MessageDTO.class);
+    MessageDTO messageDTO = easyRandom.nextObject(MessageDTO.class);
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE)
         .cookie(csrfCookie)
@@ -452,7 +471,7 @@ public class MessageControllerAuthorizationTestIT {
         .header("rcToken", RC_TOKEN)
         .header("rcUserId", RC_USER_ID)
         .header("rcGroupId", RC_GROUP_ID)
-        .content(new ObjectMapper().writeValueAsString(messageDTO))
+        .content(objectMapper.writeValueAsString(messageDTO))
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
@@ -478,7 +497,7 @@ public class MessageControllerAuthorizationTestIT {
   public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_TechnicalDefaultAuthority()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
         post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -486,7 +505,7 @@ public class MessageControllerAuthorizationTestIT {
             .header(CSRF_HEADER, CSRF_VALUE)
             .header("rcGroupId", RC_GROUP_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+            .content(objectMapper.writeValueAsString(aliasOnlyMessageDTO))
             .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 

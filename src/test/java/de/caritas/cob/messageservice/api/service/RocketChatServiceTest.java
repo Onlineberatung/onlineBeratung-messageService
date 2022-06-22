@@ -7,6 +7,7 @@ import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.createGroupMessage;
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -25,7 +26,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException;
-import de.caritas.cob.messageservice.api.exception.RocketChatPostMessageException;
+import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
@@ -34,10 +35,10 @@ import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
 import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResultDTO;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jeasy.random.EasyRandom;
@@ -108,8 +109,8 @@ public class RocketChatServiceTest {
         "sort");
     setField(rocketChatService,
         rocketChatService.getClass().getDeclaredField("rcQueryParamSortValue"), "{\"ts\":1}");
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcPostMessageUrl"),
-        "http://localhost/api/v1/chat.postMessage");
+    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcSendMessageUrl"),
+        "http://localhost/api/v1/chat.sendMessage");
     setField(rocketChatService,
         rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_GROUP_MESSAGES_READ),
         FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ);
@@ -197,7 +198,7 @@ public class RocketChatServiceTest {
 
     rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID);
 
-    verify(encryptionService, times(5)).decrypt(anyString(), anyString());
+    verify(encryptionService, times(10)).decrypt(anyString(), anyString());
   }
 
   @Test
@@ -287,19 +288,19 @@ public class RocketChatServiceTest {
   public void postGroupMessage_Should_ReturnRocketChatPostMessageException_When_HttpRequestFails()
       throws CustomCryptoException {
 
-    RocketChatPostMessageException ex = new RocketChatPostMessageException(new Exception("reason"));
+    RocketChatSendMessageException ex = new RocketChatSendMessageException(new Exception("reason"));
 
     when(restTemplate.postForObject(
         ArgumentMatchers.anyString(),
         any(),
-        ArgumentMatchers.<Class<PostMessageResponseDTO>>any()))
+        ArgumentMatchers.<Class<SendMessageResponseDTO>>any()))
         .thenThrow(ex);
 
     when(encryptionService.encrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
         .thenReturn(RC_MESSAGE);
 
     try {
-      rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, RC_MESSAGE, null);
+      rocketChatService.postGroupMessage(createGroupMessage());
       fail("Expected exception: InternalServerErrorException");
     } catch (InternalServerErrorException internalServerErrorException) {
       assertTrue("Expected InternalServerErrorException thrown", true);
@@ -323,21 +324,20 @@ public class RocketChatServiceTest {
       postGroupMessage_Should_ReturnPostMessageResponseDTO_When_ProvidedWithValidParameters()
           throws CustomCryptoException {
 
-    PostMessageResponseDTO response =
-        new PostMessageResponseDTO(new Date(), RC_GROUP_ID, true, "", "");
+    SendMessageResponseDTO response = new SendMessageResponseDTO(new SendMessageResultDTO(), true, null, null);
 
     when(restTemplate.postForObject(
             ArgumentMatchers.anyString(),
             any(),
-            ArgumentMatchers.<Class<PostMessageResponseDTO>>any()))
+            ArgumentMatchers.<Class<SendMessageResponseDTO>>any()))
         .thenReturn(response);
 
     when(encryptionService.encrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
         .thenReturn(RC_MESSAGE);
 
     assertThat(
-        rocketChatService.postGroupMessage(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, RC_MESSAGE, null),
-        instanceOf(PostMessageResponseDTO.class));
+        rocketChatService.postGroupMessage(createGroupMessage()),
+        instanceOf(SendMessageResponseDTO.class));
   }
 
   /** Method: markGroupAsReadForSystemUser */

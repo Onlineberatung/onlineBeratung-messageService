@@ -28,6 +28,8 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TIMESTAM
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_TOKEN;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.SEND_NOTIFICATION;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.createFeedbackGroupMessage;
+import static de.caritas.cob.messageservice.testhelper.TestConstants.createGroupMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,6 +54,8 @@ import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.AttachmentDTO;
+import de.caritas.cob.messageservice.api.model.ChatMessage;
+import de.caritas.cob.messageservice.api.model.DraftMessageDTO;
 import de.caritas.cob.messageservice.api.model.FileDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
@@ -64,13 +68,13 @@ import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.assertj.core.util.Arrays;
 import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -103,7 +107,7 @@ public class MessageControllerTestIT {
           .imagePreview(RC_ATTACHMENT_IMAGE_PREVIEW);
   private final MessagesDTO MESSAGES_DTO = new MessagesDTO("123", null, RC_GROUP_ID, MESSAGE,
       RC_TIMESTAMP, new UserDTO(RC_USER_ID, "test", "name"), false, new String[0], new String[0],
-      RC_TIMESTAMP, Arrays.array(ATTACHMENT_DTO), FILE_DTO, null);
+      RC_TIMESTAMP, Arrays.array(ATTACHMENT_DTO), FILE_DTO, null, null);
   private final String PATH_UPDATE_KEY = "/messages/key?key=";
   private final String PATH_DRAFT_MESSAGE = "/messages/draft";
   private final String QUERY_PARAM_OFFSET = "offset";
@@ -161,8 +165,8 @@ public class MessageControllerTestIT {
   public void createMessage_Should_ReturnBadRequest_WhenHeaderValuesAreMissing() throws Exception {
 
     mvc.perform(
-        post(PATH_POST_CREATE_MESSAGE).content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_MESSAGE).content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
@@ -180,7 +184,7 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
@@ -198,7 +202,7 @@ public class MessageControllerTestIT {
   public void forwardMessage_Should_ReturnBadRequest_WhenHeaderValuesAreMissing() throws Exception {
 
     mvc.perform(post(PATH_POST_FORWARD_MESSAGE).content(VALID_FORWARD_MESSAGE_REQUEST_BODY)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
@@ -218,9 +222,9 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(
-        post(PATH_POST_CREATE_FEEDBACK_MESSAGE)
-            .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_FEEDBACK_MESSAGE)
+                .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
@@ -237,17 +241,17 @@ public class MessageControllerTestIT {
     MessageStreamDTO stream = new MessageStreamDTO().messages(messages);
     String streamJson = convertObjectToJson(stream);
 
-    when(rocketChatService.getGroupMessages(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString())).thenReturn(stream);
+    when(rocketChatService.getGroupMessages(anyString(), anyString(),
+        anyString())).thenReturn(stream);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
-        .param(QUERY_PARAM_COUNT, RC_COUNT).param(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
+            .param(QUERY_PARAM_COUNT, RC_COUNT).param(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
         .andExpect(content().json(streamJson));
 
-    verify(rocketChatService, atLeastOnce()).getGroupMessages(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString());
+    verify(rocketChatService, atLeastOnce()).getGroupMessages(anyString(), anyString(),
+        anyString());
   }
 
   @Test
@@ -255,13 +259,12 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .content(VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .content(VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION)
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, atLeastOnce()).postGroupMessage(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.any());
+    verify(postGroupMessageFacade, atLeastOnce()).postGroupMessage(any(ChatMessage.class));
   }
 
   @Test
@@ -279,14 +282,13 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(post(PATH_POST_CREATE_FEEDBACK_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
-        .header(QUERY_PARAM_RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_ID)
-        .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
+            .header(QUERY_PARAM_RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_ID)
+            .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.isNull());
+    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(any(ChatMessage.class));
   }
 
   /**
@@ -296,16 +298,16 @@ public class MessageControllerTestIT {
   public void getMessageStream_Should_ReturnNoContent_WhenProvidedWithValidRequestValuesAndMessageStreamIsEmpty()
       throws Exception {
 
-    when(rocketChatService.getGroupMessages(Mockito.anyString(), Mockito.anyString(),
-        Mockito.anyString())).thenReturn(null);
+    when(rocketChatService.getGroupMessages(anyString(), anyString(),
+        anyString())).thenReturn(null);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
         .param(QUERY_PARAM_COUNT, RC_COUNT).param(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
 
-    verify(rocketChatService, atLeastOnce()).getGroupMessages(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString());
+    verify(rocketChatService, atLeastOnce()).getGroupMessages(anyString(), anyString(),
+        anyString());
   }
 
   /**
@@ -316,17 +318,15 @@ public class MessageControllerTestIT {
       throws Exception {
 
     doThrow(new InternalServerErrorException())
-        .when(postGroupMessageFacade).postGroupMessage(eq(RC_TOKEN), eq(RC_USER_ID),
-        eq(RC_GROUP_ID), any());
+        .when(postGroupMessageFacade).postGroupMessage(createGroupMessage());
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isInternalServerError());
 
-    verify(postGroupMessageFacade, atLeastOnce()).postGroupMessage(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.any());
+    verify(postGroupMessageFacade, atLeastOnce()).postGroupMessage(any(ChatMessage.class));
   }
 
   @Test
@@ -334,15 +334,15 @@ public class MessageControllerTestIT {
       throws Exception {
 
     doThrow(new InternalServerErrorException())
-        .when(postGroupMessageFacade).postFeedbackGroupMessage(any(), any(), any(), any(), any());
+        .when(postGroupMessageFacade).postFeedbackGroupMessage(any(ChatMessage.class));
 
     mvc.perform(post(PATH_POST_FORWARD_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
         .content(VALID_FORWARD_MESSAGE_REQUEST_BODY).contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isInternalServerError());
 
-    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(
+        any(ChatMessage.class));
   }
 
   @Test
@@ -350,17 +350,17 @@ public class MessageControllerTestIT {
       throws Exception {
 
     doThrow(new InternalServerErrorException()).when(postGroupMessageFacade)
-        .postFeedbackGroupMessage(RC_TOKEN, RC_USER_ID, RC_FEEDBACK_GROUP_ID, MESSAGE, null);
+        .postFeedbackGroupMessage(createFeedbackGroupMessage());
 
     mvc.perform(post(PATH_POST_CREATE_FEEDBACK_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
-        .header(QUERY_PARAM_RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_ID)
-        .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID)
+            .header(QUERY_PARAM_RC_FEEDBACK_GROUP_ID, RC_FEEDBACK_GROUP_ID)
+            .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isInternalServerError());
 
-    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(Mockito.anyString(),
-        Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.isNull());
+    verify(postGroupMessageFacade, atLeastOnce()).postFeedbackGroupMessage(
+        any(ChatMessage.class));
   }
 
   /**
@@ -372,7 +372,7 @@ public class MessageControllerTestIT {
     when(encryptionService.getMasterKey()).thenReturn(MASTER_KEY_1);
 
     mvc.perform(post(PATH_UPDATE_KEY).contentType(MediaType.APPLICATION_JSON)
-        .content(MASTER_KEY_DTO_KEY_2).accept(MediaType.APPLICATION_JSON))
+            .content(MASTER_KEY_DTO_KEY_2).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
   }
 
@@ -385,7 +385,7 @@ public class MessageControllerTestIT {
     when(encryptionService.getMasterKey()).thenReturn(MASTER_KEY_1);
 
     mvc.perform(post(PATH_UPDATE_KEY).contentType(MediaType.APPLICATION_JSON)
-        .content(MASTER_KEY_DTO_KEY_1).accept(MediaType.APPLICATION_JSON))
+            .content(MASTER_KEY_DTO_KEY_1).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isConflict());
   }
 
@@ -401,13 +401,13 @@ public class MessageControllerTestIT {
   public void createMessage_Should_LogInternalServerError_When_InternalServerErrorIsThrown()
       throws Exception {
 
-    doThrow(new InternalServerErrorException())
-        .when(postGroupMessageFacade).postGroupMessage(any(), any(), any(), any());
+    doThrow(new InternalServerErrorException()).when(postGroupMessageFacade)
+        .postGroupMessage(any(ChatMessage.class));
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
-        .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
-        .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .content(VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION)
+            .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isInternalServerError());
 
     verify(logger, atLeastOnce()).error(eq("{}{}"), eq("Internal Server Error: "), anyString());
@@ -423,38 +423,44 @@ public class MessageControllerTestIT {
   @Test
   public void saveDraftMessage_Should_returnBadRequest_When_rcGroupIdIsMissing() throws Exception {
     mvc.perform(post(PATH_DRAFT_MESSAGE)
-        .content("message")
-        .contentType(MediaType.APPLICATION_JSON))
+            .content("message")
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   public void saveDraftMessage_Should_returnBadRequest_When_messageIsMissing() throws Exception {
     mvc.perform(post(PATH_DRAFT_MESSAGE)
-        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .contentType(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   public void saveDraftMessage_Should_returnCreated_When_messageIsNew() throws Exception {
-    when(this.draftMessageService.saveDraftMessage(any(), any())).thenReturn(NEW_MESSAGE);
+    var draftMessageDTO = new DraftMessageDTO();
+    draftMessageDTO.setMessage("message");
+    when(this.draftMessageService.saveDraftMessage(any(), any(), any(), any())).thenReturn(
+        NEW_MESSAGE);
 
     mvc.perform(post(PATH_DRAFT_MESSAGE)
-        .content("message")
-        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .contentType(MediaType.APPLICATION_JSON))
+            .content(new ObjectMapper().writeValueAsString(draftMessageDTO))
+            .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
   }
 
   @Test
   public void saveDraftMessage_Should_returnOk_When_messageIsOverwritten() throws Exception {
-    when(this.draftMessageService.saveDraftMessage(any(), any())).thenReturn(OVERWRITTEN_MESSAGE);
+    when(this.draftMessageService.saveDraftMessage(any(), any(), any(), any())).thenReturn(
+        OVERWRITTEN_MESSAGE);
+    var draftMessage = new DraftMessageDTO();
+    draftMessage.setMessage("message");
 
     mvc.perform(post(PATH_DRAFT_MESSAGE)
-        .content("message")
-        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .contentType(MediaType.APPLICATION_JSON))
+            .content(new ObjectMapper().writeValueAsString(draftMessage))
+            .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
   }
 
@@ -466,24 +472,28 @@ public class MessageControllerTestIT {
 
   @Test
   public void findDraftMessage_Should_returnDraftMessage_When_messageExists() throws Exception {
-    when(this.draftMessageService.findAndDecryptDraftMessage(any())).thenReturn("message");
+    var draftMessageDTO = new DraftMessageDTO();
+    draftMessageDTO.setMessage("message");
+    var draftMessage = Optional.of(draftMessageDTO);
+    when(this.draftMessageService.findAndDecryptDraftMessage(RC_GROUP_ID)).thenReturn(draftMessage);
 
-    String message = mvc.perform(get(PATH_DRAFT_MESSAGE)
-        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .contentType(MediaType.APPLICATION_JSON))
+    String response = mvc.perform(get(PATH_DRAFT_MESSAGE)
+            .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()
         .getContentAsString();
 
-    assertThat(message, is("message"));
+    var draftMessageResponse = new ObjectMapper().readValue(response, DraftMessageDTO.class);
+    assertThat(draftMessageResponse, is(draftMessageDTO));
   }
 
   @Test
   public void findDraftMessage_Should_returnNoContent_When_noDraftMessageExists() throws Exception {
     mvc.perform(get(PATH_DRAFT_MESSAGE)
-        .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-        .contentType(MediaType.APPLICATION_JSON))
+            .header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNoContent());
   }
 
@@ -495,10 +505,10 @@ public class MessageControllerTestIT {
         new EasyRandom().nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
-        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(this.postGroupMessageFacade);
@@ -509,10 +519,10 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(
-        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
-            .header("RCGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+                .header("RCGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(this.postGroupMessageFacade);
@@ -523,11 +533,11 @@ public class MessageControllerTestIT {
       throws Exception {
 
     mvc.perform(
-        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
-            .header("RCGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(new VideoCallMessageDTO()))
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+                .header("RCGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(new VideoCallMessageDTO()))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(this.postGroupMessageFacade);
@@ -541,11 +551,11 @@ public class MessageControllerTestIT {
         new EasyRandom().nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
-        post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
-            .header("RCGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
+                .header("RCGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(videoCallMessageDTO))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
     verify(this.postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
@@ -558,10 +568,10 @@ public class MessageControllerTestIT {
         new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
-        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(this.postGroupMessageFacade);
@@ -571,10 +581,10 @@ public class MessageControllerTestIT {
   public void saveAliasOnlyMessage_Should_ReturnBadRequest_When_AliasOnlyMessageDtoIsMissing()
       throws Exception {
     mvc.perform(
-        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
-            .header("rcGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(this.postGroupMessageFacade);
@@ -588,14 +598,15 @@ public class MessageControllerTestIT {
     aliasOnlyMessageDTO.setMessageType(MessageType.FORWARD);
 
     mvc.perform(
-        post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
-            .header("rcGroupId", RC_GROUP_ID)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
-            .accept(MediaType.APPLICATION_JSON))
+            post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(aliasOnlyMessageDTO))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
     verify(this.postGroupMessageFacade, times(1))
         .postAliasOnlyMessage(RC_GROUP_ID, MessageType.FORWARD);
   }
+
 }
