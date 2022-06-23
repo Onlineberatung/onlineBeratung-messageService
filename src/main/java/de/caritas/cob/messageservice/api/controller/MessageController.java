@@ -1,5 +1,7 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.nonNull;
+
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
@@ -221,12 +223,19 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
     var type = aliasOnlyMessageDTO.getMessageType();
+    var message = aliasOnlyMessageDTO.getMessage();
+
     if (type.equals(MessageType.USER_MUTED) || type.equals(MessageType.USER_UNMUTED)) {
-      var message = String.format("Message type (%s) is protected.", type);
-      throw new BadRequestException(message, LogService::logBadRequest);
+      var errorMessage = String.format("Message type (%s) is protected.", type);
+      throw new BadRequestException(errorMessage, LogService::logBadRequest);
     }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type);
+    if (nonNull(message) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
+      var errorMessage = String.format("A custom message is not supported by type (%s).", type);
+      throw new BadRequestException(errorMessage, LogService::logBadRequest);
+    }
+
+    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, message);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }

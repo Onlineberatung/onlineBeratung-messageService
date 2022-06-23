@@ -89,6 +89,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 public class MessageControllerTestIT {
 
+  private static final EasyRandom easyRandom = new EasyRandom();
+
   private final String VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION =
       "{\"message\": \"Lorem ipsum\", \"sendNotification\": " + DONT_SEND_NOTIFICATION + "}";
   private final String VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION =
@@ -502,7 +504,7 @@ public class MessageControllerTestIT {
       throws Exception {
 
     VideoCallMessageDTO videoCallMessageDTO =
-        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+        easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -548,7 +550,7 @@ public class MessageControllerTestIT {
       throws Exception {
 
     VideoCallMessageDTO videoCallMessageDTO =
-        new EasyRandom().nextObject(VideoCallMessageDTO.class);
+        easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -565,7 +567,7 @@ public class MessageControllerTestIT {
   public void saveAliasOnlyMessage_Should_ReturnBadRequest_When_rcGroupIdIsMissing()
       throws Exception {
     AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+        easyRandom.nextObject(AliasOnlyMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -593,9 +595,9 @@ public class MessageControllerTestIT {
   @Test
   public void saveAliasOnlyMessage_Should_ReturnCreated_When_paramsAreValid()
       throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        new EasyRandom().nextObject(AliasOnlyMessageDTO.class);
+    var aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     aliasOnlyMessageDTO.setMessageType(MessageType.FORWARD);
+    aliasOnlyMessageDTO.setMessage(null);
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -606,7 +608,7 @@ public class MessageControllerTestIT {
         .andExpect(status().isCreated());
 
     verify(this.postGroupMessageFacade, times(1))
-        .postAliasOnlyMessage(RC_GROUP_ID, MessageType.FORWARD);
+        .postAliasOnlyMessage(RC_GROUP_ID, MessageType.FORWARD, null);
   }
 
 }

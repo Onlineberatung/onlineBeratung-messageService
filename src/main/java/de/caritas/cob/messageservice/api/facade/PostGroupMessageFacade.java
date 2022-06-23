@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.facade;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
@@ -13,7 +14,9 @@ import de.caritas.cob.messageservice.api.helper.AuthenticatedUserHelper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.MessageText;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
@@ -86,7 +89,7 @@ public class PostGroupMessageFacade {
       this.liveEventNotificationService.sendLiveEvent(chatMessage.getRcGroupId());
     }
     if (isTrue(chatMessage.isSendNotification())) {
-      emailNotificationFacade.sendEmailNotification(chatMessage.getRcGroupId());
+      emailNotificationFacade.sendEmailAboutNewChatMessage(chatMessage.getRcGroupId());
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
@@ -101,7 +104,7 @@ public class PostGroupMessageFacade {
   private void notifyAndClearDraftForFeedbackGroup(String rcFeedbackGroupId) {
     draftMessageService.deleteDraftMessageIfExist(rcFeedbackGroupId);
     liveEventNotificationService.sendLiveEvent(rcFeedbackGroupId);
-    emailNotificationFacade.sendFeedbackEmailNotification(rcFeedbackGroupId);
+    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(rcFeedbackGroupId);
   }
 
   /**
@@ -161,10 +164,20 @@ public class PostGroupMessageFacade {
    * @param messageType {@link MessageType}
    * @return {@link MessageResponseDTO}
    */
-  public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType) {
-    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(messageType);
-    var response = this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId,
-        aliasMessageDTO);
+  public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType,
+      MessageText message) {
+    var aliasMessage = mapper.aliasMessageDtoOf(messageType);
+    var messageString = mapper.messageStringOf(message);
+
+    var response = rocketChatService.postAliasOnlyMessageAsSystemUser(
+        rcGroupId, aliasMessage, messageString
+    );
+
+    if (nonNull(message) && message.getStatus().equals(ReassignStatus.REQUESTED)) {
+      var toConsultantId = message.getToConsultantId();
+      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, toConsultantId.toString());
+    }
+
     return mapper.messageResponseOf(response);
   }
 }

@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -27,6 +28,7 @@ import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO.EventTypeEnum;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
@@ -369,7 +371,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
-  void saveAliasOnlyMessageShouldReturnSendMessageResult() throws Exception {
+  void saveAliasOnlyMessageShouldReturnSendMessageResultWhenNoMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     givenAnAliasOnlyMessage(false);
@@ -395,9 +397,63 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  void saveAliasOnlyMessageShouldReturnSendMessageResultWhenWithMessage() throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    givenAnAliasOnlyMessageWithSupportedMessage();
+    givenSuccessfulSendMessageResponse(null, RC_GROUP_ID);
+
+    when(encryptionService.encrypt(matches("\\{.+REQUESTED.+\\}"), eq(RC_GROUP_ID)))
+        .thenReturn("ENCRYPTED");
+
+    mockMvc.perform(
+            post("/messages/aliasonly/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+                .accept(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("ts").isNotEmpty())
+        .andExpect(jsonPath("_updatedAt").isNotEmpty())
+        .andExpect(jsonPath("rid", is(RC_GROUP_ID)))
+        .andExpect(jsonPath("t", is(nullValue())))
+        .andExpect(jsonPath("e2e", is(nullValue())))
+        .andExpect(jsonPath("_id").isNotEmpty());
+
+    var body = sendMessagePayloadCaptor.getValue().getBody();
+    assertThat(body).isNotNull();
+    var sendMessageRequest = body.getMessage();
+    assertThat(sendMessageRequest.getAlias()).containsSequence("messageType");
+    assertThat(sendMessageRequest.getAlias()).containsSequence("REASSIGN_CONSULTANT");
+    assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
   void saveAliasOnlyMessageShouldReturnBadRequestIfTypeIsProtected() throws Exception {
     givenAuthenticatedUser();
     givenAnAliasOnlyMessage(true);
+
+    mockMvc.perform(
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON)
+    ).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  void saveAliasOnlyMessageShouldReturnBadRequestIfMessageTypeDoesNotSupportAMessage()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAnAliasOnlyMessageWithUnsupportedMessage();
 
     mockMvc.perform(
         post("/messages/aliasonly/new")
@@ -465,8 +521,23 @@ public class MessageControllerE2EIT {
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
   }
 
+  private void givenAnAliasOnlyMessageWithUnsupportedMessage() {
+    aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    var messageType = easyRandom.nextBoolean()
+        ? MessageType.FURTHER_STEPS
+        : MessageType.E2EE_ACTIVATED;
+    aliasOnlyMessage.setMessageType(messageType);
+  }
+
+  private void givenAnAliasOnlyMessageWithSupportedMessage() {
+    aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    aliasOnlyMessage.setMessageType(MessageType.REASSIGN_CONSULTANT);
+    aliasOnlyMessage.getMessage().setStatus(ReassignStatus.REQUESTED);
+  }
+
   private void givenAnAliasOnlyMessage(boolean muteUnmute) {
     aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    aliasOnlyMessage.setMessage(null);
 
     MessageType messageType;
     if (muteUnmute) {

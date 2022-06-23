@@ -1,17 +1,25 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.MessageText;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import java.util.Date;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class MessageMapper {
+
+  private final ObjectMapper objectMapper;
 
   public MessagesDTO typedMessageOf(MessagesDTO messagesDTO) {
     var messageType = messagesDTO.getT();
@@ -29,7 +37,7 @@ public class MessageMapper {
     return messagesDTO;
   }
 
-  private AliasMessageDTO aliasMessageDtoOf(MessageType messageType) {
+  public AliasMessageDTO aliasMessageDtoOf(MessageType messageType) {
     var alias = new AliasMessageDTO();
     alias.setMessageType(messageType);
 
@@ -48,5 +56,17 @@ public class MessageMapper {
         .e2e(message.getE2e())
         .t(message.getT())
         .org(message.getOrg());
+  }
+
+  public String messageStringOf(MessageText message) {
+    if (isNull(message)) {
+      return null;
+    }
+
+    try {
+      return objectMapper.writeValueAsString(message);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
