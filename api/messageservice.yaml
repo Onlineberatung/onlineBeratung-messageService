@@ -560,6 +560,7 @@ components:
         - "USER_MUTED"
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
+        - "MASTER_KEY_LOST"
 
     UserDTO:
       type: object
