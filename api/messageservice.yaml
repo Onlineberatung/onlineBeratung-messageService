@@ -562,6 +562,7 @@ components:
         - "USER_MUTED"
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
+        - "MASTER_KEY_LOST"
         - "REASSIGN_CONSULTANT"
 
     MessageText:

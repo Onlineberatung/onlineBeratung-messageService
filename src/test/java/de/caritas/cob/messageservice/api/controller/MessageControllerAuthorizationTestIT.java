@@ -307,8 +307,7 @@ public class MessageControllerAuthorizationTestIT {
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserAuthority()
       throws Exception {
 
-    VideoCallMessageDTO videoCallMessageDTO =
-        easyRandom.nextObject(VideoCallMessageDTO.class);
+    var videoCallMessageDTO = easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -328,8 +327,7 @@ public class MessageControllerAuthorizationTestIT {
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_ConsultantAuthority()
       throws Exception {
 
-    VideoCallMessageDTO videoCallMessageDTO =
-        easyRandom.nextObject(VideoCallMessageDTO.class);
+    var videoCallMessageDTO = easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -347,8 +345,7 @@ public class MessageControllerAuthorizationTestIT {
   @Test
   public void saveAliasOnlyMessage_Should_ReturnUnauthorizedAndCallNoMethods_When_NoKeycloakAuthorization()
       throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        givenAValidAliasOnlyMessageDTO();
+    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -367,8 +364,7 @@ public class MessageControllerAuthorizationTestIT {
   @WithMockUser
   public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoUserDefaultAuthority()
       throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        givenAValidAliasOnlyMessageDTO();
+    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -387,8 +383,7 @@ public class MessageControllerAuthorizationTestIT {
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void saveAliasOnlyMessage_Should_ReturnForbiddenAndCallNoMethods_When_NoCsrfTokens()
       throws Exception {
-    AliasOnlyMessageDTO aliasOnlyMessageDTO =
-        givenAValidAliasOnlyMessageDTO();
+    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -405,7 +400,7 @@ public class MessageControllerAuthorizationTestIT {
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_UserDefaultAuthority()
       throws Exception {
-    var aliasOnlyMessageDTO = givenAValidAliasOnlyMessageDTO();
+    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -424,7 +419,7 @@ public class MessageControllerAuthorizationTestIT {
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
   public void saveAliasOnlyMessageShouldReturnCreatedWhenConsultantDefaultAuthority()
       throws Exception {
-    var aliasOnlyMessageDTO = givenAValidAliasOnlyMessageDTO();
+    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
 
     mvc.perform(
             post("/messages/aliasonly/new")
@@ -442,8 +437,7 @@ public class MessageControllerAuthorizationTestIT {
   public void createVideoHintMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_AnonyousAuthority()
       throws Exception {
 
-    VideoCallMessageDTO videoCallMessageDTO =
-        easyRandom.nextObject(VideoCallMessageDTO.class);
+    var videoCallMessageDTO = easyRandom.nextObject(VideoCallMessageDTO.class);
 
     mvc.perform(
             post(PATH_POST_CREATE_VIDEO_HINT_MESSAGE)
@@ -463,7 +457,7 @@ public class MessageControllerAuthorizationTestIT {
   public void sendNewMessage_Should_ReturnCreated_When_AnonyousAuthority()
       throws Exception {
 
-    MessageDTO messageDTO = easyRandom.nextObject(MessageDTO.class);
+    var messageDTO = easyRandom.nextObject(MessageDTO.class);
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE)
             .cookie(csrfCookie)
@@ -520,5 +514,18 @@ public class MessageControllerAuthorizationTestIT {
     }
 
     return alias;
+  }
+
+  AliasOnlyMessageDTO createAliasOnlyMessageWithoutProtectedType() {
+    AliasOnlyMessageDTO aliasOnlyMessageDTO;
+    do {
+      aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    } while (isProtectedMessageType(aliasOnlyMessageDTO.getMessageType()));
+    return aliasOnlyMessageDTO;
+  }
+
+  private boolean isProtectedMessageType(MessageType messageType) {
+    return messageType == MessageType.USER_MUTED
+        || messageType == MessageType.USER_UNMUTED;
   }
 }
