@@ -521,6 +521,9 @@ public class MessageControllerAuthorizationTestIT {
     do {
       aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     } while (isProtectedMessageType(aliasOnlyMessageDTO.getMessageType()));
+
+    aliasOnlyMessageDTO.setMessage(null);
+
     return aliasOnlyMessageDTO;
   }
 
