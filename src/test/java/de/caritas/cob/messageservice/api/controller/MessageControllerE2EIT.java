@@ -11,8 +11,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -21,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
+import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
@@ -39,6 +38,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
+import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
@@ -52,9 +52,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -64,14 +64,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "spring.profiles.active=testing")
-@AutoConfigureTestDatabase(replace = Replace.ANY)
+@ActiveProfiles("testing")
+@AutoConfigureTestDatabase
 public class MessageControllerE2EIT {
 
   private static final EasyRandom easyRandom = new EasyRandom();
@@ -83,11 +85,14 @@ public class MessageControllerE2EIT {
   @Autowired
   private MockMvc mockMvc;
 
-  @MockBean
-  private RestTemplate restTemplate;
+  @Autowired
+  private EncryptionService encryptionService;
+
+  @Autowired
+  private RocketChatService rocketChatService;
 
   @MockBean
-  private EncryptionService encryptionService;
+  private RestTemplate restTemplate;
 
   @MockBean
   @SuppressWarnings("unused")
@@ -112,6 +117,7 @@ public class MessageControllerE2EIT {
   @AfterEach
   void reset() {
     aliasOnlyMessage = null;
+    encryptionService.updateMasterKey("initialMasterKey");
   }
 
   @Test
@@ -165,8 +171,6 @@ public class MessageControllerE2EIT {
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   public void getMessagesShouldContainOrgMessage() throws Exception {
     givenMessages();
-    doAnswer(decryptArgs -> decryptArgs.getArgument(0))
-        .when(encryptionService).decrypt(anyString(), anyString());
 
     mockMvc.perform(
             get("/messages")
@@ -197,8 +201,7 @@ public class MessageControllerE2EIT {
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse("e2e", rcGroupId);
-    when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
-
+    givenAMasterKey();
     MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
 
     mockMvc.perform(
@@ -219,21 +222,20 @@ public class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
     assertThat(sendMessageRequest.getAlias()).isNull();
     assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
-    assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+    assertThat(sendMessageRequest.getMsg()).startsWith("enc:");
   }
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
+  @DirtiesContext
   public void sendMessageShouldTransmitOrgMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse("e2e", rcGroupId);
-    when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
-    when(encryptionService.encrypt(eq("plain text message"), anyString())).thenReturn(
-        "UNENCRYPTED_MESSAGE");
-    MessageDTO encMessageWithOrg = createMessage("enc.secret_message", "e2e")
+    var encMessageWithOrg = createMessage("enc.secret_message", "e2e")
         .org("plain text message");
+    givenEncryptionCapturing(encMessageWithOrg.getMessage(), encMessageWithOrg.getOrg());
 
     mockMvc.perform(
             post("/messages/new")
@@ -253,8 +255,8 @@ public class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
     assertThat(sendMessageRequest.getAlias()).isNull();
     assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
-    assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
-    assertThat(sendMessageRequest.getOrg()).isEqualTo("UNENCRYPTED_MESSAGE");
+    assertThat(sendMessageRequest.getMsg()).isEqualTo("encCameIn");
+    assertThat(sendMessageRequest.getOrg()).isEqualTo("plainCameIn");
   }
 
   @Test
@@ -264,7 +266,7 @@ public class MessageControllerE2EIT {
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse("e2e", rcGroupId);
-    when(encryptionService.encrypt(eq("enc.secret_message"), anyString())).thenReturn("ENCRYPTED");
+    givenAMasterKey();
 
     MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
 
@@ -295,6 +297,7 @@ public class MessageControllerE2EIT {
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse(null, rcGroupId);
     VideoCallMessageDTO vcm = createVideoCallMessage();
+    givenAMasterKey();
 
     mockMvc.perform(
             post("/messages/videohint/new")
@@ -322,6 +325,7 @@ public class MessageControllerE2EIT {
     var rcFeedbackGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse(null, rcFeedbackGroupId);
     MessageDTO feedbackMessage = createMessage("a feedback message", null);
+    givenAMasterKey();
 
     mockMvc.perform(
             post("/messages/feedback/new")
@@ -349,6 +353,7 @@ public class MessageControllerE2EIT {
     givenRocketChatSystemUser();
     givenAFeedbackGroupResponse();
     givenSuccessfulSendMessageResponse("e2e", RC_GROUP_ID);
+    givenAMasterKey();
     ForwardMessageDTO forwardMessage = createForwardMessage();
 
     mockMvc.perform(
@@ -376,6 +381,7 @@ public class MessageControllerE2EIT {
     givenRocketChatSystemUser();
     givenAnAliasOnlyMessage(false);
     givenSuccessfulSendMessageResponse(null, RC_GROUP_ID);
+    givenAMasterKey();
 
     mockMvc.perform(
             post("/messages/aliasonly/new")
@@ -402,9 +408,7 @@ public class MessageControllerE2EIT {
     givenRocketChatSystemUser();
     givenAnAliasOnlyMessageWithSupportedMessage();
     givenSuccessfulSendMessageResponse(null, RC_GROUP_ID);
-
-    when(encryptionService.encrypt(matches("\\{.+REQUESTED.+\\}"), eq(RC_GROUP_ID)))
-        .thenReturn("ENCRYPTED");
+    givenAMasterKey();
 
     mockMvc.perform(
             post("/messages/aliasonly/new")
@@ -428,7 +432,7 @@ public class MessageControllerE2EIT {
     var sendMessageRequest = body.getMessage();
     assertThat(sendMessageRequest.getAlias()).containsSequence("messageType");
     assertThat(sendMessageRequest.getAlias()).containsSequence("REASSIGN_CONSULTANT");
-    assertThat(sendMessageRequest.getMsg()).isEqualTo("ENCRYPTED");
+    assertThat(sendMessageRequest.getMsg()).startsWith("enc:");
   }
 
   @Test
@@ -464,6 +468,17 @@ public class MessageControllerE2EIT {
             .content(objectMapper.writeValueAsString(aliasOnlyMessage))
             .accept(MediaType.APPLICATION_JSON)
     ).andExpect(status().isBadRequest());
+  }
+
+  private void givenAMasterKey() {
+    encryptionService.updateMasterKey(RandomStringUtils.randomAlphanumeric(16));
+  }
+
+  private void givenEncryptionCapturing(String encMessage, String plainMessage) throws CustomCryptoException {
+    var encServiceMock = Mockito.mock(EncryptionService.class);
+    ReflectionTestUtils.setField(rocketChatService, "encryptionService", encServiceMock);
+    when(encServiceMock.encrypt(eq(encMessage), anyString())).thenReturn("encCameIn");
+    when(encServiceMock.encrypt(eq(plainMessage), anyString())).thenReturn("plainCameIn");
   }
 
   private void givenSomeMessagesWithMutedUnmutedType() {
