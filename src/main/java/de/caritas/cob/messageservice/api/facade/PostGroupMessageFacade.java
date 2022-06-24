@@ -11,10 +11,10 @@ import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsRead
 import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUserHelper;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
-import de.caritas.cob.messageservice.api.model.MessageText;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
@@ -165,16 +165,16 @@ public class PostGroupMessageFacade {
    * @return {@link MessageResponseDTO}
    */
   public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType,
-      MessageText message) {
+      AliasArgs aliasArgs) {
     var aliasMessage = mapper.aliasMessageDtoOf(messageType);
-    var messageString = mapper.messageStringOf(message);
+    var messageString = mapper.messageStringOf(aliasArgs);
 
     var response = rocketChatService.postAliasOnlyMessageAsSystemUser(
         rcGroupId, aliasMessage, messageString
     );
 
-    if (nonNull(message) && message.getStatus().equals(ReassignStatus.REQUESTED)) {
-      var toConsultantId = message.getToConsultantId();
+    if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
+      var toConsultantId = aliasArgs.getToConsultantId();
       emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, toConsultantId.toString());
     }
 

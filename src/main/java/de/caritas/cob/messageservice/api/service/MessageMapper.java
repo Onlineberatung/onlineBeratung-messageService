@@ -5,9 +5,9 @@ import static java.util.Objects.nonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
-import de.caritas.cob.messageservice.api.model.MessageText;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
@@ -58,13 +58,13 @@ public class MessageMapper {
         .org(message.getOrg());
   }
 
-  public String messageStringOf(MessageText message) {
-    if (isNull(message)) {
+  public String messageStringOf(AliasArgs aliasArgs) {
+    if (isNull(aliasArgs)) {
       return null;
     }
 
     try {
-      return objectMapper.writeValueAsString(message);
+      return objectMapper.writeValueAsString(aliasArgs);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

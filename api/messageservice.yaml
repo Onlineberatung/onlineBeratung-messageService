@@ -548,8 +548,8 @@ components:
       properties:
         messageType:
           $ref: '#/components/schemas/MessageType'
-        message:
-          $ref: '#/components/schemas/MessageText'
+        args:
+          $ref: '#/components/schemas/AliasArgs'
 
     MessageType:
       type: string
@@ -565,7 +565,7 @@ components:
         - "MASTER_KEY_LOST"
         - "REASSIGN_CONSULTANT"
 
-    MessageText:
+    AliasArgs:
       type: object
       required:
         - toConsultantId

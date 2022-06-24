@@ -532,12 +532,12 @@ public class MessageControllerE2EIT {
   private void givenAnAliasOnlyMessageWithSupportedMessage() {
     aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     aliasOnlyMessage.setMessageType(MessageType.REASSIGN_CONSULTANT);
-    aliasOnlyMessage.getMessage().setStatus(ReassignStatus.REQUESTED);
+    aliasOnlyMessage.getArgs().setStatus(ReassignStatus.REQUESTED);
   }
 
   private void givenAnAliasOnlyMessage(boolean muteUnmute) {
     aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
-    aliasOnlyMessage.setMessage(null);
+    aliasOnlyMessage.setArgs(null);
 
     MessageType messageType;
     if (muteUnmute) {

@@ -223,19 +223,19 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
     var type = aliasOnlyMessageDTO.getMessageType();
-    var message = aliasOnlyMessageDTO.getMessage();
+    var aliasArgs = aliasOnlyMessageDTO.getArgs();
 
     if (type.equals(MessageType.USER_MUTED) || type.equals(MessageType.USER_UNMUTED)) {
-      var errorMessage = String.format("Message type (%s) is protected.", type);
-      throw new BadRequestException(errorMessage, LogService::logBadRequest);
+      var message = String.format("Message type (%s) is protected.", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    if (nonNull(message) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
-      var errorMessage = String.format("A custom message is not supported by type (%s).", type);
-      throw new BadRequestException(errorMessage, LogService::logBadRequest);
+    if (nonNull(aliasArgs) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
+      var message = String.format("Alias args are not supported by type (%s).", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, message);
+    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }

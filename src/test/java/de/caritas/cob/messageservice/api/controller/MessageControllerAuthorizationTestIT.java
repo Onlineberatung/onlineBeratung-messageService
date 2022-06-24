@@ -507,7 +507,7 @@ public class MessageControllerAuthorizationTestIT {
 
   private AliasOnlyMessageDTO givenAValidAliasOnlyMessageDTO() {
     var alias = easyRandom.nextObject(AliasOnlyMessageDTO.class);
-    alias.setMessage(null);
+    alias.setArgs(null);
     while (alias.getMessageType().equals(MessageType.USER_MUTED)
         || alias.getMessageType().equals(MessageType.USER_UNMUTED)) {
       alias.setMessageType(easyRandom.nextObject(MessageType.class));
@@ -522,7 +522,7 @@ public class MessageControllerAuthorizationTestIT {
       aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     } while (isProtectedMessageType(aliasOnlyMessageDTO.getMessageType()));
 
-    aliasOnlyMessageDTO.setMessage(null);
+    aliasOnlyMessageDTO.setArgs(null);
 
     return aliasOnlyMessageDTO;
   }

@@ -597,7 +597,7 @@ public class MessageControllerTestIT {
       throws Exception {
     var aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     aliasOnlyMessageDTO.setMessageType(MessageType.FORWARD);
-    aliasOnlyMessageDTO.setMessage(null);
+    aliasOnlyMessageDTO.setArgs(null);
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
