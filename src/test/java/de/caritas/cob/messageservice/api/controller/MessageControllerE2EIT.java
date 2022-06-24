@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,12 +18,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
+import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
+import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
@@ -43,7 +48,9 @@ import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHel
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -113,11 +120,14 @@ public class MessageControllerE2EIT {
   private ArgumentCaptor<HttpEntity<SendMessageWrapper>> sendMessagePayloadCaptor;
 
   private AliasOnlyMessageDTO aliasOnlyMessage;
+  private List<MessagesDTO> messages;
+  private ConsultantReassignment consultantReassignment;
 
   @AfterEach
   void reset() {
     aliasOnlyMessage = null;
     encryptionService.updateMasterKey("initialMasterKey");
+    messages = null;
   }
 
   @Test
@@ -143,6 +153,36 @@ public class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[3].alias.messageType", is("USER_UNMUTED")))
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_MUTED"))))
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_UNMUTED"))));
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void getMessagesShouldRespondWithAliasArgsConsultantReassign() throws Exception {
+    givenAMasterKey();
+    var groupId = RandomStringUtils.randomAlphabetic(16);
+    givenAMessageWithAnEncryptedConsultantReassignment(groupId);
+
+    var response = mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", groupId)
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("messages", hasSize(1)))
+        .andExpect(jsonPath("messages[0].alias.messageType", is("REASSIGN_CONSULTANT")))
+        .andExpect(jsonPath("messages[0].rid", is(groupId)))
+        .andExpect(jsonPath("messages[0].msg").isNotEmpty())
+        .andReturn().getResponse().getContentAsString();
+
+    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    var messagesResponse = objectMapper.readValue(response, MessageStreamDTO.class);
+    var message = messagesResponse.getMessages().get(1).getMsg(); // 1 due to split before
+    var consultantReassignment = objectMapper.readValue(message, ConsultantReassignment.class);
+
+    assertEquals(this.consultantReassignment, consultantReassignment);
   }
 
   @Test
@@ -474,7 +514,8 @@ public class MessageControllerE2EIT {
     encryptionService.updateMasterKey(RandomStringUtils.randomAlphanumeric(16));
   }
 
-  private void givenEncryptionCapturing(String encMessage, String plainMessage) throws CustomCryptoException {
+  private void givenEncryptionCapturing(String encMessage, String plainMessage)
+      throws CustomCryptoException {
     var encServiceMock = Mockito.mock(EncryptionService.class);
     ReflectionTestUtils.setField(rocketChatService, "encryptionService", encServiceMock);
     when(encServiceMock.encrypt(eq(encMessage), anyString())).thenReturn("encCameIn");
@@ -504,6 +545,34 @@ public class MessageControllerE2EIT {
     var messages = easyRandom.objects(MessagesDTO.class, 5).collect(Collectors.toList());
     messages.forEach(message -> message.setAlias(null));
 
+    var messageStreamDTO = new MessageStreamDTO();
+    messageStreamDTO.setMessages(messages);
+
+    when(restTemplate.exchange(any(), any(HttpMethod.class), any(), eq(MessageStreamDTO.class)))
+        .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
+  }
+
+  private void givenAMessageWithAnEncryptedConsultantReassignment(String groupId) {
+    consultantReassignment = new ConsultantReassignment();
+    consultantReassignment.setToConsultantId(UUID.randomUUID());
+    consultantReassignment.setStatus(ReassignStatus.REQUESTED);
+
+    var message = easyRandom.nextObject(MessagesDTO.class);
+    message.setOrg(null);
+    message.setRid(groupId);
+    var alias = new AliasMessageDTO();
+    alias.setMessageType(MessageType.REASSIGN_CONSULTANT);
+    message.setAlias(alias);
+
+    try {
+      var argsString = objectMapper.writeValueAsString(consultantReassignment);
+      var encryptedMessage = encryptionService.encrypt(argsString, groupId);
+      message.setMsg(encryptedMessage);
+    } catch (CustomCryptoException | JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+
+    messages = List.of(message);
     var messageStreamDTO = new MessageStreamDTO();
     messageStreamDTO.setMessages(messages);
 
