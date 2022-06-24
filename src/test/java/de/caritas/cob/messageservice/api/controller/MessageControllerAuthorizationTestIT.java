@@ -22,6 +22,7 @@ import de.caritas.cob.messageservice.api.service.RocketChatService;
 import javax.servlet.http.Cookie;
 import org.jeasy.random.EasyRandom;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @TestPropertySource(properties = "spring.profiles.active=testing")
 @SpringBootTest
 @AutoConfigureMockMvc
+@Ignore
 public class MessageControllerAuthorizationTestIT {
 
   protected final static String PATH_GET_MESSAGE_STREAM = "/messages";
