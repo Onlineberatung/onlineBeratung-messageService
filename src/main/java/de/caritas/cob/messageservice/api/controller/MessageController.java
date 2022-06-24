@@ -57,6 +57,8 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestParam String rcGroupId) {
 
+    //get all messages based on rcgroupid
+
     MessageStreamDTO message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
 
     return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
@@ -228,6 +230,22 @@ public class MessageController implements MessagesApi {
 
     var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type);
 
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+  }
+
+  /**
+   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
+   * the specified Rocket.Chat group.
+   *
+   * @param rcGroupId           (required) Rocket.Chat group ID
+   * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
+   * @return {@link ResponseEntity} with the {@link HttpStatus}
+   */
+  @Override
+  public ResponseEntity<MessageResponseDTO> saveAliasMessageWithContent(@RequestHeader String rcGroupId,
+      @Valid AliasMessageDTO aliasOnlyMessageDTO) {
+    var type = aliasOnlyMessageDTO.getMessageType();
+    var response = postGroupMessageFacade.postAliasMessage(rcGroupId, type, aliasOnlyMessageDTO.getContent());
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 }

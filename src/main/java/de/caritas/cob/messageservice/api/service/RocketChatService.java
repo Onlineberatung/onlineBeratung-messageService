@@ -168,7 +168,7 @@ public class RocketChatService {
 
     if (nonNull(msg.getAlias().getForwardMessageDTO())) {
       msg.getAlias().setMessageType(MessageType.FORWARD);
-    } else {
+    } else if (nonNull(msg.getAlias().getVideoCallMessageDTO())) {
       msg.getAlias().setMessageType(MessageType.VIDEOCALL);
     }
   }
