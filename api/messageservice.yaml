@@ -566,6 +566,10 @@ components:
         - "REASSIGN_CONSULTANT"
 
     AliasArgs:
+      oneOf:
+        - $ref: '#/components/schemas/ConsultantReassignment'
+
+    ConsultantReassignment:
       type: object
       required:
         - toConsultantId
