@@ -48,6 +48,6 @@ public class EmailNotificationFacade {
 
   @SuppressWarnings("unused")
   public void sendEmailAboutReassignRequest(String rcGroupId, String toConsultantId) {
-
+    // will call user service
   }
 }

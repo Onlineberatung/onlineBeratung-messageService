@@ -157,7 +157,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void getMessagesShouldRespondWithAliasArgsConsultantReassign() throws Exception {
+  void getMessagesShouldRespondWithAliasArgsConsultantReassign() throws Exception {
     givenAMasterKey();
     var groupId = RandomStringUtils.randomAlphabetic(16);
     givenAMessageWithAnEncryptedConsultantReassignment(groupId);
