@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +26,7 @@ import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
@@ -122,17 +124,21 @@ public class MessageControllerE2EIT {
   private AliasOnlyMessageDTO aliasOnlyMessage;
   private List<MessagesDTO> messages;
   private ConsultantReassignment consultantReassignment;
+  private String messageId;
+  private AliasArgs aliasArgs;
 
   @AfterEach
   void reset() {
     aliasOnlyMessage = null;
     encryptionService.updateMasterKey("initialMasterKey");
     messages = null;
+    messageId = null;
+    aliasArgs = null;
   }
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
+  void getMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
     givenSomeMessagesWithMutedUnmutedType();
 
     mockMvc.perform(
@@ -187,7 +193,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldRespondWithEmptyAlias() throws Exception {
+  void getMessagesShouldRespondWithEmptyAlias() throws Exception {
     givenMessagesWithoutClearAlias();
 
     mockMvc.perform(
@@ -209,7 +215,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldContainOrgMessage() throws Exception {
+  void getMessagesShouldContainOrgMessage() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -235,8 +241,121 @@ public class MessageControllerE2EIT {
   }
 
   @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithBadRequestWhenMessageIdHasWrongFormat()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAWronglyFormattedMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithBadRequestWhenRcTokenMissing() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithBadRequestWhenRcUserIdMissing() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithBadRequestIfStatusIsInitial() throws Exception {
+    givenAuthenticatedUser();
+    givenARequestedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithBadRequestIfStatusIsArbitrary() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    var content = "{ \"status\": \"" + RandomStringUtils.randomAlphabetic(16) + "\" }";
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(content)
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithNoContent() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void sendMessageShouldTransmitTypeOfMessage() throws Exception {
+  void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -268,7 +387,7 @@ public class MessageControllerE2EIT {
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   @DirtiesContext
-  public void sendMessageShouldTransmitOrgMessage() throws Exception {
+  void sendMessageShouldTransmitOrgMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -301,7 +420,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
+  void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -330,7 +449,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT})
-  public void createVideoHintMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void createVideoHintMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -357,7 +476,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
-  public void createFeedbackMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void createFeedbackMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -387,7 +506,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
-  public void forwardMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void forwardMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -586,6 +705,29 @@ public class MessageControllerE2EIT {
     messageStreamDTO.setMessages(messages);
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(), eq(MessageStreamDTO.class)))
         .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
+  }
+
+  private void givenAWronglyFormattedMessageId() {
+    int idLength = 0;
+    while (idLength < 1 || idLength == 17) {
+      idLength = easyRandom.nextInt(31) + 1;
+    }
+    messageId = RandomStringUtils.randomAlphanumeric(idLength);
+  }
+
+  private void givenAValidMessageId() {
+    messageId = RandomStringUtils.randomAlphanumeric(17);
+  }
+
+  private void givenAPatchSupportedReassignArg() {
+    aliasArgs = new AliasArgs();
+    var status = easyRandom.nextBoolean() ? ReassignStatus.REJECTED : ReassignStatus.CONFIRMED;
+    aliasArgs.setStatus(status);
+  }
+
+  private void givenARequestedReassignArg() {
+    aliasArgs = new AliasArgs();
+    aliasArgs.setStatus(ReassignStatus.REQUESTED);
   }
 
   private void givenAuthenticatedUser() {

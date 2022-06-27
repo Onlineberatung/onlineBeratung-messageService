@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.ChatMessage;
@@ -15,6 +16,7 @@ import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
@@ -238,5 +240,17 @@ public class MessageController implements MessagesApi {
     var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
+  }
+
+  @Override
+  public ResponseEntity<Void> patchMessage(String rcToken, String rcUserId, String messageId,
+      AliasArgs aliasArgs) {
+    var reassignStatus = aliasArgs.getStatus();
+    if (reassignStatus == ReassignStatus.REQUESTED) {
+      var message = String.format("Updating status (%s) is not supported.", reassignStatus);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    return ResponseEntity.noContent().build();
   }
 }
