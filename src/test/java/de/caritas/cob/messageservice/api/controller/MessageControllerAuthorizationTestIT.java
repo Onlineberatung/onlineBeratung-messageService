@@ -8,19 +8,23 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import javax.servlet.http.Cookie;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,10 +71,14 @@ public class MessageControllerAuthorizationTestIT {
   private PostGroupMessageFacade postGroupMessageFacade;
 
   private Cookie csrfCookie;
+  private String messageId;
+  private AliasArgs aliasArgs;
 
   @Before
   public void setUp() {
     csrfCookie = new Cookie(CSRF_COOKIE, CSRF_VALUE);
+    messageId = null;
+    aliasArgs = null;
   }
 
   @Test
@@ -505,6 +513,61 @@ public class MessageControllerAuthorizationTestIT {
     verify(postGroupMessageFacade).postAliasOnlyMessage(any(), any(), any());
   }
 
+  @Test
+  public void patchMessageShouldReturnUnauthorizedWhenNoKeycloakAuthorization() throws Exception {
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(csrfCookie)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(authorities = {
+      AuthorityValue.ANONYMOUS_DEFAULT,
+      AuthorityValue.CONSULTANT_DEFAULT,
+      AuthorityValue.TECHNICAL_DEFAULT,
+      AuthorityValue.USE_FEEDBACK
+  })
+  public void patchMessageShouldReturnForbiddenAndCallNoMethodsWhenNoUserDefaultAuthority()
+      throws Exception {
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(csrfCookie)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldReturnForbiddenAndCallNoMethodsWhenNoCsrfToken() throws Exception {
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs)))
+        .andExpect(status().isForbidden());
+  }
+
   private AliasOnlyMessageDTO givenAValidAliasOnlyMessageDTO() {
     var alias = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     alias.setArgs(null);
@@ -530,5 +593,15 @@ public class MessageControllerAuthorizationTestIT {
   private boolean isProtectedMessageType(MessageType messageType) {
     return messageType == MessageType.USER_MUTED
         || messageType == MessageType.USER_UNMUTED;
+  }
+
+  private void givenAValidMessageId() {
+    messageId = RandomStringUtils.randomAlphanumeric(17);
+  }
+
+  private void givenAPatchSupportedReassignArg() {
+    aliasArgs = new AliasArgs();
+    var status = easyRandom.nextBoolean() ? ReassignStatus.REJECTED : ReassignStatus.CONFIRMED;
+    aliasArgs.setStatus(status);
   }
 }

@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +26,7 @@ import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
@@ -122,12 +124,16 @@ public class MessageControllerE2EIT {
   private AliasOnlyMessageDTO aliasOnlyMessage;
   private List<MessagesDTO> messages;
   private ConsultantReassignment consultantReassignment;
+  private String messageId;
+  private AliasArgs aliasArgs;
 
   @AfterEach
   void reset() {
     aliasOnlyMessage = null;
     encryptionService.updateMasterKey("initialMasterKey");
     messages = null;
+    messageId = null;
+    aliasArgs = null;
   }
 
   @Test
@@ -232,6 +238,119 @@ public class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[3].msg").isNotEmpty())
         .andExpect(jsonPath("messages[4].org").isNotEmpty())
         .andExpect(jsonPath("messages[4].msg").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithBadRequestWhenMessageIdHasWrongFormat()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAWronglyFormattedMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithBadRequestWhenRcTokenMissing() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithBadRequestWhenRcUserIdMissing() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithBadRequestIfStatusIsInitial() throws Exception {
+    givenAuthenticatedUser();
+    givenARequestedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithBadRequestIfStatusIsArbitrary() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    var content = "{ \"status\": \"" + RandomStringUtils.randomAlphabetic(16) + "\" }";
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(content)
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void patchMessageShouldRespondWithNoContent() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isNoContent());
   }
 
   @Test
@@ -586,6 +705,29 @@ public class MessageControllerE2EIT {
     messageStreamDTO.setMessages(messages);
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(), eq(MessageStreamDTO.class)))
         .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
+  }
+
+  private void givenAWronglyFormattedMessageId() {
+    int idLength = 0;
+    while (idLength < 1 || idLength == 17) {
+      idLength = easyRandom.nextInt(31) + 1;
+    }
+    messageId = RandomStringUtils.randomAlphanumeric(idLength);
+  }
+
+  private void givenAValidMessageId() {
+    messageId = RandomStringUtils.randomAlphanumeric(17);
+  }
+
+  private void givenAPatchSupportedReassignArg() {
+    aliasArgs = new AliasArgs();
+    var status = easyRandom.nextBoolean() ? ReassignStatus.REJECTED : ReassignStatus.CONFIRMED;
+    aliasArgs.setStatus(status);
+  }
+
+  private void givenARequestedReassignArg() {
+    aliasArgs = new AliasArgs();
+    aliasArgs.setStatus(ReassignStatus.REQUESTED);
   }
 
   private void givenAuthenticatedUser() {
