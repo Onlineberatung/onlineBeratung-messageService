@@ -138,7 +138,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
+  void getMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
     givenSomeMessagesWithMutedUnmutedType();
 
     mockMvc.perform(
@@ -193,7 +193,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldRespondWithEmptyAlias() throws Exception {
+  void getMessagesShouldRespondWithEmptyAlias() throws Exception {
     givenMessagesWithoutClearAlias();
 
     mockMvc.perform(
@@ -215,7 +215,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void getMessagesShouldContainOrgMessage() throws Exception {
+  void getMessagesShouldContainOrgMessage() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -242,7 +242,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithBadRequestWhenMessageIdHasWrongFormat()
+  void patchMessageShouldRespondWithBadRequestWhenMessageIdHasWrongFormat()
       throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
@@ -262,7 +262,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithBadRequestWhenRcTokenMissing() throws Exception {
+  void patchMessageShouldRespondWithBadRequestWhenRcTokenMissing() throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
@@ -280,7 +280,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithBadRequestWhenRcUserIdMissing() throws Exception {
+  void patchMessageShouldRespondWithBadRequestWhenRcUserIdMissing() throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
@@ -298,7 +298,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithBadRequestIfStatusIsInitial() throws Exception {
+  void patchMessageShouldRespondWithBadRequestIfStatusIsInitial() throws Exception {
     givenAuthenticatedUser();
     givenARequestedReassignArg();
     givenAValidMessageId();
@@ -317,7 +317,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithBadRequestIfStatusIsArbitrary() throws Exception {
+  void patchMessageShouldRespondWithBadRequestIfStatusIsArbitrary() throws Exception {
     givenAuthenticatedUser();
     givenAValidMessageId();
     var content = "{ \"status\": \"" + RandomStringUtils.randomAlphabetic(16) + "\" }";
@@ -336,7 +336,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void patchMessageShouldRespondWithNoContent() throws Exception {
+  void patchMessageShouldRespondWithNoContent() throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
@@ -355,7 +355,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void sendMessageShouldTransmitTypeOfMessage() throws Exception {
+  void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -387,7 +387,7 @@ public class MessageControllerE2EIT {
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   @DirtiesContext
-  public void sendMessageShouldTransmitOrgMessage() throws Exception {
+  void sendMessageShouldTransmitOrgMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -420,7 +420,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  public void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
+  void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
@@ -449,7 +449,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT})
-  public void createVideoHintMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void createVideoHintMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -476,7 +476,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
-  public void createFeedbackMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void createFeedbackMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -506,7 +506,7 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USE_FEEDBACK})
-  public void forwardMessageShouldReturnSendMessageResultOnSuccessfulRequest()
+  void forwardMessageShouldReturnSendMessageResultOnSuccessfulRequest()
       throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
