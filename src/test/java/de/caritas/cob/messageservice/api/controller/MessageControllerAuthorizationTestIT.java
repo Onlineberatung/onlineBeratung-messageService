@@ -412,7 +412,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
+    verify(postGroupMessageFacade).postAliasOnlyMessage(any(), any(), any());
   }
 
   @Test
@@ -449,7 +449,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
+    verify(postGroupMessageFacade).createVideoHintMessage(any(), any());
   }
 
   @Test
@@ -490,7 +490,7 @@ public class MessageControllerAuthorizationTestIT {
   @WithMockUser(authorities = {AuthorityValue.TECHNICAL_DEFAULT})
   public void saveAliasOnlyMessage_Should_ReturnCreatedAndCallPostGroupMessageFacade_When_TechnicalDefaultAuthority()
       throws Exception {
-    var aliasOnlyMessageDTO = createAliasOnlyMessageWithoutProtectedType();
+    var aliasOnlyMessageDTO = givenAValidAliasOnlyMessageDTO();
 
     mvc.perform(
             post(PATH_POST_CREATE_ALIAS_ONLY_MESSAGE)
@@ -502,7 +502,18 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).postAliasOnlyMessage(any(), any());
+    verify(postGroupMessageFacade).postAliasOnlyMessage(any(), any(), any());
+  }
+
+  private AliasOnlyMessageDTO givenAValidAliasOnlyMessageDTO() {
+    var alias = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    alias.setArgs(null);
+    while (alias.getMessageType().equals(MessageType.USER_MUTED)
+        || alias.getMessageType().equals(MessageType.USER_UNMUTED)) {
+      alias.setMessageType(easyRandom.nextObject(MessageType.class));
+    }
+
+    return alias;
   }
 
   AliasOnlyMessageDTO createAliasOnlyMessageWithoutProtectedType() {
@@ -510,6 +521,9 @@ public class MessageControllerAuthorizationTestIT {
     do {
       aliasOnlyMessageDTO = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     } while (isProtectedMessageType(aliasOnlyMessageDTO.getMessageType()));
+
+    aliasOnlyMessageDTO.setArgs(null);
+
     return aliasOnlyMessageDTO;
   }
 

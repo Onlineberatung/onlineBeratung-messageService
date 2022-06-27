@@ -1,9 +1,9 @@
 package de.caritas.cob.messageservice.api.facade;
 
+import de.caritas.cob.messageservice.api.helper.EmailNotificationHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import de.caritas.cob.messageservice.api.helper.EmailNotificationHelper;
 
 /*
  * Facade to encapsulate the steps for sending an email notification
@@ -27,11 +27,10 @@ public class EmailNotificationFacade {
   /**
    * Sends a new message notification via the UserService (user data needed for sending the mail
    * will be read by the UserService, which in turn calls the MessageService).
-   * 
-   * @param rcGroupId
+   *
+   * @param rcGroupId - Rocket.Chat group id
    */
-
-  public void sendEmailNotification(String rcGroupId) {
+  public void sendEmailAboutNewChatMessage(String rcGroupId) {
     emailNotificationHelper.sendEmailNotificationViaUserService(rcGroupId,
         userServiceApiSendNewMessageNotificationUrl);
   }
@@ -39,13 +38,16 @@ public class EmailNotificationFacade {
   /**
    * Sends a new feedback message notification via the UserService (user data needed for sending the
    * mail will be read by the UserService, which in turn calls the MessageService).
-   * 
-   * @param rcGroupId
+   *
+   * @param rcGroupId - Rocket.Chat group id
    */
-
-  public void sendFeedbackEmailNotification(String rcGroupId) {
+  public void sendEmailAboutNewFeedbackMessage(String rcGroupId) {
     emailNotificationHelper.sendEmailNotificationViaUserService(rcGroupId,
         userServiceApiSendNewFeedbackMessageNotificationUrl);
   }
 
+  @SuppressWarnings("unused")
+  public void sendEmailAboutReassignRequest(String rcGroupId, String toConsultantId) {
+    // will call user service
+  }
 }

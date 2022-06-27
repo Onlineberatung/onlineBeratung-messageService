@@ -31,7 +31,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: key
 
   /messages/new:
@@ -79,7 +79,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/feedback/new:
@@ -127,7 +127,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/videohint/new:
@@ -207,7 +207,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/forward:
     post:
@@ -255,7 +255,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/draft:
     post:
@@ -290,7 +290,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
     get:
       tags:
         - message-controller
@@ -320,7 +320,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/aliasonly/new:
     post:
@@ -548,6 +548,8 @@ components:
       properties:
         messageType:
           $ref: '#/components/schemas/MessageType'
+        args:
+          $ref: '#/components/schemas/AliasArgs'
 
     MessageType:
       type: string
@@ -561,6 +563,30 @@ components:
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
         - "MASTER_KEY_LOST"
+        - "REASSIGN_CONSULTANT"
+
+    AliasArgs:
+      oneOf:
+        - $ref: '#/components/schemas/ConsultantReassignment'
+
+    ConsultantReassignment:
+      type: object
+      required:
+        - toConsultantId
+        - status
+      properties:
+        toConsultantId:
+          type: string
+          format: UUID
+        status:
+          $ref: '#/components/schemas/ReassignStatus'
+
+    ReassignStatus:
+      type: string
+      enum:
+        - "REQUESTED"
+        - "CONFIRMED"
+        - "REJECTED"
 
     UserDTO:
       type: object

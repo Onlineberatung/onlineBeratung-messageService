@@ -1,5 +1,7 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.nonNull;
+
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
@@ -221,12 +223,19 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
     var type = aliasOnlyMessageDTO.getMessageType();
+    var aliasArgs = aliasOnlyMessageDTO.getArgs();
+
     if (type.equals(MessageType.USER_MUTED) || type.equals(MessageType.USER_UNMUTED)) {
       var message = String.format("Message type (%s) is protected.", type);
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type);
+    if (nonNull(aliasArgs) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
+      var message = String.format("Alias args are not supported by type (%s).", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }

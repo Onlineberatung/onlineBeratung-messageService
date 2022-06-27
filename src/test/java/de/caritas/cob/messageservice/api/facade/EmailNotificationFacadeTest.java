@@ -42,7 +42,7 @@ public class EmailNotificationFacadeTest {
   @Test
   public void sendEmailNotification_Should_PassUserServiceApiSendNewMessageNotificationUrlToEmailNotificationHelper() {
 
-    emailNotificationFacade.sendEmailNotification(RC_GROUP_ID);
+    emailNotificationFacade.sendEmailAboutNewChatMessage(RC_GROUP_ID);
 
     verify(emailNotificationHelper, times(1)).sendEmailNotificationViaUserService(RC_GROUP_ID,
         NOTIFICATION_API_URL);
@@ -52,7 +52,7 @@ public class EmailNotificationFacadeTest {
   @Test
   public void sendFeedbackEmailNotification_Should_PassUserServiceApiSendNewFeedbackMessageNotificationUrlToEmailNotificationHelper() {
 
-    emailNotificationFacade.sendFeedbackEmailNotification(RC_GROUP_ID);
+    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(RC_GROUP_ID);
 
     verify(emailNotificationHelper, times(1)).sendEmailNotificationViaUserService(RC_GROUP_ID,
         FEEDBACK_NOTIFICATION_API_URL);
