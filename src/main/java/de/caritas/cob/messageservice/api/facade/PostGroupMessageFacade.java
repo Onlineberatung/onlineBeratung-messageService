@@ -169,7 +169,7 @@ public class PostGroupMessageFacade {
   }
 
   /**
-   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
+   * Posts a message which contains an alias with the provided {@link MessageType} in
    * the specified Rocket.Chat group.
    *
    * @param rcGroupId   Rocket.Chat group ID
