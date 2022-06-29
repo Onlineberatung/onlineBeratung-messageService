@@ -591,6 +591,7 @@ components:
     MessageType:
       type: string
       enum:
+        - "APPOINTMENT_SET"
         - "FINISHED_CONVERSATION"
         - "FORWARD"
         - "FURTHER_STEPS"
@@ -599,7 +600,6 @@ components:
         - "USER_MUTED"
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
-        - "APPOINTMENT_SET"
 
     UserDTO:
       type: object
