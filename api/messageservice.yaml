@@ -31,7 +31,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: key
 
   /messages/new:
@@ -79,7 +79,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/feedback/new:
@@ -127,7 +127,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/videohint/new:
@@ -207,7 +207,54 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
+
+  /messages/{messageId}:
+    patch:
+      tags:
+        - message-controller
+      summary: 'Partially updates a message [Auth: user]'
+      description: Current support is limited to the reassign status.
+      operationId: patchMessage
+      parameters:
+        - name: rcToken
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: rcUserId
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 17
+            maxLength: 17
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/AliasArgs'
+      responses:
+        204:
+          description: NO CONTENT - message has been updated
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        404:
+          description: NOT FOUND - messageId unknown
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
 
   /messages/forward:
     post:
@@ -255,7 +302,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/draft:
     post:
@@ -290,7 +337,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
     get:
       tags:
         - message-controller
@@ -320,7 +367,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/aliasonly/new:
     post:
@@ -587,6 +634,8 @@ components:
       properties:
         messageType:
           $ref: '#/components/schemas/MessageType'
+        args:
+          $ref: '#/components/schemas/AliasArgs'
 
     MessageType:
       type: string
@@ -600,6 +649,30 @@ components:
         - "USER_MUTED"
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
+        - "MASTER_KEY_LOST"
+        - "REASSIGN_CONSULTANT"
+
+    AliasArgs:
+      oneOf:
+        - $ref: '#/components/schemas/ConsultantReassignment'
+
+    ConsultantReassignment:
+      type: object
+      required:
+        - status
+      properties:
+        toConsultantId:
+          type: string
+          format: UUID
+        status:
+          $ref: '#/components/schemas/ReassignStatus'
+
+    ReassignStatus:
+      type: string
+      enum:
+        - "REQUESTED"
+        - "CONFIRMED"
+        - "REJECTED"
 
     UserDTO:
       type: object

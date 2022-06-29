@@ -209,6 +209,11 @@ public class RocketChatService {
     return encryptionService.encrypt(escaped, rcGroupId);
   }
 
+  public SendMessageResponseDTO postAliasOnlyMessageAsSystemUser(String rcGroupId,
+      AliasMessageDTO aliasMessageDTO) {
+    return postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO, null);
+  }
+
   /**
    * Posts metadata contained in an {@link AliasMessageDTO} in the given Rocket.Chat group with an
    * empty message.
@@ -218,10 +223,10 @@ public class RocketChatService {
    * @return {@link SendMessageResponseDTO}
    */
   public SendMessageResponseDTO postAliasOnlyMessageAsSystemUser(String rcGroupId,
-      AliasMessageDTO aliasMessageDTO) {
+      AliasMessageDTO aliasMessageDTO, String messageString) {
     var systemUser = retrieveSystemUser();
     var alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
-    var aliasMessage = createAliasMessage(rcGroupId, systemUser, alias);
+    var aliasMessage = createAliasMessage(rcGroupId, systemUser, alias, messageString);
 
     try {
       return this.postGroupMessage(aliasMessage);
@@ -231,12 +236,14 @@ public class RocketChatService {
   }
 
   private ChatMessage createAliasMessage(String rcGroupId, RocketChatCredentials systemUser,
-      String alias) {
+      String alias, String message) {
+    var text = isNull(message) ? EMPTY : message;
+
     return ChatMessage.builder()
         .rcToken(systemUser.getRocketChatToken())
         .rcUserId(systemUser.getRocketChatUserId())
         .rcGroupId(rcGroupId)
-        .text(EMPTY)
+        .text(text)
         .alias(alias).build();
   }
 
