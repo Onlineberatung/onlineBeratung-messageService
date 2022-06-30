@@ -45,6 +45,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequiredArgsConstructor
 public class RocketChatService {
 
+  public static final String E2E_ENCRYPTION_TYPE = "e2e";
+
   @Value("${rocket.chat.api.get.group.message.url}")
   private String rcGetGroupMessageUrl;
 
@@ -184,14 +186,10 @@ public class RocketChatService {
       throws CustomCryptoException {
 
     var headers = getRocketChatHeader(chatMessage.getRcToken(), chatMessage.getRcUserId());
-    var encryptedText = encryptText(chatMessage.getText(), chatMessage.getRcGroupId());
-    String encryptedOrgText = null;
-    if (isNotBlank(chatMessage.getOrgText())) {
-      encryptedOrgText = encryptText(chatMessage.getOrgText(), chatMessage.getRcGroupId());
-    }
 
-    var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), encryptedText,
-        encryptedOrgText, chatMessage.getAlias(), chatMessage.getType());
+    var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(),
+        extractMessageText(chatMessage), extractOrgMessageText(chatMessage), chatMessage.getAlias(),
+        chatMessage.getType());
     var payload = new SendMessageWrapper(sendMessage);
     var request = new HttpEntity<>(payload, headers);
 
@@ -202,6 +200,24 @@ public class RocketChatService {
           "Request body which caused the error was " + request.getBody());
       throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
+  }
+
+  private String extractMessageText(ChatMessage chatMessage) throws CustomCryptoException {
+    if (isMessageE2eEncrypted(chatMessage)) {
+      return chatMessage.getText();
+    }
+    return encryptText(chatMessage.getText(), chatMessage.getRcGroupId());
+  }
+
+  private String extractOrgMessageText(ChatMessage chatMessage) throws CustomCryptoException {
+    if (isNotBlank(chatMessage.getOrgText())) {
+      return encryptText(chatMessage.getOrgText(), chatMessage.getRcGroupId());
+    }
+    return chatMessage.getOrgText();
+  }
+
+  private boolean isMessageE2eEncrypted(ChatMessage chatMessage) {
+    return E2E_ENCRYPTION_TYPE.equals(chatMessage.getType());
   }
 
   private String encryptText(String text, String rcGroupId) throws CustomCryptoException {

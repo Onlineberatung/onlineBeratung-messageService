@@ -2,6 +2,7 @@ package de.caritas.cob.messageservice.api.service;
 
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.NEW_MESSAGE;
 import static de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType.OVERWRITTEN_MESSAGE;
+import static de.caritas.cob.messageservice.api.service.RocketChatService.E2E_ENCRYPTION_TYPE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -89,16 +90,24 @@ public class DraftMessageService {
   private void updateMessage(String message, String orgMessage, String rcGroupId,
       DraftMessage draftMessage) {
     try {
-      String encryptedMessage = this.encryptionService.encrypt(message, rcGroupId);
+      if (isMessageE2eEncrypted(draftMessage)) {
+        draftMessage.setMessage(message);
+      } else {
+        var encryptedText = this.encryptionService.encrypt(message, rcGroupId);
+        draftMessage.setMessage(encryptedText);
+      }
       // org messages can be null, encryptionService can't handle this
       if (isNotBlank(orgMessage)) {
         String encryptedOriginalMessage = this.encryptionService.encrypt(orgMessage, rcGroupId);
         draftMessage.setOrg(encryptedOriginalMessage);
       }
-      draftMessage.setMessage(encryptedMessage);
     } catch (CustomCryptoException e) {
       throw new InternalServerErrorException(e, LogService::logInternalServerError);
     }
+  }
+
+  private boolean isMessageE2eEncrypted(DraftMessage draftMessage) {
+    return E2E_ENCRYPTION_TYPE.equals(draftMessage.getT());
   }
 
   /**

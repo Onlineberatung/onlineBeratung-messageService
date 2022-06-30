@@ -359,9 +359,9 @@ public class MessageControllerE2EIT {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
-    givenSuccessfulSendMessageResponse("e2e", rcGroupId);
+    givenSuccessfulSendMessageResponse("p", rcGroupId);
     givenAMasterKey();
-    MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
+    MessageDTO encryptedMessage = createMessage("enc.secret_message", "p");
 
     mockMvc.perform(
             post("/messages/new")
@@ -380,7 +380,7 @@ public class MessageControllerE2EIT {
     var sendMessageRequest = body.getMessage();
     assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
     assertThat(sendMessageRequest.getAlias()).isNull();
-    assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
+    assertThat(sendMessageRequest.getT()).isEqualTo("p");
     assertThat(sendMessageRequest.getMsg()).startsWith("enc:");
   }
 
@@ -391,8 +391,8 @@ public class MessageControllerE2EIT {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
-    givenSuccessfulSendMessageResponse("e2e", rcGroupId);
-    var encMessageWithOrg = createMessage("enc.secret_message", "e2e")
+    givenSuccessfulSendMessageResponse("p", rcGroupId);
+    var encMessageWithOrg = createMessage("enc.secret_message", "p")
         .org("plain text message");
     givenEncryptionCapturing(encMessageWithOrg.getMessage(), encMessageWithOrg.getOrg());
 
@@ -413,7 +413,7 @@ public class MessageControllerE2EIT {
     var sendMessageRequest = body.getMessage();
     assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
     assertThat(sendMessageRequest.getAlias()).isNull();
-    assertThat(sendMessageRequest.getT()).isEqualTo("e2e");
+    assertThat(sendMessageRequest.getT()).isEqualTo("p");
     assertThat(sendMessageRequest.getMsg()).isEqualTo("encCameIn");
     assertThat(sendMessageRequest.getOrg()).isEqualTo("plainCameIn");
   }
