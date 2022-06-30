@@ -379,8 +379,9 @@ public class RocketChatService {
     return null;
   }
 
+  @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive
   private boolean isRcNotFoundResponse(HttpClientErrorException exception) {
     return HttpStatus.BAD_REQUEST.equals(exception.getStatusCode())
-        && exception.getResponseBodyAsString().matches(".*\"success\"\\s*:\\s*false.*");
+        && exception.getResponseBodyAsString().matches("\\{.*\"success\"\\s*:\\s*false.*}");
   }
 }
