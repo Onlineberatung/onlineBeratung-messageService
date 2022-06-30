@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.Messenger;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
@@ -68,7 +68,7 @@ public class MessageControllerAuthorizationTestIT {
   private EncryptionService encryptionService;
 
   @MockBean
-  private PostGroupMessageFacade postGroupMessageFacade;
+  private Messenger messenger;
 
   private Cookie csrfCookie;
   private String messageId;
@@ -124,7 +124,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isUnauthorized());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -137,7 +137,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -150,7 +150,7 @@ public class MessageControllerAuthorizationTestIT {
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -195,7 +195,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isUnauthorized());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -208,7 +208,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -220,7 +220,7 @@ public class MessageControllerAuthorizationTestIT {
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -233,7 +233,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isUnauthorized());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -247,7 +247,7 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -259,7 +259,7 @@ public class MessageControllerAuthorizationTestIT {
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isForbidden());
 
     verifyNoMoreInteractions(rocketChatService);
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -275,7 +275,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -292,7 +292,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -307,7 +307,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -327,7 +327,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
+    verify(messenger, times(1)).createVideoHintMessage(any(), any());
   }
 
   @Test
@@ -347,7 +347,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade, times(1)).createVideoHintMessage(any(), any());
+    verify(messenger, times(1)).createVideoHintMessage(any(), any());
   }
 
   @Test
@@ -365,7 +365,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -384,7 +384,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -401,7 +401,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
 
-    verifyNoMoreInteractions(postGroupMessageFacade);
+    verifyNoMoreInteractions(messenger);
   }
 
   @Test
@@ -420,7 +420,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade).postAliasOnlyMessage(any(), any(), any());
+    verify(messenger).createEvent(any(), any(), any());
   }
 
   @Test
@@ -457,7 +457,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade).createVideoHintMessage(any(), any());
+    verify(messenger).createVideoHintMessage(any(), any());
   }
 
   @Test
@@ -510,7 +510,7 @@ public class MessageControllerAuthorizationTestIT {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
-    verify(postGroupMessageFacade).postAliasOnlyMessage(any(), any(), any());
+    verify(messenger).createEvent(any(), any(), any());
   }
 
   @Test

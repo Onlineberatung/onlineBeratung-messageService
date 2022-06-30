@@ -3,7 +3,7 @@ package de.caritas.cob.messageservice.api.controller;
 import static java.util.Objects.nonNull;
 
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.Messenger;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -46,7 +46,7 @@ public class MessageController implements MessagesApi {
 
   private final @NonNull RocketChatService rocketChatService;
   private final @NonNull EncryptionService encryptionService;
-  private final @NonNull PostGroupMessageFacade postGroupMessageFacade;
+  private final @NonNull Messenger messenger;
   private final @NonNull DraftMessageService draftMessageService;
 
   /**
@@ -106,7 +106,7 @@ public class MessageController implements MessagesApi {
         .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
         .type(message.getT()).build();
 
-    var response = postGroupMessageFacade.postGroupMessage(groupMessage);
+    var response = messenger.postGroupMessage(groupMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -138,7 +138,7 @@ public class MessageController implements MessagesApi {
         .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage())
         .orgText(forwardMessageDTO.getOrg()).type(forwardMessageDTO.getT()).alias(alias.get())
         .build();
-    var response = postGroupMessageFacade.postFeedbackGroupMessage(forwardMessage);
+    var response = messenger.postFeedbackGroupMessage(forwardMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -160,7 +160,7 @@ public class MessageController implements MessagesApi {
     var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
         .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
 
-    var response = postGroupMessageFacade.postFeedbackGroupMessage(feedbackMessage);
+    var response = messenger.postFeedbackGroupMessage(feedbackMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -176,7 +176,7 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageResponseDTO> createVideoHintMessage(@RequestHeader String rcGroupId,
       @Valid @RequestBody VideoCallMessageDTO videoCallMessageDTO) {
 
-    var response = this.postGroupMessageFacade.createVideoHintMessage(rcGroupId,
+    var response = this.messenger.createVideoHintMessage(rcGroupId,
         videoCallMessageDTO);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -237,7 +237,7 @@ public class MessageController implements MessagesApi {
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, aliasArgs);
+    var response = messenger.createEvent(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -247,8 +247,12 @@ public class MessageController implements MessagesApi {
       AliasArgs aliasArgs) {
     var reassignStatus = aliasArgs.getStatus();
     if (reassignStatus == ReassignStatus.REQUESTED) {
-      var message = String.format("Updating status (%s) is not supported.", reassignStatus);
+      var message = String.format("Updating to status (%s) is not supported.", reassignStatus);
       throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    if (!messenger.patchEventMessage(rcToken, rcUserId, messageId, reassignStatus)) {
+      return ResponseEntity.notFound().build();
     }
 
     return ResponseEntity.noContent().build();

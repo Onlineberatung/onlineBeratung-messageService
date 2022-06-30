@@ -24,6 +24,8 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
+import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.net.URI;
 import java.util.Collections;
@@ -31,10 +33,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -42,10 +46,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RocketChatService {
 
   public static final String E2E_ENCRYPTION_TYPE = "e2e";
+
+  private static final String ENDPOINT_MESSAGE_GET = "/chat.getMessage?msgId=";
+
+  @Value("${rocket.chat.api.url}")
+  private String baseUrl;
 
   @Value("${rocket.chat.api.get.group.message.url}")
   private String rcGetGroupMessageUrl;
@@ -346,5 +356,32 @@ public class RocketChatService {
               clientErrorEx.getStatusCode(), rcUserId, rcGroupId),
           LogService::logRocketChatBadRequestError);
     }
+  }
+
+  public Message findMessage(String rcToken, String rcUserId, String messageId) {
+    var url = baseUrl + ENDPOINT_MESSAGE_GET + messageId;
+    var entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.exchange(url, HttpMethod.GET, entity, MessageResponse.class);
+      if (nonNull(response.getBody())) {
+        return response.getBody().getMessage();
+      }
+    } catch (HttpClientErrorException exception) {
+      if (!isRcNotFoundResponse(exception)) {
+        log.error("Chat Get-Message failed.", exception);
+        var errorFormat = "Could not read message (%s) from Rocket.Chat API";
+        var errorMessage = String.format(errorFormat, messageId);
+        throw new InternalServerErrorException(errorMessage, LogService::logRocketChatServiceError);
+      }
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive
+  private boolean isRcNotFoundResponse(HttpClientErrorException exception) {
+    return HttpStatus.BAD_REQUEST.equals(exception.getStatusCode())
+        && exception.getResponseBodyAsString().matches("\\{.*\"success\"\\s*:\\s*false.*}");
   }
 }
