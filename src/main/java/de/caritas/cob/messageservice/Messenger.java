@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.facade;
+package de.caritas.cob.messageservice;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -9,6 +9,7 @@ import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
 import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
+import de.caritas.cob.messageservice.api.facade.EmailNotificationFacade;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUserHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
@@ -30,6 +31,7 @@ import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageS
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -37,8 +39,9 @@ import org.springframework.stereotype.Service;
  * Facade to encapsulate the steps for posting a (group) message to Rocket.Chat
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
-public class PostGroupMessageFacade {
+public class Messenger {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
 
@@ -157,14 +160,14 @@ public class PostGroupMessageFacade {
   }
 
   /**
-   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
-   * the specified Rocket.Chat group.
+   * Creates an event with the provided {@link MessageType} in specified Rocket.Chat group.
    *
    * @param rcGroupId   Rocket.Chat group ID
    * @param messageType {@link MessageType}
+   * @param aliasArgs   optional arguments
    * @return {@link MessageResponseDTO}
    */
-  public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType,
+  public MessageResponseDTO createEvent(String rcGroupId, MessageType messageType,
       AliasArgs aliasArgs) {
     var aliasMessage = mapper.aliasMessageDtoOf(messageType);
     var messageString = mapper.messageStringOf(aliasArgs);
@@ -179,5 +182,17 @@ public class PostGroupMessageFacade {
     }
 
     return mapper.messageResponseOf(response);
+  }
+
+  public boolean patchEventMessage(String rcToken, String rcUserId, String messageId,
+      ReassignStatus reassignStatus) {
+    var message = rocketChatService.findMessage(rcToken, rcUserId, messageId);
+    if (nonNull(message)) {
+      log.info("message found");
+
+      return true;
+    }
+
+    return false;
   }
 }

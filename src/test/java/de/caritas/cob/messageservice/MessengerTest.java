@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.facade;
+package de.caritas.cob.messageservice;
 
 import static de.caritas.cob.messageservice.testhelper.TestConstants.DONT_SEND_NOTIFICATION;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.GET_GROUP_INFO_DTO;
@@ -22,6 +22,7 @@ import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
+import de.caritas.cob.messageservice.api.facade.EmailNotificationFacade;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ChatMessage;
@@ -52,7 +53,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PostGroupMessageFacadeTest {
+public class MessengerTest {
 
   private static final String RC_TOKEN = "r94qMDk8gtgVNzqCq9zD2hELK-eXGB5VHlUVBgE8a8f";
   private static final String RC_USER_ID = "pptLwARyTMzbTTRdg";
@@ -66,7 +67,7 @@ public class PostGroupMessageFacadeTest {
   private static final SendMessageResponseDTO POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL = new SendMessageResponseDTO(
       new SendMessageResultDTO(), false, null, null);
   @InjectMocks
-  private PostGroupMessageFacade postGroupMessageFacade;
+  private Messenger messenger;
 
   @Mock
   private RocketChatService rocketChatService;
@@ -92,7 +93,7 @@ public class PostGroupMessageFacadeTest {
 
   @Before
   public void setup() {
-    setField(this.postGroupMessageFacade, "rocketChatSystemUserId", RC_SYSTEM_USER_ID);
+    setField(this.messenger, "rocketChatSystemUserId", RC_SYSTEM_USER_ID);
     when(authenticatedUser.getRoles())
         .thenReturn(SetUtils.unmodifiableSet(Role.CONSULTANT.getRoleName()));
     when(authenticatedUser.getUserId())
@@ -113,7 +114,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(groupMessage)).thenThrow(
         rocketChatSendMessageException);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -125,7 +126,7 @@ public class PostGroupMessageFacadeTest {
     var groupMessage = createGroupMessage().build();
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(null);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -138,7 +139,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(
         POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -150,7 +151,7 @@ public class PostGroupMessageFacadeTest {
     var groupMessage = createGroupMessage().build();
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(null);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -162,7 +163,7 @@ public class PostGroupMessageFacadeTest {
     var groupMessage = createGroupMessage().sendNotification(SEND_NOTIFICATION).build();
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(1)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -174,7 +175,7 @@ public class PostGroupMessageFacadeTest {
     var groupMessage = createGroupMessage().build();
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(Mockito.anyString());
   }
@@ -195,7 +196,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(feedbackGroupMessage)).thenThrow(
         rocketChatSendMessageException);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
   }
@@ -210,7 +211,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(feedbackGroupMessage))
         .thenReturn(null);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewFeedbackMessage(
         RC_FEEDBACK_GROUP_ID);
@@ -227,7 +228,7 @@ public class PostGroupMessageFacadeTest {
         POST_MESSAGE_RESPONSE_DTO_UNSUCCESSFUL);
     var feedbackGroupMessage = createFeedbackGroupMessage().build();
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_FEEDBACK_GROUP_ID);
   }
@@ -241,7 +242,7 @@ public class PostGroupMessageFacadeTest {
     var feedbackGroupMessage = createFeedbackGroupMessage().build();
     when(rocketChatService.postGroupMessage(feedbackGroupMessage)).thenReturn(null);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewFeedbackMessage(
         RC_FEEDBACK_GROUP_ID);
@@ -257,7 +258,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(feedbackGroupMessage)).thenReturn(
         POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(emailNotificationFacade, times(1)).sendEmailAboutNewFeedbackMessage(
         RC_FEEDBACK_GROUP_ID);
@@ -269,7 +270,7 @@ public class PostGroupMessageFacadeTest {
         .thenReturn(GET_GROUP_INFO_DTO);
     var groupMessage = createGroupMessage().build();
 
-    postGroupMessageFacade.postFeedbackGroupMessage(groupMessage);
+    messenger.postFeedbackGroupMessage(groupMessage);
 
     verify(emailNotificationFacade, times(0)).sendEmailAboutNewFeedbackMessage(RC_GROUP_ID);
   }
@@ -283,7 +284,7 @@ public class PostGroupMessageFacadeTest {
     var noNotificationMessage = createGroupMessage().sendNotification(DONT_SEND_NOTIFICATION)
         .build();
 
-    postGroupMessageFacade.postGroupMessage(noNotificationMessage);
+    messenger.postGroupMessage(noNotificationMessage);
 
     verify(this.liveEventNotificationService, times(1)).sendLiveEvent(RC_GROUP_ID);
   }
@@ -298,7 +299,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(feedbackGroupMessage)).thenReturn(
         POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(this.liveEventNotificationService, times(1)).sendLiveEvent(RC_FEEDBACK_GROUP_ID);
   }
@@ -311,7 +312,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(systemFeedbackMessage)).thenReturn(
         POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postGroupMessage(systemFeedbackMessage);
+    messenger.postGroupMessage(systemFeedbackMessage);
 
     verifyNoInteractions(this.liveEventNotificationService);
   }
@@ -324,7 +325,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(groupMessage))
         .thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_GROUP_ID);
   }
@@ -336,7 +337,7 @@ public class PostGroupMessageFacadeTest {
     var groupMessage = createGroupMessage().build();
     when(rocketChatService.postGroupMessage(groupMessage)).thenReturn(POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postGroupMessage(groupMessage);
+    messenger.postGroupMessage(groupMessage);
 
     verify(statisticsService, times(1))
         .fireEvent(any(CreateMessageStatisticsEvent.class));
@@ -369,7 +370,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postGroupMessage(feedbackGroupMessage)).thenReturn(
         POST_MESSAGE_RESPONSE_DTO);
 
-    postGroupMessageFacade.postFeedbackGroupMessage(feedbackGroupMessage);
+    messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
     verify(this.draftMessageService, times(1)).deleteDraftMessageIfExist(RC_FEEDBACK_GROUP_ID);
   }
@@ -381,7 +382,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postAliasOnlyMessageAsSystemUser("rcGroupId",
         aliasMessageDTO)).thenReturn(createSuccessfulMessageResult(null, "rcGroupId"));
 
-    this.postGroupMessageFacade.createVideoHintMessage("rcGroupId", callMessageDTO);
+    this.messenger.createVideoHintMessage("rcGroupId", callMessageDTO);
 
     verify(this.rocketChatService, times(1)).postAliasOnlyMessageAsSystemUser(anyString(),
         any());
@@ -393,7 +394,7 @@ public class PostGroupMessageFacadeTest {
     when(rocketChatService.postAliasOnlyMessageAsSystemUser(RC_GROUP_ID, aliasMessageDTO, null))
         .thenReturn(createSuccessfulMessageResult(null, RC_GROUP_ID));
 
-    postGroupMessageFacade.postAliasOnlyMessage(RC_GROUP_ID, MessageType.FURTHER_STEPS, null);
+    messenger.createEvent(RC_GROUP_ID, MessageType.FURTHER_STEPS, null);
 
     var captor = ArgumentCaptor.forClass(AliasMessageDTO.class);
     verify(rocketChatService)

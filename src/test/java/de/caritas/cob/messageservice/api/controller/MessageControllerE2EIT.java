@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -46,6 +47,8 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWr
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
+import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
@@ -77,6 +80,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootTest
@@ -340,6 +344,7 @@ public class MessageControllerE2EIT {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
+    givenASuccessfulGetChatMessageResponse(messageId);
 
     mockMvc.perform(
             patch("/messages/{messageId}", messageId)
@@ -351,6 +356,46 @@ public class MessageControllerE2EIT {
                 .content(objectMapper.writeValueAsString(aliasArgs))
         )
         .andExpect(status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithNotFoundIfMessageDoesNotExist() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+    givenAGetChatMessageNotFoundResponse(messageId);
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithInternalServerErrorIfRocketChatResponseSevereError() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+    givenAGetChatMessageSevereErrorResponse(messageId);
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isInternalServerError());
   }
 
   @Test
@@ -745,6 +790,38 @@ public class MessageControllerE2EIT {
     var successfulResponse = createSuccessfulMessageResult(type, roomId);
     when(restTemplate.postForObject(anyString(), sendMessagePayloadCaptor.capture(),
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
+  }
+
+  private void givenASuccessfulGetChatMessageResponse(String messageId) {
+    var response = new MessageResponse();
+    response.setSuccess(true);
+    var message = easyRandom.nextObject(Message.class);
+    message.setId(messageId);
+    response.setMessage(message);
+
+    var urlSuffix = "/chat.getMessage?msgId=" + messageId;
+    when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
+  }
+
+  private void givenAGetChatMessageNotFoundResponse(String messageId) throws JsonProcessingException {
+    var payload = new MessageResponse();
+    payload.setSuccess(false);
+    var body = objectMapper.writeValueAsString(payload).getBytes();
+    var statusText = HttpStatus.BAD_REQUEST.getReasonPhrase();
+    var exception = new HttpClientErrorException(HttpStatus.BAD_REQUEST, statusText, body, null);
+
+    var urlSuffix = "/chat.getMessage?msgId=" + messageId;
+    when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenThrow(exception);
+  }
+
+  private void givenAGetChatMessageSevereErrorResponse(String messageId) {
+    var exception = new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+
+    var urlSuffix = "/chat.getMessage?msgId=" + messageId;
+    when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenThrow(exception);
   }
 
   private void givenAnAliasOnlyMessageWithUnsupportedMessage() {
