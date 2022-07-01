@@ -52,6 +52,8 @@ import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -340,11 +342,12 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void patchMessageShouldRespondWithNoContent() throws Exception {
+  void patchMessageShouldRespondWithBadRequestIfFoundMessageIsNotReassignmentEvent()
+      throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
-    givenASuccessfulGetChatMessageResponse(messageId);
+    givenANonEventGetChatMessageResponse(messageId);
 
     mockMvc.perform(
             patch("/messages/{messageId}", messageId)
@@ -355,7 +358,7 @@ public class MessageControllerE2EIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aliasArgs))
         )
-        .andExpect(status().isNoContent());
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -380,7 +383,8 @@ public class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void patchMessageShouldRespondWithInternalServerErrorIfRocketChatResponseSevereError() throws Exception {
+  void patchMessageShouldRespondWithInternalServerErrorIfRocketChatResponseSevereError()
+      throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
     givenAValidMessageId();
@@ -396,6 +400,29 @@ public class MessageControllerE2EIT {
                 .content(objectMapper.writeValueAsString(aliasArgs))
         )
         .andExpect(status().isInternalServerError());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithNoContent() throws Exception {
+    givenAuthenticatedUser();
+    givenAPatchSupportedReassignArg();
+    givenAValidMessageId();
+    givenAMasterKey();
+    givenRocketChatSystemUser();
+    givenASuccessfulGetChatMessageResponse(messageId);
+    givenASuccessfulUpdateChatMessageResponse();
+
+    mockMvc.perform(
+            patch("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasArgs))
+        )
+        .andExpect(status().isNoContent());
   }
 
   @Test
@@ -576,6 +603,24 @@ public class MessageControllerE2EIT {
         .andExpect(jsonPath("rid", is(RC_GROUP_ID)))
         .andExpect(jsonPath("t", is("e2e")))
         .andExpect(jsonPath("_id").isNotEmpty());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  void saveAliasOnlyMessageShouldReturnBadRequestIfReassignHasNoConsultantId() throws Exception {
+    givenAuthenticatedUser();
+    givenAReassignmentEventWithNoConsultantId();
+
+    mockMvc.perform(
+            post("/messages/aliasonly/new")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcGroupId", RC_GROUP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+                .accept(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -792,9 +837,37 @@ public class MessageControllerE2EIT {
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
   }
 
-  private void givenASuccessfulGetChatMessageResponse(String messageId) {
+  private void givenASuccessfulGetChatMessageResponse(String messageId)
+      throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);
+
+    var message = easyRandom.nextObject(Message.class);
+    message.setId(messageId);
+
+    var alias = new AliasMessageDTO();
+    alias.setMessageType(MessageType.REASSIGN_CONSULTANT);
+    var aliasString = objectMapper.writeValueAsString(alias);
+    var encodedAlias = URLEncoder.encode(aliasString, StandardCharsets.UTF_8);
+    message.setAlias(encodedAlias);
+
+    var consultantReassignment = new ConsultantReassignment();
+    consultantReassignment.setStatus(ReassignStatus.REQUESTED);
+    consultantReassignment.setToConsultantId(UUID.randomUUID());
+    var msg = objectMapper.writeValueAsString(consultantReassignment);
+    var encryptedMessage = encryptionService.encrypt(msg, message.getRid());
+    message.setMsg(encryptedMessage);
+    response.setMessage(message);
+
+    var urlSuffix = "/chat.getMessage?msgId=" + messageId;
+    when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
+  }
+
+  private void givenANonEventGetChatMessageResponse(String messageId) {
+    var response = new MessageResponse();
+    response.setSuccess(true);
+
     var message = easyRandom.nextObject(Message.class);
     message.setId(messageId);
     response.setMessage(message);
@@ -804,7 +877,17 @@ public class MessageControllerE2EIT {
         eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
   }
 
-  private void givenAGetChatMessageNotFoundResponse(String messageId) throws JsonProcessingException {
+  private void givenASuccessfulUpdateChatMessageResponse() {
+    var response = new MessageResponse();
+    response.setSuccess(true);
+
+    var urlSuffix = "/api/v1/chat.update";
+    when(restTemplate.postForObject(endsWith(urlSuffix), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenReturn(response);
+  }
+
+  private void givenAGetChatMessageNotFoundResponse(String messageId)
+      throws JsonProcessingException {
     var payload = new MessageResponse();
     payload.setSuccess(false);
     var body = objectMapper.writeValueAsString(payload).getBytes();
@@ -838,6 +921,14 @@ public class MessageControllerE2EIT {
     aliasOnlyMessage.getArgs().setStatus(ReassignStatus.REQUESTED);
   }
 
+  private void givenAReassignmentEventWithNoConsultantId() {
+    aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    var args = new AliasArgs();
+    args.setStatus(ReassignStatus.REQUESTED);
+    aliasOnlyMessage.setArgs(args);
+    aliasOnlyMessage.setMessageType(MessageType.REASSIGN_CONSULTANT);
+  }
+
   private void givenAnAliasOnlyMessage(boolean muteUnmute) {
     aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     aliasOnlyMessage.setArgs(null);
@@ -849,7 +940,8 @@ public class MessageControllerE2EIT {
       do {
         messageType = easyRandom.nextObject(MessageType.class);
       } while (
-          messageType.equals(MessageType.USER_MUTED) || messageType.equals(MessageType.USER_UNMUTED)
+          messageType == MessageType.USER_MUTED || messageType == MessageType.USER_UNMUTED
+              || messageType == MessageType.REASSIGN_CONSULTANT
       );
     }
 

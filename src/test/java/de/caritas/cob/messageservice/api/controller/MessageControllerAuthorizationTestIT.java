@@ -592,7 +592,8 @@ public class MessageControllerAuthorizationTestIT {
 
   private boolean isProtectedMessageType(MessageType messageType) {
     return messageType == MessageType.USER_MUTED
-        || messageType == MessageType.USER_UNMUTED;
+        || messageType == MessageType.USER_UNMUTED
+        || messageType == MessageType.REASSIGN_CONSULTANT;
   }
 
   private void givenAValidMessageId() {

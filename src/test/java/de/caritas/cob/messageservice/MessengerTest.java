@@ -89,7 +89,7 @@ public class MessengerTest {
 
   @SuppressWarnings("unused")
   @Spy
-  private MessageMapper mapper = new MessageMapper(new ObjectMapper());
+  private MessageMapper mapper = new MessageMapper(new ObjectMapper(), null);
 
   @Before
   public void setup() {
