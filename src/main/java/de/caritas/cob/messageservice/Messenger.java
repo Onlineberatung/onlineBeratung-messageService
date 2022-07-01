@@ -200,6 +200,13 @@ public class Messenger {
     consultantReassignment.setStatus(status);
     var updatedMessage = mapper.updateMessageOf(message, consultantReassignment);
 
-    return rocketChatService.updateMessage(updatedMessage);
+    var isUpdated = rocketChatService.updateMessage(updatedMessage);
+    if (isUpdated && status == ReassignStatus.CONFIRMED) {
+      emailNotificationFacade.sendEmailAboutReassignDecision(
+          updatedMessage.getRoomId(), consultantReassignment.getToConsultantId()
+      );
+    }
+
+    return isUpdated;
   }
 }

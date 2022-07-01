@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.facade;
 
 import de.caritas.cob.messageservice.api.helper.EmailNotificationHelper;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -48,6 +49,11 @@ public class EmailNotificationFacade {
 
   @SuppressWarnings("unused")
   public void sendEmailAboutReassignRequest(String rcGroupId, String toConsultantId) {
+    // will call user service
+  }
+
+  @SuppressWarnings("unused")
+  public void sendEmailAboutReassignDecision(String roomId, UUID toConsultantId) {
     // will call user service
   }
 }
