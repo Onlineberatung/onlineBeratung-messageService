@@ -22,6 +22,8 @@ public class Message {
 
   private String msg;
 
+  private String rid;
+
   @JsonIgnore
   Map<String, Object> otherProperties = new LinkedHashMap<>();
 

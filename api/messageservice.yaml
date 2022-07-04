@@ -618,6 +618,9 @@ components:
 
     ConsultantReassignment:
       type: object
+      description: >
+        toConsultantId is required during creation but cannot be changed afterwards. Thus, in 
+        subsequent edits toConsultantId can be omitted because it is ignored then.
       required:
         - status
       properties:

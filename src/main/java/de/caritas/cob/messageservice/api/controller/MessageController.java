@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
@@ -232,8 +233,14 @@ public class MessageController implements MessagesApi {
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    if (nonNull(aliasArgs) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
+    if (nonNull(aliasArgs) && type != MessageType.REASSIGN_CONSULTANT) {
       var message = String.format("Alias args are not supported by type (%s).", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    if (type == MessageType.REASSIGN_CONSULTANT && isNull(aliasArgs.getToConsultantId())) {
+      var errorFormat = "toConsultantId is required during reassignment creation (%s).";
+      var message = String.format(errorFormat, MessageType.REASSIGN_CONSULTANT);
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
@@ -251,10 +258,8 @@ public class MessageController implements MessagesApi {
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    if (!messenger.patchEventMessage(rcToken, rcUserId, messageId, reassignStatus)) {
-      return ResponseEntity.notFound().build();
-    }
-
-    return ResponseEntity.noContent().build();
+    return messenger.patchEventMessage(rcToken, rcUserId, messageId, reassignStatus)
+        ? ResponseEntity.noContent().build()
+        : ResponseEntity.notFound().build();
   }
 }

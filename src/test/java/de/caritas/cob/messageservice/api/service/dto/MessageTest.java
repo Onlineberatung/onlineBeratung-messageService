@@ -10,20 +10,19 @@ import de.caritas.cob.messageservice.api.model.MessageType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.Test;
 
 public class MessageTest {
 
+  private static final EasyRandom easyRandom = new EasyRandom();
   private static final String ALIAS_FURTHER_STEPS = "%7B%22forwardMessageDTO%22%3Anull%2C%22videoCallMessageDTO%22%3Anull%2C%22messageType%22%3A%22FURTHER_STEPS%22%7D";
 
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
   void messageShouldBeTransformable() throws JsonProcessingException {
-    var message = new Message();
-    message.setId(RandomStringUtils.randomAlphanumeric(17));
-    message.setMsg(RandomStringUtils.randomAlphabetic(64));
+    var message = easyRandom.nextObject(Message.class);
     message.setOtherProperties(
         Map.of(
             "x", "y",
@@ -47,6 +46,7 @@ public class MessageTest {
     assertEquals(message.getId(), deserializedMessage.getId());
     assertEquals(message.getMsg(), deserializedMessage.getMsg());
     assertEquals(message.getAlias(), deserializedMessage.getAlias());
+    assertEquals(message.getRid(), deserializedMessage.getRid());
     assertEquals(message.getOtherProperties(), deserializedMessage.getOtherProperties());
   }
 
@@ -76,13 +76,12 @@ public class MessageTest {
     assertEquals(new ArrayList<>(), deserializedMessage.getOtherProperties().get("urls"));
     var u = deserializedMessage.getOtherProperties().get("u");
     assertEquals("System", ((HashMap<?, ?>) u).get("username"));
+    assertEquals("oenMBe5enNCnAXkhp", deserializedMessage.getRid());
   }
 
   @Test
   void messageShouldTellMessageType() {
-    var message = new Message();
-    message.setId(RandomStringUtils.randomAlphanumeric(17));
-    message.setMsg(RandomStringUtils.randomAlphabetic(64));
+    var message = easyRandom.nextObject(Message.class);
     message.setOtherProperties(Map.of("x", "y"));
     message.setAlias(ALIAS_FURTHER_STEPS);
 
@@ -94,10 +93,9 @@ public class MessageTest {
 
   @Test
   void messageShouldTellFalseOnNullMessageType() {
-    var message = new Message();
-    message.setId(RandomStringUtils.randomAlphanumeric(17));
-    message.setMsg(RandomStringUtils.randomAlphabetic(64));
+    var message = easyRandom.nextObject(Message.class);
     message.setOtherProperties(Map.of("x", "y"));
+    message.setAlias(null);
 
     assertFalse(message.isA(MessageType.FURTHER_STEPS));
     assertFalse(message.isA(MessageType.USER_MUTED));
@@ -108,9 +106,7 @@ public class MessageTest {
 
   @Test
   void messageShouldTellFalseOnEmptyMessageType() {
-    var message = new Message();
-    message.setId(RandomStringUtils.randomAlphanumeric(17));
-    message.setMsg(RandomStringUtils.randomAlphabetic(64));
+    var message = easyRandom.nextObject(Message.class);
     message.setOtherProperties(Map.of("x", "y"));
     message.setAlias("");
 
@@ -122,11 +118,8 @@ public class MessageTest {
 
   @Test
   void messageShouldTellFalseOnArbitraryMessageType() {
-    var message = new Message();
-    message.setId(RandomStringUtils.randomAlphanumeric(17));
-    message.setMsg(RandomStringUtils.randomAlphabetic(64));
+    var message = easyRandom.nextObject(Message.class);
     message.setOtherProperties(Map.of("x", "y"));
-    message.setAlias(RandomStringUtils.randomAlphanumeric(32));
 
     assertFalse(message.isA(MessageType.FURTHER_STEPS));
     assertFalse(message.isA(MessageType.USER_MUTED));

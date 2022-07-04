@@ -185,14 +185,28 @@ public class Messenger {
   }
 
   public boolean patchEventMessage(String rcToken, String rcUserId, String messageId,
-      ReassignStatus reassignStatus) {
+      ReassignStatus status) {
     var message = rocketChatService.findMessage(rcToken, rcUserId, messageId);
-    if (nonNull(message)) {
-      log.info("message found");
-
-      return true;
+    if (isNull(message)) {
+      return false;
     }
 
-    return false;
+    if (!message.isA(MessageType.REASSIGN_CONSULTANT)) {
+      var errorMessage = String.format("Message (%s) is not a reassignment.", messageId);
+      throw new BadRequestException(errorMessage, LogService::logBadRequest);
+    }
+
+    var consultantReassignment = mapper.consultantReassignmentOf(message);
+    consultantReassignment.setStatus(status);
+    var updatedMessage = mapper.updateMessageOf(message, consultantReassignment);
+
+    var isUpdated = rocketChatService.updateMessage(updatedMessage);
+    if (isUpdated && status == ReassignStatus.CONFIRMED) {
+      emailNotificationFacade.sendEmailAboutReassignDecision(
+          updatedMessage.getRoomId(), consultantReassignment.getToConsultantId()
+      );
+    }
+
+    return isUpdated;
   }
 }
