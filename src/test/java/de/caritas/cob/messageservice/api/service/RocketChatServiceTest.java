@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.service;
 
+import static de.caritas.cob.messageservice.api.service.RocketChatService.E2E_ENCRYPTION_TYPE;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
@@ -19,6 +20,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.util.reflection.FieldSetter.setField;
 import static org.powermock.reflect.Whitebox.setInternalState;
@@ -29,6 +32,7 @@ import de.caritas.cob.messageservice.api.exception.RocketChatBadRequestException
 import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
+import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
@@ -320,27 +324,52 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void
-      postGroupMessage_Should_ReturnPostMessageResponseDTO_When_ProvidedWithValidParameters()
-          throws CustomCryptoException {
+  public void postGroupMessage_Should_ReturnPostMessageResponseDTO_When_ProvidedWithValidParameters()
+      throws CustomCryptoException {
 
-    SendMessageResponseDTO response = new SendMessageResponseDTO(new SendMessageResultDTO(), true, null, null);
+    SendMessageResponseDTO response = new SendMessageResponseDTO(new SendMessageResultDTO(), true,
+        null, null);
 
-    when(restTemplate.postForObject(
-            ArgumentMatchers.anyString(),
-            any(),
-            ArgumentMatchers.<Class<SendMessageResponseDTO>>any()))
-        .thenReturn(response);
+    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
+        ArgumentMatchers.<Class<SendMessageResponseDTO>>any())).thenReturn(response);
 
-    when(encryptionService.encrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
-        .thenReturn(RC_MESSAGE);
+    when(encryptionService.encrypt(ArgumentMatchers.anyString(),
+        ArgumentMatchers.anyString())).thenReturn(RC_MESSAGE);
 
     assertThat(
         rocketChatService.postGroupMessage(createGroupMessage()),
         instanceOf(SendMessageResponseDTO.class));
   }
 
-  /** Method: markGroupAsReadForSystemUser */
+  @Test
+  public void postGroupMessage_should_not_encrypt_text_of_e2e_encrypted_messages()
+      throws CustomCryptoException {
+    var e2eEncryptedMessage = ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
+        .rcGroupId(RC_GROUP_ID).text("e2eEncryptedMessage")
+        .type(E2E_ENCRYPTION_TYPE).build();
+
+    rocketChatService.postGroupMessage(e2eEncryptedMessage);
+
+    verifyNoInteractions(encryptionService);
+  }
+
+  @Test
+  public void postGroupMessage_should_encrypt_org_text_of_e2e_encrypted_messages()
+      throws CustomCryptoException {
+    var e2eEncryptedMessage = ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
+        .rcGroupId(RC_GROUP_ID).text("e2eEncryptedMessage")
+        .orgText("original message")
+        .type(E2E_ENCRYPTION_TYPE).build();
+
+    rocketChatService.postGroupMessage(e2eEncryptedMessage);
+
+    verify(encryptionService).encrypt("original message", RC_GROUP_ID);
+    verifyNoMoreInteractions(encryptionService);
+  }
+
+  /**
+   * Method: markGroupAsReadForSystemUser
+   */
   @Test
   public void markGroupAsReadForSystemUser_Should_LogError_When_MarkGroupAsReadFails()
       throws SecurityException, RocketChatUserNotInitializedException {
@@ -348,11 +377,8 @@ public class RocketChatServiceTest {
     when(rcCredentialsHelper.getSystemUser()).thenReturn(RCC_SYSTEM_USER);
 
     RestClientException ex = new RestClientException(ERROR_MSG);
-    when(restTemplate.postForObject(
-            ArgumentMatchers.anyString(),
-            any(),
-            ArgumentMatchers.<Class<StandardResponseDTO>>any()))
-        .thenThrow(ex);
+    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
+        ArgumentMatchers.<Class<StandardResponseDTO>>any())).thenThrow(ex);
 
     try {
       rocketChatService.markGroupAsReadForSystemUser(RC_GROUP_ID);
@@ -368,11 +394,9 @@ public class RocketChatServiceTest {
 
     when(rcCredentialsHelper.getSystemUser()).thenReturn(RCC_SYSTEM_USER);
 
-    when(restTemplate.postForObject(
-            ArgumentMatchers.anyString(),
-            any(),
-            ArgumentMatchers.<Class<StandardResponseDTO>>any()))
-        .thenReturn(STANDARD_SUCCESS_RESPONSE_DTO);
+    when(restTemplate.postForObject(ArgumentMatchers.anyString(), any(),
+        ArgumentMatchers.<Class<StandardResponseDTO>>any())).thenReturn(
+        STANDARD_SUCCESS_RESPONSE_DTO);
 
     rocketChatService.markGroupAsReadForSystemUser(RC_GROUP_ID);
     verify(restTemplate, atLeastOnce())
@@ -380,9 +404,8 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void
-      markGroupAsReadForSystemUser_Should_LogError_When_ProvidedWithInvalidRocketChatSystemUserCredentials()
-          throws SecurityException, RocketChatUserNotInitializedException {
+  public void markGroupAsReadForSystemUser_Should_LogError_When_ProvidedWithInvalidRocketChatSystemUserCredentials()
+      throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser()).thenReturn(INVALID_RCC_SYSTEM_USER);
 
@@ -391,9 +414,8 @@ public class RocketChatServiceTest {
   }
 
   @Test(expected = InternalServerErrorException.class)
-  public void
-      markGroupAsReadForSystemUser_Should_ThrowInternalServerError_When_ProvidedWithOutChatSystemUserCredentials()
-          throws SecurityException, RocketChatUserNotInitializedException {
+  public void markGroupAsReadForSystemUser_Should_ThrowInternalServerError_When_ProvidedWithOutChatSystemUserCredentials()
+      throws SecurityException, RocketChatUserNotInitializedException {
 
     when(rcCredentialsHelper.getSystemUser())
         .thenThrow(new RocketChatUserNotInitializedException(""));
@@ -402,8 +424,7 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void postAliasOnlyMessageAsSystemUser_Should_postGroupMessage()
-      throws Exception {
+  public void postAliasOnlyMessageAsSystemUser_Should_postGroupMessage() throws Exception {
     RocketChatCredentials rocketChatCredentials =
         new EasyRandom().nextObject(RocketChatCredentials.class);
     when(this.rcCredentialsHelper.getSystemUser()).thenReturn(rocketChatCredentials);

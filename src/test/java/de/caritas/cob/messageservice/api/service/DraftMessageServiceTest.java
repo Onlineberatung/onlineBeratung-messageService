@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -49,7 +50,7 @@ public class DraftMessageServiceTest {
       throws CustomCryptoException {
 
     SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
-        "rcGroupId", "e2e");
+        "rcGroupId", null);
 
     assertThat(savedDraftType, is(NEW_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
@@ -63,11 +64,23 @@ public class DraftMessageServiceTest {
         .thenReturn(Optional.of(new DraftMessage()));
 
     SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
-        "rcGroupId", "e2e");
+        "rcGroupId", "p");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
     verify(this.encryptionService, times(2)).encrypt(any(), any());
 
+    verify(this.draftMessageRepository).save(captor.capture());
+    assertThat("p", is(captor.getValue().getT()));
+  }
+
+  @Test
+  public void saveDraftMessage_should_not_encrypt_message_if_already_e2e_encrypted()
+      throws CustomCryptoException {
+    draftMessageService.saveDraftMessage("message", "original",
+        "rcGroupId", "e2e");
+
+    verify(this.encryptionService).encrypt("original", "rcGroupId");
+    verifyNoMoreInteractions(this.encryptionService);
     verify(this.draftMessageRepository).save(captor.capture());
     assertThat("e2e", is(captor.getValue().getT()));
   }

@@ -30,7 +30,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @TestPropertySource(properties = "spring.profiles.active=testing")
 public class DraftMessageServiceIT {
 
-  public static final String ENC_PREFIX = "enc.";
   @Autowired
   private DraftMessageService draftMessageService;
 
@@ -42,10 +41,10 @@ public class DraftMessageServiceIT {
 
   @Before
   public void setup() throws CustomCryptoException {
-    doAnswer(encryptArgs -> ENC_PREFIX + encryptArgs.getArguments()[0]).when(encryptionService)
+    doAnswer(encryptArgs -> encryptArgs.getArguments()[0]).when(encryptionService)
         .encrypt(anyString(), anyString());
-    doAnswer(decryptArgs -> String.valueOf(decryptArgs.getArguments()[0]).substring(ENC_PREFIX.length())).when(
-        encryptionService).decrypt(anyString(), anyString());
+    doAnswer(decryptArgs -> String.valueOf(decryptArgs.getArguments()[0])).when(encryptionService)
+        .decrypt(anyString(), anyString());
     when(this.authenticatedUser.getUserId()).thenReturn("userId");
   }
 
