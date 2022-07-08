@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice;
 
+import static de.caritas.cob.messageservice.api.model.MessageType.MASTER_KEY_LOST;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
@@ -126,8 +127,8 @@ public class Messenger {
       rocketChatService.markGroupAsReadForSystemUser(groupMessage.getRcGroupId());
       return mapper.messageResponseOf(response);
     } catch (RocketChatSendMessageException
-             | RocketChatPostMarkGroupAsReadException
-             | CustomCryptoException ex) {
+        | RocketChatPostMarkGroupAsReadException
+        | CustomCryptoException ex) {
       throw new InternalServerErrorException(ex, LogService::logInternalServerError);
     }
   }
@@ -175,6 +176,10 @@ public class Messenger {
     var response = rocketChatService.postAliasOnlyMessageAsSystemUser(
         rcGroupId, aliasMessage, messageString
     );
+
+    if (MASTER_KEY_LOST.equals(messageType)) {
+      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId);
+    }
 
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
       var toConsultantId = aliasArgs.getToConsultantId();
