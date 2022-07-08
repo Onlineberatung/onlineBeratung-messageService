@@ -402,6 +402,17 @@ public class MessengerTest {
     assertThat(captor.getValue().getMessageType(), is(MessageType.FURTHER_STEPS));
   }
 
+  @Test
+  public void createEvent_Should_sendNewMessageMail_When_messageTypeIsMasterkeyLost() {
+    var aliasMessageDTO = new AliasMessageDTO().messageType(MessageType.MASTER_KEY_LOST);
+    when(rocketChatService.postAliasOnlyMessageAsSystemUser(RC_GROUP_ID, aliasMessageDTO, null))
+        .thenReturn(createSuccessfulMessageResult(null, RC_GROUP_ID));
+
+    messenger.createEvent(RC_GROUP_ID, MessageType.MASTER_KEY_LOST, null);
+
+    verify(emailNotificationFacade).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+  }
+
   private ChatMessageBuilder createFeedbackGroupMessage() {
     return ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
         .rcGroupId(RC_FEEDBACK_GROUP_ID).text(MESSAGE);
