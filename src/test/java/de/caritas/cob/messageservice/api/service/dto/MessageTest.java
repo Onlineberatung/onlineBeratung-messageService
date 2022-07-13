@@ -1,19 +1,23 @@
 package de.caritas.cob.messageservice.api.service.dto;
 
+import static de.caritas.cob.messageservice.api.model.ReassignStatus.REQUESTED;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.hamcrest.Matchers;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.Test;
 
-public class MessageTest {
+class MessageTest {
 
   private static final EasyRandom easyRandom = new EasyRandom();
   private static final String ALIAS_FURTHER_STEPS = "%7B%22forwardMessageDTO%22%3Anull%2C%22videoCallMessageDTO%22%3Anull%2C%22messageType%22%3A%22FURTHER_STEPS%22%7D";
@@ -126,4 +130,15 @@ public class MessageTest {
     assertFalse(message.isA(MessageType.FORWARD));
     assertFalse(message.isA(MessageType.REASSIGN_CONSULTANT));
   }
+
+  @Test
+  void objectMapperTest() throws JsonProcessingException {
+    var stored = "{&quot;toConsultantId&quot;:&quot;8a81117b-d875-4ba4-8696-d62c3a2dae91&quot;,&quot;status&quot;:&quot;REQUESTED&quot;}";
+    stored = stored.replace("&quot;", "\"");
+
+    var result = new ObjectMapper().readValue(stored, ConsultantReassignment.class);
+
+    assertThat(result.getStatus(), Matchers.is(REQUESTED));
+  }
+
 }

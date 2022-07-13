@@ -182,8 +182,7 @@ public class Messenger {
     }
 
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
-      var toConsultantId = aliasArgs.getToConsultantId();
-      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, toConsultantId.toString());
+      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, aliasArgs);
     }
 
     return mapper.messageResponseOf(response);
@@ -208,8 +207,7 @@ public class Messenger {
     var isUpdated = rocketChatService.updateMessage(updatedMessage);
     if (isUpdated && status == ReassignStatus.CONFIRMED) {
       emailNotificationFacade.sendEmailAboutReassignDecision(
-          updatedMessage.getRoomId(), consultantReassignment.getToConsultantId()
-      );
+          updatedMessage.getRoomId(), consultantReassignment);
     }
 
     return isUpdated;
