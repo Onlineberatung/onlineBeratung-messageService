@@ -65,9 +65,7 @@ public class EmailNotificationFacade {
     var reassignmentNotification = new ReassignmentNotificationDTO()
         .rcGroupId(rcGroupId)
         .toConsultantId(aliasArgs.getToConsultantId())
-        .toConsultantName(aliasArgs.getToConsultantName())
-        .fromConsultantName(aliasArgs.getFromConsultantName())
-        .toAskerName(aliasArgs.getToAskerName());
+        .fromConsultantName(aliasArgs.getFromConsultantName());
     addDefaultHeaders(userControllerApi.getApiClient());
     userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
@@ -77,9 +75,7 @@ public class EmailNotificationFacade {
     var reassignmentNotification = new ReassignmentNotificationDTO()
         .rcGroupId(roomId)
         .toConsultantId(consultantReassignment.getToConsultantId())
-        .toConsultantName(consultantReassignment.getToConsultantName())
         .fromConsultantName(consultantReassignment.getFromConsultantName())
-        .toAskerName(consultantReassignment.getToAskerName())
         .isConfirmed(consultantReassignment.getStatus() == ReassignStatus.CONFIRMED);
     addDefaultHeaders(userControllerApi.getApiClient());
     userControllerApi.sendReassignmentNotification(reassignmentNotification);

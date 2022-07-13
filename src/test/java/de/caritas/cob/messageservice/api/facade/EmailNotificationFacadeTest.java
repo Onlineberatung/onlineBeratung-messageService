@@ -77,8 +77,6 @@ class EmailNotificationFacadeTest {
         .rcGroupId(RC_GROUP_ID)
         .fromConsultantName(aliasArgs.getFromConsultantName())
         .toConsultantId(aliasArgs.getToConsultantId())
-        .toConsultantName(aliasArgs.getToConsultantName())
-        .toAskerName(aliasArgs.getToAskerName())
         .isConfirmed(null);
     verify(userControllerApi).sendReassignmentNotification(expectedMessage);
   }
@@ -93,8 +91,6 @@ class EmailNotificationFacadeTest {
         .rcGroupId(RC_GROUP_ID)
         .fromConsultantName(consultantReassignment.getFromConsultantName())
         .toConsultantId(consultantReassignment.getToConsultantId())
-        .toConsultantName(consultantReassignment.getToConsultantName())
-        .toAskerName(consultantReassignment.getToAskerName())
         .isConfirmed(consultantReassignment.getStatus() == ReassignStatus.CONFIRMED);
     verify(userControllerApi).sendReassignmentNotification(expectedMessage);
   }
