@@ -619,14 +619,21 @@ components:
     ConsultantReassignment:
       type: object
       description: >
-        toConsultantId is required during creation but cannot be changed afterwards. Thus, in 
-        subsequent edits toConsultantId can be omitted because it is ignored then.
+        toConsultantId, toConsultantName, toAskerName and fromConsultantName are required during
+        creation but cannot be changed afterwards. Thus, in subsequent edits these properties can
+        be omitted because they are ignored then.
       required:
         - status
       properties:
         toConsultantId:
           type: string
           format: UUID
+        toConsultantName:
+          type: string
+        toAskerName:
+          type: string
+        fromConsultantName:
+          type: string
         status:
           $ref: '#/components/schemas/ReassignStatus'
 
