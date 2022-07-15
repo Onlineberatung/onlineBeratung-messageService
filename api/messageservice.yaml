@@ -641,6 +641,8 @@ components:
       type: string
       enum:
         - "APPOINTMENT_SET"
+        - "APPOINTMENT_CANCELLED"
+        - "APPOINTMENT_RESCHEDULED"
         - "FINISHED_CONVERSATION"
         - "FORWARD"
         - "FURTHER_STEPS"
