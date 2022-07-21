@@ -1,4 +1,4 @@
-package de.caritas.cob.messageservice.api.facade;
+package de.caritas.cob.messageservice;
 
 import static de.caritas.cob.messageservice.api.model.MessageType.MASTER_KEY_LOST;
 import static java.util.Objects.isNull;

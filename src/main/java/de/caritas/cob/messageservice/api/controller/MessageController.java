@@ -271,22 +271,25 @@ public class MessageController implements MessagesApi {
         ? ResponseEntity.noContent().build()
         : ResponseEntity.notFound().build();
   }
-}
-
 
   /**
-   * Posts a message which contains an alias with the provided {@link MessageType} in
-   * the specified Rocket.Chat group.
+   * Posts a message which contains an alias with the provided {@link MessageType} in the specified
+   * Rocket.Chat group.
    *
    * @param rcGroupId           (required) Rocket.Chat group ID
    * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<MessageResponseDTO> saveAliasMessageWithContent(@RequestHeader String rcGroupId,
+  public ResponseEntity<MessageResponseDTO> saveAliasMessageWithContent(
+      @RequestHeader String rcGroupId,
       @Valid AliasMessageDTO aliasOnlyMessageDTO) {
     var type = aliasOnlyMessageDTO.getMessageType();
-    var response = postGroupMessageFacade.postAliasMessage(rcGroupId, type, aliasOnlyMessageDTO.getContent());
+    var response = messenger
+        .postAliasMessage(rcGroupId, type, aliasOnlyMessageDTO.getContent());
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
+
+}
+
 
