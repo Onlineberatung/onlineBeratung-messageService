@@ -212,4 +212,19 @@ public class Messenger {
 
     return isUpdated;
   }
+
+  /**
+   * Posts a message which contains an alias with the provided {@link MessageType} in
+   * the specified Rocket.Chat group.
+   *
+   * @param rcGroupId   Rocket.Chat group ID
+   * @param messageType {@link MessageType}
+   * @return {@link MessageResponseDTO}
+   */
+  public MessageResponseDTO postAliasMessage(String rcGroupId, MessageType messageType, String content) {
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(messageType).content(content);
+    var response = this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId,
+        aliasMessageDTO);
+    return mapper.messageResponseOf(response);
+  }
 }
