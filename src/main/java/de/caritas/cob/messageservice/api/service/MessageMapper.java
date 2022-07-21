@@ -5,12 +5,16 @@ import static java.util.Objects.nonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
+import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class MessageMapper {
 
   private final ObjectMapper objectMapper;
+  private final EncryptionService encryptionService;
 
   public MessagesDTO typedMessageOf(MessagesDTO messagesDTO) {
     var messageType = messagesDTO.getT();
@@ -66,6 +71,32 @@ public class MessageMapper {
     try {
       return objectMapper.writeValueAsString(aliasArgs);
     } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public ConsultantReassignment consultantReassignmentOf(Message message) {
+    try {
+      var foundMsgString = encryptionService.decrypt(message.getMsg(), message.getRid());
+      foundMsgString = foundMsgString.replace("&quot;", "\"");
+      return objectMapper.readValue(foundMsgString, ConsultantReassignment.class);
+    } catch (JsonProcessingException | CustomCryptoException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public UpdateMessage updateMessageOf(Message message, ConsultantReassignment reassignment) {
+    try {
+      var text = objectMapper.writeValueAsString(reassignment);
+      var encryptedText = encryptionService.encrypt(text, message.getRid());
+
+      var updatedMessage = new UpdateMessage();
+      updatedMessage.setRoomId(message.getRid());
+      updatedMessage.setMsgId(message.getId());
+      updatedMessage.setText(encryptedText);
+
+      return updatedMessage;
+    } catch (JsonProcessingException | CustomCryptoException e) {
       throw new RuntimeException(e);
     }
   }

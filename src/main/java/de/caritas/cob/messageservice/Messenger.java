@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.facade;
 
+import static de.caritas.cob.messageservice.api.model.MessageType.MASTER_KEY_LOST;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
@@ -9,6 +10,7 @@ import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.RocketChatPostMarkGroupAsReadException;
 import de.caritas.cob.messageservice.api.exception.RocketChatSendMessageException;
+import de.caritas.cob.messageservice.api.facade.EmailNotificationFacade;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUserHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
@@ -30,6 +32,7 @@ import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageS
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -37,8 +40,9 @@ import org.springframework.stereotype.Service;
  * Facade to encapsulate the steps for posting a (group) message to Rocket.Chat
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
-public class PostGroupMessageFacade {
+public class Messenger {
 
   private static final String FEEDBACK_GROUP_IDENTIFIER = "feedback";
 
@@ -123,8 +127,8 @@ public class PostGroupMessageFacade {
       rocketChatService.markGroupAsReadForSystemUser(groupMessage.getRcGroupId());
       return mapper.messageResponseOf(response);
     } catch (RocketChatSendMessageException
-             | RocketChatPostMarkGroupAsReadException
-             | CustomCryptoException ex) {
+        | RocketChatPostMarkGroupAsReadException
+        | CustomCryptoException ex) {
       throw new InternalServerErrorException(ex, LogService::logInternalServerError);
     }
   }
@@ -157,14 +161,14 @@ public class PostGroupMessageFacade {
   }
 
   /**
-   * Posts an empty message which only contains an alias with the provided {@link MessageType} in
-   * the specified Rocket.Chat group.
+   * Creates an event with the provided {@link MessageType} in specified Rocket.Chat group.
    *
    * @param rcGroupId   Rocket.Chat group ID
    * @param messageType {@link MessageType}
+   * @param aliasArgs   optional arguments
    * @return {@link MessageResponseDTO}
    */
-  public MessageResponseDTO postAliasOnlyMessage(String rcGroupId, MessageType messageType,
+  public MessageResponseDTO createEvent(String rcGroupId, MessageType messageType,
       AliasArgs aliasArgs) {
     var aliasMessage = mapper.aliasMessageDtoOf(messageType);
     var messageString = mapper.messageStringOf(aliasArgs);
@@ -173,12 +177,40 @@ public class PostGroupMessageFacade {
         rcGroupId, aliasMessage, messageString
     );
 
+    if (MASTER_KEY_LOST.equals(messageType)) {
+      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId);
+    }
+
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
-      var toConsultantId = aliasArgs.getToConsultantId();
-      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, toConsultantId.toString());
+      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, aliasArgs);
     }
 
     return mapper.messageResponseOf(response);
+  }
+
+  public boolean patchEventMessage(String rcToken, String rcUserId, String messageId,
+      ReassignStatus status) {
+    var message = rocketChatService.findMessage(rcToken, rcUserId, messageId);
+    if (isNull(message)) {
+      return false;
+    }
+
+    if (!message.isA(MessageType.REASSIGN_CONSULTANT)) {
+      var errorMessage = String.format("Message (%s) is not a reassignment.", messageId);
+      throw new BadRequestException(errorMessage, LogService::logBadRequest);
+    }
+
+    var consultantReassignment = mapper.consultantReassignmentOf(message);
+    consultantReassignment.setStatus(status);
+    var updatedMessage = mapper.updateMessageOf(message, consultantReassignment);
+
+    var isUpdated = rocketChatService.updateMessage(updatedMessage);
+    if (isUpdated && status == ReassignStatus.CONFIRMED) {
+      emailNotificationFacade.sendEmailAboutReassignDecision(
+          updatedMessage.getRoomId(), consultantReassignment);
+    }
+
+    return isUpdated;
   }
 
   /**

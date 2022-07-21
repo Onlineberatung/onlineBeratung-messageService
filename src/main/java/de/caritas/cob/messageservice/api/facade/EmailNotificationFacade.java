@@ -1,27 +1,35 @@
 package de.caritas.cob.messageservice.api.facade;
 
-import de.caritas.cob.messageservice.api.helper.EmailNotificationHelper;
-import org.springframework.beans.factory.annotation.Autowired;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
+import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
+import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
+import de.caritas.cob.messageservice.userservice.generated.ApiClient;
+import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
+import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
+import de.caritas.cob.messageservice.userservice.generated.web.model.ReassignmentNotificationDTO;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /*
  * Facade to encapsulate the steps for sending an email notification
  */
 @Component
+@RequiredArgsConstructor
 public class EmailNotificationFacade {
 
-  @Value("${user.service.api.new.message.notification}")
-  private String userServiceApiSendNewMessageNotificationUrl;
+  private final @NonNull ServiceHelper serviceHelper;
+  private final @NonNull UserControllerApi userControllerApi;
+  @Value("${user.service.api.liveproxy.url}")
+  private String userServiceApiUrl;
 
-  @Value("${user.service.api.new.feedback.message.notification}")
-  private String userServiceApiSendNewFeedbackMessageNotificationUrl;
-
-  private final EmailNotificationHelper emailNotificationHelper;
-
-  @Autowired
-  public EmailNotificationFacade(EmailNotificationHelper emailNotificationHelper) {
-    this.emailNotificationHelper = emailNotificationHelper;
+  @EventListener(ApplicationReadyEvent.class)
+  public void setBasePath() {
+    userControllerApi.getApiClient().setBasePath(userServiceApiUrl);
   }
 
   /**
@@ -31,8 +39,14 @@ public class EmailNotificationFacade {
    * @param rcGroupId - Rocket.Chat group id
    */
   public void sendEmailAboutNewChatMessage(String rcGroupId) {
-    emailNotificationHelper.sendEmailNotificationViaUserService(rcGroupId,
-        userServiceApiSendNewMessageNotificationUrl);
+    addDefaultHeaders(userControllerApi.getApiClient());
+    userControllerApi
+        .sendNewMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
+  }
+
+  private void addDefaultHeaders(ApiClient apiClient) {
+    var headers = this.serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+    headers.forEach((key, value) -> apiClient.addDefaultHeader(key, value.iterator().next()));
   }
 
   /**
@@ -42,12 +56,28 @@ public class EmailNotificationFacade {
    * @param rcGroupId - Rocket.Chat group id
    */
   public void sendEmailAboutNewFeedbackMessage(String rcGroupId) {
-    emailNotificationHelper.sendEmailNotificationViaUserService(rcGroupId,
-        userServiceApiSendNewFeedbackMessageNotificationUrl);
+    addDefaultHeaders(userControllerApi.getApiClient());
+    userControllerApi
+        .sendNewFeedbackMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
   }
 
-  @SuppressWarnings("unused")
-  public void sendEmailAboutReassignRequest(String rcGroupId, String toConsultantId) {
-    // will call user service
+  public void sendEmailAboutReassignRequest(String rcGroupId, AliasArgs aliasArgs) {
+    var reassignmentNotification = new ReassignmentNotificationDTO()
+        .rcGroupId(rcGroupId)
+        .toConsultantId(aliasArgs.getToConsultantId())
+        .fromConsultantName(aliasArgs.getFromConsultantName());
+    addDefaultHeaders(userControllerApi.getApiClient());
+    userControllerApi.sendReassignmentNotification(reassignmentNotification);
+  }
+
+  public void sendEmailAboutReassignDecision(String roomId,
+      ConsultantReassignment consultantReassignment) {
+    var reassignmentNotification = new ReassignmentNotificationDTO()
+        .rcGroupId(roomId)
+        .toConsultantId(consultantReassignment.getToConsultantId())
+        .fromConsultantName(consultantReassignment.getFromConsultantName())
+        .isConfirmed(consultantReassignment.getStatus() == ReassignStatus.CONFIRMED);
+    addDefaultHeaders(userControllerApi.getApiClient());
+    userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
 }

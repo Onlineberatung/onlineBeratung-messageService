@@ -1,9 +1,10 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import de.caritas.cob.messageservice.Messenger;
 import de.caritas.cob.messageservice.api.exception.BadRequestException;
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -46,7 +47,7 @@ public class MessageController implements MessagesApi {
 
   private final @NonNull RocketChatService rocketChatService;
   private final @NonNull EncryptionService encryptionService;
-  private final @NonNull PostGroupMessageFacade postGroupMessageFacade;
+  private final @NonNull Messenger messenger;
   private final @NonNull DraftMessageService draftMessageService;
 
   /**
@@ -106,7 +107,7 @@ public class MessageController implements MessagesApi {
         .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
         .type(message.getT()).build();
 
-    var response = postGroupMessageFacade.postGroupMessage(groupMessage);
+    var response = messenger.postGroupMessage(groupMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -138,7 +139,7 @@ public class MessageController implements MessagesApi {
         .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage())
         .orgText(forwardMessageDTO.getOrg()).type(forwardMessageDTO.getT()).alias(alias.get())
         .build();
-    var response = postGroupMessageFacade.postFeedbackGroupMessage(forwardMessage);
+    var response = messenger.postFeedbackGroupMessage(forwardMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -160,7 +161,7 @@ public class MessageController implements MessagesApi {
     var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
         .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
 
-    var response = postGroupMessageFacade.postFeedbackGroupMessage(feedbackMessage);
+    var response = messenger.postFeedbackGroupMessage(feedbackMessage);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
@@ -176,7 +177,7 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageResponseDTO> createVideoHintMessage(@RequestHeader String rcGroupId,
       @Valid @RequestBody VideoCallMessageDTO videoCallMessageDTO) {
 
-    var response = this.postGroupMessageFacade.createVideoHintMessage(rcGroupId,
+    var response = this.messenger.createVideoHintMessage(rcGroupId,
         videoCallMessageDTO);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -232,15 +233,46 @@ public class MessageController implements MessagesApi {
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    if (nonNull(aliasArgs) && !type.equals(MessageType.REASSIGN_CONSULTANT)) {
+    if (nonNull(aliasArgs) && type != MessageType.REASSIGN_CONSULTANT) {
       var message = String.format("Alias args are not supported by type (%s).", type);
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    var response = postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, type, aliasArgs);
+    if (type == MessageType.REASSIGN_CONSULTANT && hasMissingMandatoryAliasArgForReassignment(
+        aliasArgs)) {
+      var errorFormat = "toConsultantId is required during reassignment creation (%s).";
+      var message = String.format(errorFormat, MessageType.REASSIGN_CONSULTANT);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    var response = messenger.createEvent(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
+
+  private boolean hasMissingMandatoryAliasArgForReassignment(AliasArgs aliasArgs) {
+    if (nonNull(aliasArgs)) {
+      return isNull(aliasArgs.getToConsultantId()) || isNull(aliasArgs.getFromConsultantName())
+          || isNull(aliasArgs.getToConsultantName()) || isNull(aliasArgs.getToAskerName());
+    }
+    return true;
+  }
+
+  @Override
+  public ResponseEntity<Void> patchMessage(String rcToken, String rcUserId, String messageId,
+      AliasArgs aliasArgs) {
+    var reassignStatus = aliasArgs.getStatus();
+    if (reassignStatus == ReassignStatus.REQUESTED) {
+      var message = String.format("Updating to status (%s) is not supported.", reassignStatus);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    return messenger.patchEventMessage(rcToken, rcUserId, messageId, reassignStatus)
+        ? ResponseEntity.noContent().build()
+        : ResponseEntity.notFound().build();
+  }
+}
+
 
   /**
    * Posts a message which contains an alias with the provided {@link MessageType} in
@@ -258,15 +290,3 @@ public class MessageController implements MessagesApi {
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
-  @Override
-  public ResponseEntity<Void> patchMessage(String rcToken, String rcUserId, String messageId,
-      AliasArgs aliasArgs) {
-    var reassignStatus = aliasArgs.getStatus();
-    if (reassignStatus == ReassignStatus.REQUESTED) {
-      var message = String.format("Updating status (%s) is not supported.", reassignStatus);
-      throw new BadRequestException(message, LogService::logBadRequest);
-    }
-
-    return ResponseEntity.noContent().build();
-  }
-}
