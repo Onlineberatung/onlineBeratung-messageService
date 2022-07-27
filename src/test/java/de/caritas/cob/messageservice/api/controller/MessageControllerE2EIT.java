@@ -8,7 +8,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
@@ -577,8 +580,14 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
         .andExpect(jsonPath("rid", is(rcFeedbackGroupId)))
+        .andExpect(jsonPath("org", is(not(feedbackMessage.getOrg()))))
+        .andExpect(jsonPath("org", startsWith("enc:")))
         .andExpect(jsonPath("t", is(nullValue())))
         .andExpect(jsonPath("_id").isNotEmpty());
+
+    var messageRequestPayload = sendMessagePayloadCaptor.getValue().getBody();
+    assertNotNull(messageRequestPayload);
+    assertTrue(messageRequestPayload.getMessage().getOrg().startsWith("enc:"));
   }
 
   @Test
@@ -995,6 +1004,8 @@ class MessageControllerE2EIT {
     var feedbackMessage = new MessageDTO();
     feedbackMessage.setMessage(text);
     feedbackMessage.setT(type);
+    feedbackMessage.setOrg(RandomStringUtils.randomAlphanumeric(32));
+
     return feedbackMessage;
   }
 
