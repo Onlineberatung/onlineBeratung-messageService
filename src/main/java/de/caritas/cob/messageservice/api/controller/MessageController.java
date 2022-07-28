@@ -158,8 +158,10 @@ public class MessageController implements MessagesApi {
       @RequestHeader String rcUserId, @RequestHeader String rcFeedbackGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
-        .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
+    var feedbackMessage = ChatMessage.builder()
+        .rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcFeedbackGroupId).type(message.getT())
+        .text(message.getMessage()).orgText(message.getOrg())
+        .build();
 
     var response = messenger.postFeedbackGroupMessage(feedbackMessage);
 
