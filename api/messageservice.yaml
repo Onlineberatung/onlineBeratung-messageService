@@ -31,7 +31,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: key
 
   /messages/new:
@@ -66,6 +66,10 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -75,7 +79,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/feedback/new:
@@ -110,6 +114,10 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -119,7 +127,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
       x-codegen-request-body-name: Message
 
   /messages/videohint/new:
@@ -143,6 +151,10 @@ paths:
       responses:
         201:
           description: CREATED - hint message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -195,7 +207,54 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
+
+  /messages/{messageId}:
+    patch:
+      tags:
+        - message-controller
+      summary: 'Partially updates a message [Auth: user]'
+      description: Current support is limited to the reassign status.
+      operationId: patchMessage
+      parameters:
+        - name: rcToken
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: rcUserId
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 17
+            maxLength: 17
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/AliasArgs'
+      responses:
+        204:
+          description: NO CONTENT - message has been updated
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        404:
+          description: NOT FOUND - messageId unknown
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
 
   /messages/forward:
     post:
@@ -230,6 +289,10 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -239,7 +302,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/draft:
     post:
@@ -258,7 +321,7 @@ paths:
         content:
           'application/json':
             schema:
-              type: string
+              $ref: '#/components/schemas/DraftMessageDTO'
         required: true
       responses:
         200:
@@ -274,7 +337,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
     get:
       tags:
         - message-controller
@@ -292,7 +355,7 @@ paths:
           content:
             'application/json':
               schema:
-                type: string
+                $ref: '#/components/schemas/DraftMessageDTO'
         204:
           description: NO CONTENT - no messages available
         400:
@@ -304,7 +367,7 @@ paths:
         500:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
-        - Bearer: []
+        - Bearer: [ ]
 
   /messages/aliasonly/new:
     post:
@@ -328,6 +391,47 @@ paths:
       responses:
         201:
           description: CREATED - message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /messages/aliasWithContent/new:
+    post:
+      tags:
+        - message-controller
+      summary: 'Saves a new system message containing the provided message type in the alias and
+      some content.
+      [Authorization: Role: user, consultant, technical]'
+      operationId: saveAliasMessageWithContent
+      parameters:
+        - name: rcGroupId
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/AliasMessageDTO'
+      responses:
+        201:
+          description: CREATED - message was successfully created
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessageResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -352,6 +456,12 @@ components:
         sendNotification:
           type: boolean
           example: "true"
+        t:
+          type: string
+          example: "c"
+        org:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
 
     MessageStreamDTO:
       type: object
@@ -379,12 +489,18 @@ components:
         _id:
           type: string
           example: "M73fE4WhYF4peYB3s"
+        t:
+          type: string
+          example: "room_changed_privacy"
         alias:
           $ref: '#/components/schemas/AliasMessageDTO'
         rid:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
         msg:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
         ts:
@@ -414,6 +530,42 @@ components:
         file:
           $ref: '#/components/schemas/FileDTO'
 
+    MessageResponseDTO:
+      type: object
+      required:
+        - _id
+        - rid
+        - msg
+        - ts
+        - _updatedAt
+      properties:
+        _id:
+          type: string
+          example: "M73fE4WhYF4peYB3s"
+        t:
+          type: string
+          example: "room_changed_privacy"
+        e2e:
+          type: string
+          example: "pending"
+        org:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        rid:
+          type: string
+          example: "fR2Rz7dmWmHdXE8uz"
+        msg:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        ts:
+          type: string
+          description: "Full qualified timestamp"
+          example: "2018-11-15T09:33:00.057Z"
+        _updatedAt:
+          type: string
+          description: "Full qualified timestamp"
+          example: "2018-11-15T09:33:00.057Z"
+
     AliasMessageDTO:
       type: object
       properties:
@@ -423,6 +575,8 @@ components:
           $ref: '#/components/schemas/VideoCallMessageDTO'
         messageType:
           $ref: '#/components/schemas/MessageType'
+        content:
+          type: string
 
     ForwardMessageDTO:
       type: object
@@ -433,6 +587,9 @@ components:
         - rcUserId
       properties:
         message:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
         timestamp:
@@ -447,6 +604,8 @@ components:
         rcUserId:
           type: string
           example: "ag89h3tjkerg94t"
+        t:
+          type: string
 
     VideoCallMessageDTO:
       type: object
@@ -475,10 +634,15 @@ components:
       properties:
         messageType:
           $ref: '#/components/schemas/MessageType'
+        args:
+          $ref: '#/components/schemas/AliasArgs'
 
     MessageType:
       type: string
       enum:
+        - "APPOINTMENT_SET"
+        - "APPOINTMENT_CANCELLED"
+        - "APPOINTMENT_RESCHEDULED"
         - "FINISHED_CONVERSATION"
         - "FORWARD"
         - "FURTHER_STEPS"
@@ -486,6 +650,42 @@ components:
         - "VIDEOCALL"
         - "USER_MUTED"
         - "USER_UNMUTED"
+        - "E2EE_ACTIVATED"
+        - "MASTER_KEY_LOST"
+        - "REASSIGN_CONSULTANT"
+        - "REASSIGN_CONSULTANT_RESET_LAST_MESSAGE"
+
+    AliasArgs:
+      oneOf:
+        - $ref: '#/components/schemas/ConsultantReassignment'
+
+    ConsultantReassignment:
+      type: object
+      description: >
+        toConsultantId, toConsultantName, toAskerName and fromConsultantName are required during
+        creation but cannot be changed afterwards. Thus, in subsequent edits these properties can
+        be omitted because they are ignored then.
+      required:
+        - status
+      properties:
+        toConsultantId:
+          type: string
+          format: UUID
+        toConsultantName:
+          type: string
+        toAskerName:
+          type: string
+        fromConsultantName:
+          type: string
+        status:
+          $ref: '#/components/schemas/ReassignStatus'
+
+    ReassignStatus:
+      type: string
+      enum:
+        - "REQUESTED"
+        - "CONFIRMED"
+        - "REJECTED"
 
     UserDTO:
       type: object
@@ -561,6 +761,21 @@ components:
         type:
           type: string
           example: "image/jepg"
+
+    DraftMessageDTO:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        org:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+        t:
+          type: string
+          example: "c"
 
     MasterKeyDTO:
       type: object
