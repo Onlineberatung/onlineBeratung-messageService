@@ -8,11 +8,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -26,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
+import de.caritas.cob.messageservice.api.facade.EmailNotificationFacade;
 import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -66,7 +71,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -89,7 +93,7 @@ import org.springframework.web.client.RestTemplate;
 @AutoConfigureMockMvc
 @ActiveProfiles("testing")
 @AutoConfigureTestDatabase
-public class MessageControllerE2EIT {
+class MessageControllerE2EIT {
 
   private static final EasyRandom easyRandom = new EasyRandom();
   private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -124,6 +128,10 @@ public class MessageControllerE2EIT {
   @SuppressWarnings("unused")
   private StatisticsService statisticsService;
 
+  @MockBean
+  @SuppressWarnings("unused")
+  private EmailNotificationFacade emailNotificationFacade;
+
   @Captor
   private ArgumentCaptor<HttpEntity<SendMessageWrapper>> sendMessagePayloadCaptor;
 
@@ -148,13 +156,13 @@ public class MessageControllerE2EIT {
     givenSomeMessagesWithMutedUnmutedType();
 
     mockMvc.perform(
-            get("/messages")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
-        )
+        get("/messages")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+    )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
         .andExpect(jsonPath("messages[0].alias.messageType", is(not("USER_MUTED"))))
@@ -175,13 +183,13 @@ public class MessageControllerE2EIT {
     givenAMessageWithAnEncryptedConsultantReassignment(groupId);
 
     var response = mockMvc.perform(
-            get("/messages")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .param("rcGroupId", groupId)
-        )
+        get("/messages")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .param("rcGroupId", groupId)
+    )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(1)))
         .andExpect(jsonPath("messages[0].alias.messageType", is("REASSIGN_CONSULTANT")))
@@ -203,13 +211,13 @@ public class MessageControllerE2EIT {
     givenMessagesWithoutClearAlias();
 
     mockMvc.perform(
-            get("/messages")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
-        )
+        get("/messages")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+    )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
         .andExpect(jsonPath("messages[0].alias").isEmpty())
@@ -225,13 +233,13 @@ public class MessageControllerE2EIT {
     givenMessages();
 
     mockMvc.perform(
-            get("/messages")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
-        )
+        get("/messages")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+    )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
         .andExpect(jsonPath("messages[0].org").isNotEmpty())
@@ -255,14 +263,14 @@ public class MessageControllerE2EIT {
     givenAWronglyFormattedMessageId();
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -274,13 +282,13 @@ public class MessageControllerE2EIT {
     givenAValidMessageId();
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -292,13 +300,13 @@ public class MessageControllerE2EIT {
     givenAValidMessageId();
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -310,14 +318,14 @@ public class MessageControllerE2EIT {
     givenAValidMessageId();
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -329,14 +337,14 @@ public class MessageControllerE2EIT {
     var content = "{ \"status\": \"" + RandomStringUtils.randomAlphabetic(16) + "\" }";
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(content)
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(content)
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -350,14 +358,14 @@ public class MessageControllerE2EIT {
     givenANonEventGetChatMessageResponse(messageId);
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -370,14 +378,14 @@ public class MessageControllerE2EIT {
     givenAGetChatMessageNotFoundResponse(messageId);
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isNotFound());
   }
 
@@ -391,14 +399,14 @@ public class MessageControllerE2EIT {
     givenAGetChatMessageSevereErrorResponse(messageId);
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isInternalServerError());
   }
 
@@ -414,14 +422,14 @@ public class MessageControllerE2EIT {
     givenASuccessfulUpdateChatMessageResponse();
 
     mockMvc.perform(
-            patch("/messages/{messageId}", messageId)
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasArgs))
-        )
+        patch("/messages/{messageId}", messageId)
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasArgs))
+    )
         .andExpect(status().isNoContent());
   }
 
@@ -436,15 +444,15 @@ public class MessageControllerE2EIT {
     MessageDTO encryptedMessage = createMessage("enc.secret_message", "p");
 
     mockMvc.perform(
-            post("/messages/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcGroupId", rcGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(encryptedMessage))
-        )
+        post("/messages/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .header("rcGroupId", rcGroupId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(encryptedMessage))
+    )
         .andExpect(status().isCreated());
 
     var body = sendMessagePayloadCaptor.getValue().getBody();
@@ -469,15 +477,15 @@ public class MessageControllerE2EIT {
     givenEncryptionCapturing(encMessageWithOrg.getMessage(), encMessageWithOrg.getOrg());
 
     mockMvc.perform(
-            post("/messages/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcGroupId", rcGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(encMessageWithOrg))
-        )
+        post("/messages/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .header("rcGroupId", rcGroupId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(encMessageWithOrg))
+    )
         .andExpect(status().isCreated());
 
     var body = sendMessagePayloadCaptor.getValue().getBody();
@@ -502,15 +510,15 @@ public class MessageControllerE2EIT {
     MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
 
     mockMvc.perform(
-            post("/messages/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcGroupId", rcGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(encryptedMessage))
-        )
+        post("/messages/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .header("rcGroupId", rcGroupId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(encryptedMessage))
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
@@ -531,13 +539,13 @@ public class MessageControllerE2EIT {
     givenAMasterKey();
 
     mockMvc.perform(
-            post("/messages/videohint/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcGroupId", rcGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(vcm))
-        )
+        post("/messages/videohint/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", rcGroupId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(vcm))
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
@@ -559,21 +567,27 @@ public class MessageControllerE2EIT {
     givenAMasterKey();
 
     mockMvc.perform(
-            post("/messages/feedback/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcFeedbackGroupId", rcFeedbackGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(feedbackMessage))
-        )
+        post("/messages/feedback/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .header("rcFeedbackGroupId", rcFeedbackGroupId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(feedbackMessage))
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
         .andExpect(jsonPath("rid", is(rcFeedbackGroupId)))
+        .andExpect(jsonPath("org", is(not(feedbackMessage.getOrg()))))
+        .andExpect(jsonPath("org", startsWith("enc:")))
         .andExpect(jsonPath("t", is(nullValue())))
         .andExpect(jsonPath("_id").isNotEmpty());
+
+    var messageRequestPayload = sendMessagePayloadCaptor.getValue().getBody();
+    assertNotNull(messageRequestPayload);
+    assertTrue(messageRequestPayload.getMessage().getOrg().startsWith("enc:"));
   }
 
   @Test
@@ -588,15 +602,15 @@ public class MessageControllerE2EIT {
     ForwardMessageDTO forwardMessage = createForwardMessage();
 
     mockMvc.perform(
-            post("/messages/forward")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcGroupId", RC_GROUP_ID)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(forwardMessage))
-        )
+        post("/messages/forward")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(forwardMessage))
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
@@ -612,14 +626,14 @@ public class MessageControllerE2EIT {
     givenAReassignmentEventWithNoConsultantId();
 
     mockMvc.perform(
-            post("/messages/aliasonly/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcGroupId", RC_GROUP_ID)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasOnlyMessage))
-                .accept(MediaType.APPLICATION_JSON)
-        )
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON)
+    )
         .andExpect(status().isBadRequest());
   }
 
@@ -633,14 +647,14 @@ public class MessageControllerE2EIT {
     givenAMasterKey();
 
     mockMvc.perform(
-            post("/messages/aliasonly/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcGroupId", RC_GROUP_ID)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasOnlyMessage))
-                .accept(MediaType.APPLICATION_JSON)
-        )
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON)
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
@@ -660,14 +674,14 @@ public class MessageControllerE2EIT {
     givenAMasterKey();
 
     mockMvc.perform(
-            post("/messages/aliasonly/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcGroupId", RC_GROUP_ID)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(aliasOnlyMessage))
-                .accept(MediaType.APPLICATION_JSON)
-        )
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON)
+    )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
@@ -682,6 +696,26 @@ public class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getAlias()).containsSequence("messageType");
     assertThat(sendMessageRequest.getAlias()).containsSequence("REASSIGN_CONSULTANT");
     assertThat(sendMessageRequest.getMsg()).startsWith("enc:");
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  void saveAliasOnlyMessageShouldReturnBadRequest_When_aliasIsEmpty() throws Exception {
+    givenAuthenticatedUser();
+    givenRocketChatSystemUser();
+    givenAnAliasOnlyMessageWithSupportedMessageAndEmptyArgs();
+    givenSuccessfulSendMessageResponse(null, RC_GROUP_ID);
+    givenAMasterKey();
+
+    mockMvc.perform(
+        post("/messages/aliasonly/new")
+            .cookie(CSRF_COOKIE)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcGroupId", RC_GROUP_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(aliasOnlyMessage))
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -725,7 +759,7 @@ public class MessageControllerE2EIT {
 
   private void givenEncryptionCapturing(String encMessage, String plainMessage)
       throws CustomCryptoException {
-    var encServiceMock = Mockito.mock(EncryptionService.class);
+    var encServiceMock = mock(EncryptionService.class);
     ReflectionTestUtils.setField(rocketChatService, "encryptionService", encServiceMock);
     when(encServiceMock.encrypt(eq(encMessage), anyString())).thenReturn("encCameIn");
     when(encServiceMock.encrypt(eq(plainMessage), anyString())).thenReturn("plainCameIn");
@@ -921,6 +955,12 @@ public class MessageControllerE2EIT {
     aliasOnlyMessage.getArgs().setStatus(ReassignStatus.REQUESTED);
   }
 
+  private void givenAnAliasOnlyMessageWithSupportedMessageAndEmptyArgs() {
+    aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
+    aliasOnlyMessage.setMessageType(MessageType.REASSIGN_CONSULTANT);
+    aliasOnlyMessage.setArgs(null);
+  }
+
   private void givenAReassignmentEventWithNoConsultantId() {
     aliasOnlyMessage = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     var args = new AliasArgs();
@@ -964,6 +1004,8 @@ public class MessageControllerE2EIT {
     var feedbackMessage = new MessageDTO();
     feedbackMessage.setMessage(text);
     feedbackMessage.setT(type);
+    feedbackMessage.setOrg(RandomStringUtils.randomAlphanumeric(32));
+
     return feedbackMessage;
   }
 

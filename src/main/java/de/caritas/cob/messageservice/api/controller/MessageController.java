@@ -3,8 +3,8 @@ package de.caritas.cob.messageservice.api.controller;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.Messenger;
+import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -158,8 +158,10 @@ public class MessageController implements MessagesApi {
       @RequestHeader String rcUserId, @RequestHeader String rcFeedbackGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    var feedbackMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
-        .rcGroupId(rcFeedbackGroupId).type(message.getT()).text(message.getMessage()).build();
+    var feedbackMessage = ChatMessage.builder()
+        .rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcFeedbackGroupId).type(message.getT())
+        .text(message.getMessage()).orgText(message.getOrg())
+        .build();
 
     var response = messenger.postFeedbackGroupMessage(feedbackMessage);
 
@@ -238,7 +240,8 @@ public class MessageController implements MessagesApi {
       throw new BadRequestException(message, LogService::logBadRequest);
     }
 
-    if (type == MessageType.REASSIGN_CONSULTANT && isNull(aliasArgs.getToConsultantId())) {
+    if (type == MessageType.REASSIGN_CONSULTANT && hasMissingMandatoryAliasArgForReassignment(
+        aliasArgs)) {
       var errorFormat = "toConsultantId is required during reassignment creation (%s).";
       var message = String.format(errorFormat, MessageType.REASSIGN_CONSULTANT);
       throw new BadRequestException(message, LogService::logBadRequest);
@@ -247,6 +250,14 @@ public class MessageController implements MessagesApi {
     var response = messenger.createEvent(rcGroupId, type, aliasArgs);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
+  }
+
+  private boolean hasMissingMandatoryAliasArgForReassignment(AliasArgs aliasArgs) {
+    if (nonNull(aliasArgs)) {
+      return isNull(aliasArgs.getToConsultantId()) || isNull(aliasArgs.getFromConsultantName())
+          || isNull(aliasArgs.getToConsultantName()) || isNull(aliasArgs.getToAskerName());
+    }
+    return true;
   }
 
   @Override
@@ -262,4 +273,25 @@ public class MessageController implements MessagesApi {
         ? ResponseEntity.noContent().build()
         : ResponseEntity.notFound().build();
   }
+
+  /**
+   * Posts a message which contains an alias with the provided {@link MessageType} in the specified
+   * Rocket.Chat group.
+   *
+   * @param rcGroupId           (required) Rocket.Chat group ID
+   * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
+   * @return {@link ResponseEntity} with the {@link HttpStatus}
+   */
+  @Override
+  public ResponseEntity<MessageResponseDTO> saveAliasMessageWithContent(
+      @RequestHeader String rcGroupId,
+      @Valid AliasMessageDTO aliasOnlyMessageDTO) {
+    var type = aliasOnlyMessageDTO.getMessageType();
+    var response = messenger
+        .postAliasMessage(rcGroupId, type, aliasOnlyMessageDTO.getContent());
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+  }
+
 }
+
+

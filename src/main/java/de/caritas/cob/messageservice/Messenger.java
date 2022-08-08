@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice;
 
+import static de.caritas.cob.messageservice.api.model.MessageType.MASTER_KEY_LOST;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
@@ -126,8 +127,8 @@ public class Messenger {
       rocketChatService.markGroupAsReadForSystemUser(groupMessage.getRcGroupId());
       return mapper.messageResponseOf(response);
     } catch (RocketChatSendMessageException
-             | RocketChatPostMarkGroupAsReadException
-             | CustomCryptoException ex) {
+        | RocketChatPostMarkGroupAsReadException
+        | CustomCryptoException ex) {
       throw new InternalServerErrorException(ex, LogService::logInternalServerError);
     }
   }
@@ -176,9 +177,12 @@ public class Messenger {
         rcGroupId, aliasMessage, messageString
     );
 
+    if (MASTER_KEY_LOST.equals(messageType)) {
+      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId);
+    }
+
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
-      var toConsultantId = aliasArgs.getToConsultantId();
-      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, toConsultantId.toString());
+      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, aliasArgs);
     }
 
     return mapper.messageResponseOf(response);
@@ -203,10 +207,24 @@ public class Messenger {
     var isUpdated = rocketChatService.updateMessage(updatedMessage);
     if (isUpdated && status == ReassignStatus.CONFIRMED) {
       emailNotificationFacade.sendEmailAboutReassignDecision(
-          updatedMessage.getRoomId(), consultantReassignment.getToConsultantId()
-      );
+          updatedMessage.getRoomId(), consultantReassignment);
     }
 
     return isUpdated;
+  }
+
+  /**
+   * Posts a message which contains an alias with the provided {@link MessageType} in
+   * the specified Rocket.Chat group.
+   *
+   * @param rcGroupId   Rocket.Chat group ID
+   * @param messageType {@link MessageType}
+   * @return {@link MessageResponseDTO}
+   */
+  public MessageResponseDTO postAliasMessage(String rcGroupId, MessageType messageType, String content) {
+    AliasMessageDTO aliasMessageDTO = new AliasMessageDTO().messageType(messageType).content(content);
+    var response = this.rocketChatService.postAliasOnlyMessageAsSystemUser(rcGroupId,
+        aliasMessageDTO);
+    return mapper.messageResponseOf(response);
   }
 }

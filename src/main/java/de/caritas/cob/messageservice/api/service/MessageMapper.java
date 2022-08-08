@@ -78,6 +78,7 @@ public class MessageMapper {
   public ConsultantReassignment consultantReassignmentOf(Message message) {
     try {
       var foundMsgString = encryptionService.decrypt(message.getMsg(), message.getRid());
+      foundMsgString = foundMsgString.replace("&quot;", "\"");
       return objectMapper.readValue(foundMsgString, ConsultantReassignment.class);
     } catch (JsonProcessingException | CustomCryptoException e) {
       throw new RuntimeException(e);
