@@ -67,5 +67,9 @@ public class MessagesDTO {
   @ApiModelProperty(required = false, position = 11)
   private FileDTO file;
 
+  @ApiModelProperty
+  private String t;
 
+  @ApiModelProperty
+  private String org;
 }

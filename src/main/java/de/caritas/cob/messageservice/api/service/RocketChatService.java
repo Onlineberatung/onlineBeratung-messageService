@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.service;
 
 import static com.github.jknack.handlebars.internal.lang3.StringUtils.EMPTY;
+import static com.github.jknack.handlebars.internal.lang3.StringUtils.isNotBlank;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -12,6 +13,7 @@ import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedE
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
 import de.caritas.cob.messageservice.api.helper.XssProtection;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
+import de.caritas.cob.messageservice.api.model.ChatMessage;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
@@ -19,8 +21,12 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.StandardResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.PostGroupAsReadDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageDTO;
-import de.caritas.cob.messageservice.api.model.rocket.chat.message.PostMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
+import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
+import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.net.URI;
 import java.util.Collections;
@@ -28,10 +34,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -39,14 +47,23 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RocketChatService {
+
+  public static final String E2E_ENCRYPTION_TYPE = "e2e";
+
+  private static final String ENDPOINT_MESSAGE_GET = "/chat.getMessage?msgId=";
+  private static final String ENDPOINT_MESSAGE_UPDATE = "/chat.update";
+
+  @Value("${rocket.chat.api.url}")
+  private String baseUrl;
 
   @Value("${rocket.chat.api.get.group.message.url}")
   private String rcGetGroupMessageUrl;
 
-  @Value("${rocket.chat.api.post.message.url}")
-  private String rcPostMessageUrl;
+  @Value("${rocket.chat.api.send.message.url}")
+  private String rcSendMessageUrl;
 
   @Value("${rocket.chat.api.post.group.messages.read.url}")
   private String rcPostGroupMessagesRead;
@@ -81,6 +98,7 @@ public class RocketChatService {
   private final @NonNull RestTemplate restTemplate;
   private final @NonNull EncryptionService encryptionService;
   private final @NonNull RocketChatCredentialsHelper rcCredentialHelper;
+  private final MessageMapper mapper;
 
   // MVP: count and offset are always 0 to get all messages
   private static final int DEFAULT_COUNT = 0;
@@ -102,6 +120,7 @@ public class RocketChatService {
         .stream()
         .filter(userDTO -> !userDTO.getU().getUsername().equals(rcTechnicalUser))
         .map(msg -> decryptMessageAndSetMessageType(msg, rcGroupId))
+        .map(mapper::typedMessageOf)
         .collect(Collectors.toList()));
 
     return messageStream;
@@ -150,7 +169,7 @@ public class RocketChatService {
   private void decryptMessage(MessagesDTO msg, String rcGroupId) {
     try {
       msg.setMsg(encryptionService.decrypt(msg.getMsg(), rcGroupId));
-
+      msg.setOrg(encryptionService.decrypt(msg.getOrg(), rcGroupId));
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     }
@@ -163,37 +182,74 @@ public class RocketChatService {
 
     if (nonNull(msg.getAlias().getForwardMessageDTO())) {
       msg.getAlias().setMessageType(MessageType.FORWARD);
-    } else {
+    } else if (nonNull(msg.getAlias().getVideoCallMessageDTO())) {
       msg.getAlias().setMessageType(MessageType.VIDEOCALL);
     }
+  }
+
+  public SendMessageResponseDTO postGroupMessage(ChatMessage chatMessage)
+      throws CustomCryptoException {
+    return postGroupMessage(chatMessage, true);
   }
 
   /**
    * Posts a message via Rocket.Chat API for the provided Rocket.Chat user in the provided group.
    *
-   * @param rcToken   Rocket.Chat authentication token
-   * @param rcUserId  Rocket.Chat user Id
-   * @param rcGroupId Rocket.Chat group Id
-   * @param message   Rocket.Chat message
+   * @param chatMessage the message
    * @return PostMessageResponseDTO
+   * @throws CustomCryptoException if text encryption failed
    */
-  public PostMessageResponseDTO postGroupMessage(
-      String rcToken, String rcUserId, String rcGroupId, String message, String alias)
+  public SendMessageResponseDTO postGroupMessage(ChatMessage chatMessage, boolean escapeMsg)
       throws CustomCryptoException {
+    var headers = getRocketChatHeader(chatMessage.getRcToken(), chatMessage.getRcUserId());
 
-    message = XssProtection.escapeHtml(message);
-    message = encryptionService.encrypt(message, rcGroupId);
-    HttpHeaders headers = getRocketChatHeader(rcToken, rcUserId);
-    PostMessageDTO postMessageDTO = new PostMessageDTO(rcGroupId, message, alias);
-    HttpEntity<PostMessageDTO> request = new HttpEntity<>(postMessageDTO, headers);
+    var msg = extractMessageText(chatMessage, escapeMsg);
+    var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), msg,
+        extractOrgMessageText(chatMessage), chatMessage.getAlias(), chatMessage.getType());
+    var payload = new SendMessageWrapper(sendMessage);
+
+    var request = new HttpEntity<>(payload, headers);
 
     try {
-      return restTemplate.postForObject(rcPostMessageUrl, request, PostMessageResponseDTO.class);
+      return restTemplate.postForObject(rcSendMessageUrl, request, SendMessageResponseDTO.class);
     } catch (Exception ex) {
       LogService.logRocketChatServiceError(
           "Request body which caused the error was " + request.getBody());
       throw new InternalServerErrorException(ex, LogService::logRocketChatServiceError);
     }
+  }
+
+  private String extractMessageText(ChatMessage chatMessage, boolean escapeMsg)
+      throws CustomCryptoException {
+    if (isMessageE2eEncrypted(chatMessage)) {
+      return chatMessage.getText();
+    }
+    return encryptText(chatMessage.getText(), chatMessage.getRcGroupId(), escapeMsg);
+  }
+
+  private String extractOrgMessageText(ChatMessage chatMessage) throws CustomCryptoException {
+    if (isNotBlank(chatMessage.getOrgText())) {
+      return encryptText(chatMessage.getOrgText(), chatMessage.getRcGroupId(), true);
+    }
+    return chatMessage.getOrgText();
+  }
+
+  private boolean isMessageE2eEncrypted(ChatMessage chatMessage) {
+    return E2E_ENCRYPTION_TYPE.equals(chatMessage.getType());
+  }
+
+  private String encryptText(String text, String rcGroupId, boolean escapeText)
+      throws CustomCryptoException {
+    if (escapeText) {
+      text = XssProtection.escapeHtml(text);
+    }
+
+    return encryptionService.encrypt(text, rcGroupId);
+  }
+
+  public SendMessageResponseDTO postAliasOnlyMessageAsSystemUser(String rcGroupId,
+      AliasMessageDTO aliasMessageDTO) {
+    return postAliasOnlyMessageAsSystemUser(rcGroupId, aliasMessageDTO, null);
   }
 
   /**
@@ -202,17 +258,47 @@ public class RocketChatService {
    *
    * @param rcGroupId       the Rocket.Chat group id
    * @param aliasMessageDTO {@link AliasMessageDTO}
+   * @return {@link SendMessageResponseDTO}
    */
-  public void postAliasOnlyMessageAsSystemUser(String rcGroupId, AliasMessageDTO aliasMessageDTO) {
-    RocketChatCredentials systemUser = retrieveSystemUser();
-    String alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
+  public SendMessageResponseDTO postAliasOnlyMessageAsSystemUser(String rcGroupId,
+      AliasMessageDTO aliasMessageDTO, String messageString) {
+    var systemUser = retrieveSystemUser();
+    var alias = JSONHelper.convertAliasMessageDTOToString(aliasMessageDTO).orElse(null);
+    var aliasMessage = createAliasMessage(rcGroupId, systemUser, alias, messageString);
 
     try {
-      this.postGroupMessage(systemUser.getRocketChatToken(), systemUser.getRocketChatUserId(),
-          rcGroupId, EMPTY, alias);
+      return postGroupMessage(aliasMessage, false);
     } catch (CustomCryptoException e) {
       throw new InternalServerErrorException(e, LogService::logInternalServerError);
     }
+  }
+
+  public boolean updateMessage(UpdateMessage message) {
+    var systemUser = retrieveSystemUser();
+    var headers = getRocketChatHeader(systemUser.getRocketChatToken(),
+        systemUser.getRocketChatUserId());
+    var request = new HttpEntity<>(message, headers);
+    var url = baseUrl + ENDPOINT_MESSAGE_UPDATE;
+
+    try {
+      var response = restTemplate.postForObject(url, request, MessageResponse.class);
+      return nonNull(response) && response.getSuccess();
+    } catch (HttpClientErrorException exception) {
+      log.error("Chat Update-Message failed.", exception);
+      return false;
+    }
+  }
+
+  private ChatMessage createAliasMessage(String rcGroupId, RocketChatCredentials systemUser,
+      String alias, String message) {
+    var text = isNull(message) ? EMPTY : message;
+
+    return ChatMessage.builder()
+        .rcToken(systemUser.getRocketChatToken())
+        .rcUserId(systemUser.getRocketChatUserId())
+        .rcGroupId(rcGroupId)
+        .text(text)
+        .alias(alias).build();
   }
 
   private RocketChatCredentials retrieveSystemUser() {
@@ -298,5 +384,31 @@ public class RocketChatService {
               clientErrorEx.getStatusCode(), rcUserId, rcGroupId),
           LogService::logRocketChatBadRequestError);
     }
+  }
+
+  public Message findMessage(String rcToken, String rcUserId, String messageId) {
+    var url = baseUrl + ENDPOINT_MESSAGE_GET + messageId;
+    var entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.exchange(url, HttpMethod.GET, entity, MessageResponse.class);
+      if (nonNull(response.getBody())) {
+        return response.getBody().getMessage();
+      }
+    } catch (HttpClientErrorException exception) {
+      if (!isRcNotFoundResponse(exception)) {
+        var errorFormat = "Could not read message (%s) from Rocket.Chat API";
+        var errorMessage = String.format(errorFormat, messageId);
+        throw new InternalServerErrorException(errorMessage, LogService::logRocketChatServiceError);
+      }
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive
+  private boolean isRcNotFoundResponse(HttpClientErrorException exception) {
+    return HttpStatus.BAD_REQUEST.equals(exception.getStatusCode())
+        && exception.getResponseBodyAsString().matches("\\{.*\"success\"\\s*:\\s*false.*}");
   }
 }
