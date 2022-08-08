@@ -1,16 +1,23 @@
 package de.caritas.cob.messageservice.api.controller;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import de.caritas.cob.messageservice.api.facade.PostGroupMessageFacade;
+import de.caritas.cob.messageservice.Messenger;
+import de.caritas.cob.messageservice.api.exception.BadRequestException;
 import de.caritas.cob.messageservice.api.helper.JSONHelper;
+import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
+import de.caritas.cob.messageservice.api.model.ChatMessage;
+import de.caritas.cob.messageservice.api.model.DraftMessageDTO;
 import de.caritas.cob.messageservice.api.model.ForwardMessageDTO;
 import de.caritas.cob.messageservice.api.model.MasterKeyDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
+import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageStreamDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.draftmessage.SavedDraftType;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
@@ -40,7 +47,7 @@ public class MessageController implements MessagesApi {
 
   private final @NonNull RocketChatService rocketChatService;
   private final @NonNull EncryptionService encryptionService;
-  private final @NonNull PostGroupMessageFacade postGroupMessageFacade;
+  private final @NonNull Messenger messenger;
   private final @NonNull DraftMessageService draftMessageService;
 
   /**
@@ -55,8 +62,7 @@ public class MessageController implements MessagesApi {
   public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestParam String rcGroupId) {
 
-    MessageStreamDTO message =
-        rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
+    MessageStreamDTO message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
 
     return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
         : new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -90,13 +96,20 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> createMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> createMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    postGroupMessageFacade.postGroupMessage(rcToken, rcUserId, rcGroupId, message);
+    var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+        .rcGroupId(rcGroupId)
+        .text(message.getMessage())
+        .orgText(message.getOrg())
+        .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
+        .type(message.getT()).build();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = messenger.postGroupMessage(groupMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -110,7 +123,7 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> forwardMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> forwardMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody ForwardMessageDTO forwardMessageDTO) {
 
@@ -118,14 +131,17 @@ public class MessageController implements MessagesApi {
         JSONHelper.convertAliasMessageDTOToString(
             new AliasMessageDTO().forwardMessageDTO(forwardMessageDTO));
 
-    if (!alias.isPresent()) {
+    if (alias.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
-        rcGroupId, forwardMessageDTO.getMessage(), alias.get());
+    var forwardMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+        .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage())
+        .orgText(forwardMessageDTO.getOrg()).type(forwardMessageDTO.getT()).alias(alias.get())
+        .build();
+    var response = messenger.postFeedbackGroupMessage(forwardMessage);
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -138,14 +154,18 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<Void> createFeedbackMessage(@RequestHeader String rcToken,
+  public ResponseEntity<MessageResponseDTO> createFeedbackMessage(@RequestHeader String rcToken,
       @RequestHeader String rcUserId, @RequestHeader String rcFeedbackGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    postGroupMessageFacade.postFeedbackGroupMessage(rcToken, rcUserId,
-        rcFeedbackGroupId, message.getMessage(), null);
+    var feedbackMessage = ChatMessage.builder()
+        .rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcFeedbackGroupId).type(message.getT())
+        .text(message.getMessage()).orgText(message.getOrg())
+        .build();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var response = messenger.postFeedbackGroupMessage(feedbackMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -156,12 +176,13 @@ public class MessageController implements MessagesApi {
    *                            written in the alias object
    */
   @Override
-  public ResponseEntity<Void> createVideoHintMessage(@RequestHeader String rcGroupId,
+  public ResponseEntity<MessageResponseDTO> createVideoHintMessage(@RequestHeader String rcGroupId,
       @Valid @RequestBody VideoCallMessageDTO videoCallMessageDTO) {
 
-    this.postGroupMessageFacade.createVideoHintMessage(rcGroupId, videoCallMessageDTO);
+    var response = this.messenger.createVideoHintMessage(rcGroupId,
+        videoCallMessageDTO);
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   /**
@@ -173,8 +194,11 @@ public class MessageController implements MessagesApi {
    */
   @Override
   public ResponseEntity<Void> saveDraftMessage(@RequestHeader String rcGroupId,
-      @Valid @RequestBody String message) {
-    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message, rcGroupId);
+      @Valid @RequestBody DraftMessageDTO message) {
+
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message.getMessage(),
+        message.getOrg(), rcGroupId, message.getT());
+
     return new ResponseEntity<>(savedDraftType.getHttpStatus());
   }
 
@@ -185,10 +209,11 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
   @Override
-  public ResponseEntity<String> findDraftMessage(@RequestHeader String rcGroupId) {
-    String draftMessage = this.draftMessageService.findAndDecryptDraftMessage(rcGroupId);
-    return nonNull(draftMessage) ? ResponseEntity.ok(draftMessage) :
-        new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  public ResponseEntity<DraftMessageDTO> findDraftMessage(@RequestHeader String rcGroupId) {
+    Optional<DraftMessageDTO> draftMessage = this.draftMessageService.findAndDecryptDraftMessage(
+        rcGroupId);
+    return draftMessage.map(ResponseEntity::ok)
+        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
   }
 
   /**
@@ -199,10 +224,74 @@ public class MessageController implements MessagesApi {
    * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
    * @return {@link ResponseEntity} with the {@link HttpStatus}
    */
-  @Override public ResponseEntity<Void> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
+  @Override
+  public ResponseEntity<MessageResponseDTO> saveAliasOnlyMessage(@RequestHeader String rcGroupId,
       @Valid AliasOnlyMessageDTO aliasOnlyMessageDTO) {
-    postGroupMessageFacade.postAliasOnlyMessage(rcGroupId, aliasOnlyMessageDTO.getMessageType());
+    var type = aliasOnlyMessageDTO.getMessageType();
+    var aliasArgs = aliasOnlyMessageDTO.getArgs();
 
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    if (type.equals(MessageType.USER_MUTED) || type.equals(MessageType.USER_UNMUTED)) {
+      var message = String.format("Message type (%s) is protected.", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    if (nonNull(aliasArgs) && type != MessageType.REASSIGN_CONSULTANT) {
+      var message = String.format("Alias args are not supported by type (%s).", type);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    if (type == MessageType.REASSIGN_CONSULTANT && hasMissingMandatoryAliasArgForReassignment(
+        aliasArgs)) {
+      var errorFormat = "toConsultantId is required during reassignment creation (%s).";
+      var message = String.format(errorFormat, MessageType.REASSIGN_CONSULTANT);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    var response = messenger.createEvent(rcGroupId, type, aliasArgs);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
+
+  private boolean hasMissingMandatoryAliasArgForReassignment(AliasArgs aliasArgs) {
+    if (nonNull(aliasArgs)) {
+      return isNull(aliasArgs.getToConsultantId()) || isNull(aliasArgs.getFromConsultantName())
+          || isNull(aliasArgs.getToConsultantName()) || isNull(aliasArgs.getToAskerName());
+    }
+    return true;
+  }
+
+  @Override
+  public ResponseEntity<Void> patchMessage(String rcToken, String rcUserId, String messageId,
+      AliasArgs aliasArgs) {
+    var reassignStatus = aliasArgs.getStatus();
+    if (reassignStatus == ReassignStatus.REQUESTED) {
+      var message = String.format("Updating to status (%s) is not supported.", reassignStatus);
+      throw new BadRequestException(message, LogService::logBadRequest);
+    }
+
+    return messenger.patchEventMessage(rcToken, rcUserId, messageId, reassignStatus)
+        ? ResponseEntity.noContent().build()
+        : ResponseEntity.notFound().build();
+  }
+
+  /**
+   * Posts a message which contains an alias with the provided {@link MessageType} in the specified
+   * Rocket.Chat group.
+   *
+   * @param rcGroupId           (required) Rocket.Chat group ID
+   * @param aliasOnlyMessageDTO {@link AliasOnlyMessageDTO}
+   * @return {@link ResponseEntity} with the {@link HttpStatus}
+   */
+  @Override
+  public ResponseEntity<MessageResponseDTO> saveAliasMessageWithContent(
+      @RequestHeader String rcGroupId,
+      @Valid AliasMessageDTO aliasOnlyMessageDTO) {
+    var type = aliasOnlyMessageDTO.getMessageType();
+    var response = messenger
+        .postAliasMessage(rcGroupId, type, aliasOnlyMessageDTO.getContent());
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+  }
+
 }
+
+
