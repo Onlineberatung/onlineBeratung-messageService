@@ -2,7 +2,7 @@ package de.caritas.cob.messageservice.filter;
 
 
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
-import de.caritas.cob.messageservice.api.tenant.TenantResolver;
+import de.caritas.cob.messageservice.api.tenant.TenantResolverService;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,13 +25,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 public class HttpTenantFilter extends OncePerRequestFilter {
 
-  private final TenantResolver tenantResolver;
+  private final TenantResolverService tenantResolverService;
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
     log.debug("Trying to resolve tenant for request coming from URI {}", request.getRequestURI());
-    Long tenantId = tenantResolver.resolve(request);
+    Long tenantId = tenantResolverService.resolve(request);
     log.debug("Setting current tenant context to: " + tenantId);
     TenantContext.setCurrentTenant(tenantId);
     filterChain.doFilter(request, response);
