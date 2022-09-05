@@ -117,7 +117,6 @@ public class RocketChatService {
     messageStream.setMessages(Optional.ofNullable(messageStream.getMessages())
         .orElseGet(Collections::emptyList)
         .stream()
-        .filter(userDTO -> !userDTO.getU().getUsername().equals(rcTechnicalUser))
         .map(msg -> decryptMessageAndSetMessageType(msg, rcGroupId))
         .map(mapper::typedMessageOf)
         .collect(Collectors.toList()));
@@ -145,6 +144,7 @@ public class RocketChatService {
           .queryParam(rcQueryParamOffset, offset)
           .queryParam(rcQueryParamCount, count)
           .queryParam(rcQueryParamSort, rcQueryParamSortValue)
+          .queryParam("query", mapper.queryOperatorNot(rcTechnicalUser))
           .build()
           .encode()
           .toUri();

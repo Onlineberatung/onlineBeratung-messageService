@@ -16,6 +16,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import java.util.Date;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -97,6 +98,15 @@ public class MessageMapper {
 
       return updatedMessage;
     } catch (JsonProcessingException | CustomCryptoException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public String queryOperatorNot(String username) {
+    var queryMap = Map.of("u.username", Map.of("$ne", username));
+    try {
+      return objectMapper.writeValueAsString(queryMap);
+    } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
   }
