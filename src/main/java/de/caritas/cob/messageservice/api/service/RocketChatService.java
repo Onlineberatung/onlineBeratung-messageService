@@ -100,10 +100,6 @@ public class RocketChatService {
   private final @NonNull RocketChatCredentialsHelper rcCredentialHelper;
   private final MessageMapper mapper;
 
-  // MVP: count and offset are always 0 to get all messages
-  private static final int DEFAULT_COUNT = 0;
-  private static final int DEFAULT_OFFSET = 0;
-
   /**
    * Gets the list of messages via Rocket.Chat API for the provided Rocket.Chat group. Filters out
    * technical user messages, decrypts the messages and sets the {@link MessageType}.
@@ -113,8 +109,11 @@ public class RocketChatService {
    * @param rcGroupId Rocket.Chat group ID
    * @return MessageStreamDTO {@link MessageStreamDTO}
    */
-  public MessageStreamDTO getGroupMessages(String rcToken, String rcUserId, String rcGroupId) {
-    MessageStreamDTO messageStream = obtainMessageStream(rcToken, rcUserId, rcGroupId);
+  public MessageStreamDTO getGroupMessages(String rcToken, String rcUserId, String rcGroupId,
+      int offset, int count) {
+    var uri = buildMessageStreamUri(rcGroupId, offset, count);
+    var messageStream = obtainMessageStream(rcToken, rcUserId, uri);
+
     messageStream.setMessages(Optional.ofNullable(messageStream.getMessages())
         .orElseGet(Collections::emptyList)
         .stream()
@@ -126,8 +125,7 @@ public class RocketChatService {
     return messageStream;
   }
 
-  private MessageStreamDTO obtainMessageStream(String rcToken, String rcUserId, String rcGroupId) {
-    URI uri = buildMessageStreamUri(rcGroupId);
+  private MessageStreamDTO obtainMessageStream(String rcToken, String rcUserId, URI uri) {
     HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
     try {
@@ -135,18 +133,17 @@ public class RocketChatService {
 
     } catch (RestClientException exception) {
       LogService.logRocketChatServiceError(exception);
-      throw new InternalServerErrorException(String.format(
-          "Could not read message stream from Rocket.Chat API (rcUserId: %s, rcGroupId: %s)",
-          rcUserId, rcGroupId), LogService::logRocketChatServiceError);
+      var msg = String.format("Could not read message stream from Rocket.Chat API (uri: %s)", uri);
+      throw new InternalServerErrorException(msg, LogService::logRocketChatServiceError);
     }
   }
 
-  private URI buildMessageStreamUri(String rcGroupId) {
+  private URI buildMessageStreamUri(String rcGroupId, int offset, int count) {
     try {
       return UriComponentsBuilder.fromUriString(rcGetGroupMessageUrl)
           .queryParam(rcQueryParamRoomId, rcGroupId)
-          .queryParam(rcQueryParamOffset, DEFAULT_OFFSET)
-          .queryParam(rcQueryParamCount, DEFAULT_COUNT)
+          .queryParam(rcQueryParamOffset, offset)
+          .queryParam(rcQueryParamCount, count)
           .queryParam(rcQueryParamSort, rcQueryParamSortValue)
           .build()
           .encode()

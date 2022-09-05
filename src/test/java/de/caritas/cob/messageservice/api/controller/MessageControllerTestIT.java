@@ -33,6 +33,7 @@ import static de.caritas.cob.messageservice.testhelper.TestConstants.createGroup
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -93,8 +94,6 @@ public class MessageControllerTestIT {
 
   private final String VALID_MESSAGE_REQUEST_BODY_WITHOUT_NOTIFICATION =
       "{\"message\": \"Lorem ipsum\", \"sendNotification\": " + DONT_SEND_NOTIFICATION + "}";
-  private final String VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION =
-      "{\"message\": \"Lorem ipsum\", \"sendNotification\": " + SEND_NOTIFICATION + "}";
   private final String VALID_FORWARD_MESSAGE_REQUEST_BODY = "{\"message\": \"" + MESSAGE + "\","
       + "\"timestamp\": \"2018-11-15T09:33:00.057Z\", \"username\": \"asker23\",\r\n"
       + "\"rcUserId\": \"ag89h3tjkerg94t\"}";
@@ -119,9 +118,6 @@ public class MessageControllerTestIT {
   private final String QUERY_PARAM_RC_TOKEN = "rcToken";
   private final String QUERY_PARAM_RC_FEEDBACK_GROUP_ID = "rcFeedbackGroupId";
   private final String MASTER_KEY_1 = "key1";
-  private final String MASTER_KEY_2 = "key2";
-  private final String MASTER_KEY_DTO_KEY_1 = "{\"masterKey\": \"" + MASTER_KEY_1 + "\"}";
-  private final String MASTER_KEY_DTO_KEY_2 = "{\"masterKey\": \"" + MASTER_KEY_2 + "\"}";
 
   @Autowired
   private MockMvc mvc;
@@ -139,6 +135,7 @@ public class MessageControllerTestIT {
   private DraftMessageService draftMessageService;
 
   @MockBean
+  @SuppressWarnings("unused")
   private RoleAuthorizationAuthorityMapper roleAuthorizationAuthorityMapper;
 
   @Mock
@@ -244,7 +241,7 @@ public class MessageControllerTestIT {
     String streamJson = convertObjectToJson(stream);
 
     when(rocketChatService.getGroupMessages(anyString(), anyString(),
-        anyString())).thenReturn(stream);
+        anyString(), anyInt(), anyInt())).thenReturn(stream);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
             .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
@@ -253,7 +250,7 @@ public class MessageControllerTestIT {
         .andExpect(content().json(streamJson));
 
     verify(rocketChatService, atLeastOnce()).getGroupMessages(anyString(), anyString(),
-        anyString());
+        anyString(), anyInt(), anyInt());
   }
 
   @Test
@@ -262,7 +259,7 @@ public class MessageControllerTestIT {
 
     mvc.perform(post(PATH_POST_CREATE_MESSAGE).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
             .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).header(QUERY_PARAM_RC_GROUP_ID, RC_GROUP_ID)
-            .content(VALID_MESSAGE_REQUEST_BODY_WITH_NOTIFICATION)
+            .content("{\"message\": \"Lorem ipsum\", \"sendNotification\": " + SEND_NOTIFICATION + "}")
             .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated());
 
@@ -301,7 +298,7 @@ public class MessageControllerTestIT {
       throws Exception {
 
     when(rocketChatService.getGroupMessages(anyString(), anyString(),
-        anyString())).thenReturn(null);
+        anyString(), anyInt(), anyInt())).thenReturn(null);
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).header(QUERY_PARAM_RC_TOKEN, RC_TOKEN)
         .header(QUERY_PARAM_RC_USER_ID, RC_USER_ID).param(QUERY_PARAM_OFFSET, RC_OFFSET)
@@ -309,7 +306,7 @@ public class MessageControllerTestIT {
         .accept(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
 
     verify(rocketChatService, atLeastOnce()).getGroupMessages(anyString(), anyString(),
-        anyString());
+        anyString(), anyInt(), anyInt());
   }
 
   /**
@@ -374,7 +371,7 @@ public class MessageControllerTestIT {
     when(encryptionService.getMasterKey()).thenReturn(MASTER_KEY_1);
 
     mvc.perform(post(PATH_UPDATE_KEY).contentType(MediaType.APPLICATION_JSON)
-            .content(MASTER_KEY_DTO_KEY_2).accept(MediaType.APPLICATION_JSON))
+            .content("{\"masterKey\": \"key2\"}").accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
   }
 
@@ -387,8 +384,9 @@ public class MessageControllerTestIT {
     when(encryptionService.getMasterKey()).thenReturn(MASTER_KEY_1);
 
     mvc.perform(post(PATH_UPDATE_KEY).contentType(MediaType.APPLICATION_JSON)
-            .content(MASTER_KEY_DTO_KEY_1).accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isConflict());
+            .content("{\"masterKey\": \"" + MASTER_KEY_1 + "\"}")
+            .accept(MediaType.APPLICATION_JSON)
+        ).andExpect(status().isConflict());
   }
 
   /**

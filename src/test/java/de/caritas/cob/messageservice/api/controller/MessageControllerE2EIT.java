@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -135,6 +136,9 @@ class MessageControllerE2EIT {
   @Captor
   private ArgumentCaptor<HttpEntity<SendMessageWrapper>> sendMessagePayloadCaptor;
 
+  @Captor
+  private ArgumentCaptor<URI> uriArgumentCaptor;
+
   private AliasOnlyMessageDTO aliasOnlyMessage;
   private List<MessagesDTO> messages;
   private ConsultantReassignment consultantReassignment;
@@ -156,13 +160,13 @@ class MessageControllerE2EIT {
     givenSomeMessagesWithMutedUnmutedType();
 
     mockMvc.perform(
-        get("/messages")
-            .cookie(CSRF_COOKIE)
-            .header(CSRF_HEADER, CSRF_VALUE)
-            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-            .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
-    )
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+        )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
         .andExpect(jsonPath("messages[0].alias.messageType", is(not("USER_MUTED"))))
@@ -173,6 +177,8 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[3].alias.messageType", is("USER_UNMUTED")))
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_MUTED"))))
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_UNMUTED"))));
+
+    assertGroupCallWith(0, 0);
   }
 
   @Test
@@ -203,6 +209,7 @@ class MessageControllerE2EIT {
     var consultantReassignment = objectMapper.readValue(message, ConsultantReassignment.class);
 
     assertEquals(this.consultantReassignment, consultantReassignment);
+    assertGroupCallWith(0, 0);
   }
 
   @Test
@@ -225,6 +232,8 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[2].alias").isEmpty())
         .andExpect(jsonPath("messages[3].alias").isEmpty())
         .andExpect(jsonPath("messages[4].alias").isEmpty());
+
+    assertGroupCallWith(0, 0);
   }
 
   @Test
@@ -252,6 +261,41 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[3].msg").isNotEmpty())
         .andExpect(jsonPath("messages[4].org").isNotEmpty())
         .andExpect(jsonPath("messages[4].msg").isNotEmpty());
+
+    assertGroupCallWith(0, 0);
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessagesShouldPassOffsetAndCountToChatApi() throws Exception {
+    givenMessages();
+    var offset = easyRandom.nextInt(9) + 1;
+    var count = easyRandom.nextInt(9) + 1;
+
+    mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+                .param("offset", String.valueOf(offset))
+                .param("count", String.valueOf(count))
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("messages", hasSize(5)))
+        .andExpect(jsonPath("messages[0].org").isNotEmpty())
+        .andExpect(jsonPath("messages[0].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[1].org").isNotEmpty())
+        .andExpect(jsonPath("messages[1].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[2].org").isNotEmpty())
+        .andExpect(jsonPath("messages[2].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[3].org").isNotEmpty())
+        .andExpect(jsonPath("messages[3].msg").isNotEmpty())
+        .andExpect(jsonPath("messages[4].org").isNotEmpty())
+        .andExpect(jsonPath("messages[4].msg").isNotEmpty());
+
+    assertGroupCallWith(offset, count);
   }
 
   @Test
@@ -1028,5 +1072,19 @@ class MessageControllerE2EIT {
     forwardMessage.setRcUserId(RC_USER_ID);
     forwardMessage.setDisplayName("hk");
     return forwardMessage;
+  }
+
+  private void assertGroupCallWith(int offset, int count) {
+    verify(restTemplate).exchange(uriArgumentCaptor.capture(), eq(HttpMethod.GET),
+        any(HttpEntity.class), eq(MessageStreamDTO.class));
+
+    var uri = uriArgumentCaptor.getValue();
+    assertEquals("/api/v1/groups.messages", uri.getPath());
+
+    var query = uri.getQuery();
+    var offsetPair = "offset=" + offset;
+    assertTrue(query.contains(offsetPair + "&") || query.endsWith(offsetPair));
+    var countPair = "count=" + count;
+    assertTrue(query.contains(countPair + "&") || query.endsWith(countPair));
   }
 }
