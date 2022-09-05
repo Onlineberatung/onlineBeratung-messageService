@@ -267,6 +267,40 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessagesShouldReturnBadRequestIfOffsetIsNegative() throws Exception {
+    givenMessages();
+
+    mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+                .param("offset", String.valueOf(-1))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessagesShouldReturnBadRequestIfCountIsNegative() throws Exception {
+    givenMessages();
+
+    mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+                .param("count", String.valueOf(-1))
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
   void getMessagesShouldPassOffsetCountAndUserFilterToChatApi() throws Exception {
     givenMessages();
     var offset = easyRandom.nextInt(9) + 1;
