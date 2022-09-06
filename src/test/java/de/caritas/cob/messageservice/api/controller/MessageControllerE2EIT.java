@@ -1135,7 +1135,7 @@ class MessageControllerE2EIT {
     var countPair = "count=" + count;
     assertTrue(query.contains(countPair + "&") || query.endsWith(countPair));
     var queryPair = "query={\"$and\":["
-        + "{\"ts\":{\"$gte\":{\"$date\":\"" + instant + "\"}}},"
+        + "{\"ts\":{\"$gt\":{\"$date\":\"" + instant + "\"}}},"
         + "{\"u.username\":{\"$ne\":\"rcTechUserName\"}}"
         + "]}";
     assertTrue(query.contains(queryPair + "&") || query.endsWith(queryPair));

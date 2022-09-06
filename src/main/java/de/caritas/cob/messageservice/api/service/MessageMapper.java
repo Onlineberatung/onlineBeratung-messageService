@@ -105,7 +105,7 @@ public class MessageMapper {
   }
 
   public String queryOperatorSinceAndNot(Instant since, String username) {
-    var olderThan = Map.of("ts", Map.of("$gte", Map.of("$date", since.toString())));
+    var olderThan = Map.of("ts", Map.of("$gt", Map.of("$date", since.toString())));
     var notUser = Map.of("u.username", Map.of("$ne", username));
     var op = Map.of("$and", List.of(olderThan, notUser));
     try {
