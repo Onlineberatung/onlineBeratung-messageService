@@ -211,7 +211,7 @@ paths:
             description: ISO 8601 UTC
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
@@ -345,7 +345,7 @@ paths:
         required: true
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
         201:
           description: CREATED - message was successfully created
         400:
@@ -371,7 +371,7 @@ paths:
             type: string
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
