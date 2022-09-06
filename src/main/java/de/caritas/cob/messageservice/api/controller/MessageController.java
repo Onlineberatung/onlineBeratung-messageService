@@ -34,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -59,12 +58,12 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} containing {@link MessageStreamDTO}
    */
   @Override
-  public ResponseEntity<MessageStreamDTO> getMessageStream(@RequestHeader String rcToken,
-      @RequestHeader String rcUserId, @RequestParam String rcGroupId) {
+  public ResponseEntity<MessageStreamDTO> getMessageStream(
+      String rcToken, String rcUserId, String rcGroupId, Integer offset, Integer count) {
+    var message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId, offset, count);
 
-    MessageStreamDTO message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId);
-
-    return (message != null) ? new ResponseEntity<>(message, HttpStatus.OK)
+    return (message != null)
+        ? new ResponseEntity<>(message, HttpStatus.OK)
         : new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
