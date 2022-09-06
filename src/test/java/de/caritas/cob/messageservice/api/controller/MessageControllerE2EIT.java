@@ -337,17 +337,7 @@ class MessageControllerE2EIT {
                 .param("since", since.toString())
         )
         .andExpect(status().isOk())
-        .andExpect(jsonPath("messages", hasSize(5)))
-        .andExpect(jsonPath("messages[0].org").isNotEmpty())
-        .andExpect(jsonPath("messages[0].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[1].org").isNotEmpty())
-        .andExpect(jsonPath("messages[1].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[2].org").isNotEmpty())
-        .andExpect(jsonPath("messages[2].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[3].org").isNotEmpty())
-        .andExpect(jsonPath("messages[3].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[4].org").isNotEmpty())
-        .andExpect(jsonPath("messages[4].msg").isNotEmpty());
+        .andExpect(jsonPath("messages", hasSize(5)));
 
     assertGroupCall(offset, count, since);
   }
