@@ -26,6 +26,7 @@ import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.generated.api.controller.MessagesApi;
 import io.swagger.annotations.Api;
+import java.time.Instant;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
@@ -58,9 +59,14 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} containing {@link MessageStreamDTO}
    */
   @Override
-  public ResponseEntity<MessageStreamDTO> getMessageStream(
-      String rcToken, String rcUserId, String rcGroupId, Integer offset, Integer count) {
-    var message = rocketChatService.getGroupMessages(rcToken, rcUserId, rcGroupId, offset, count);
+  public ResponseEntity<MessageStreamDTO> getMessageStream(String rcToken, String rcUserId,
+      String rcGroupId, Integer offset, Integer count, Instant since) {
+    if (isNull(since)) {
+      since = Instant.MIN;
+    }
+    var message = rocketChatService.getGroupMessages(
+        rcToken, rcUserId, rcGroupId, offset, count, since
+    );
 
     return (message != null)
         ? new ResponseEntity<>(message, HttpStatus.OK)

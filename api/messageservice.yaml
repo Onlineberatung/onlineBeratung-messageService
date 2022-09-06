@@ -202,9 +202,16 @@ paths:
             default: 0
             minimum: 0
             description: 0 means all messages
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+            example: "2022-01-10T15:23:44.921Z"
+            description: ISO 8601 UTC
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
@@ -338,7 +345,7 @@ paths:
         required: true
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
         201:
           description: CREATED - message was successfully created
         400:
@@ -364,7 +371,7 @@ paths:
             type: string
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
