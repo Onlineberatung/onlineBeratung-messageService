@@ -312,7 +312,7 @@ class MessageControllerE2EIT {
                 .header("rcToken", RandomStringUtils.randomAlphabetic(16))
                 .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
                 .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
-                .param("since", "1662468145")
+                .param("since", RandomStringUtils.randomNumeric(10))
         )
         .andExpect(status().isBadRequest());
   }
