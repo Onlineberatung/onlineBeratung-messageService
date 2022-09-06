@@ -60,6 +60,7 @@ import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -178,7 +179,7 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_MUTED"))))
         .andExpect(jsonPath("messages[4].alias.messageType", is(not("USER_UNMUTED"))));
 
-    assertGroupCallWith(0, 0);
+    assertGroupCall();
   }
 
   @Test
@@ -209,7 +210,7 @@ class MessageControllerE2EIT {
     var consultantReassignment = objectMapper.readValue(message, ConsultantReassignment.class);
 
     assertEquals(this.consultantReassignment, consultantReassignment);
-    assertGroupCallWith(0, 0);
+    assertGroupCall();
   }
 
   @Test
@@ -233,7 +234,7 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[3].alias").isEmpty())
         .andExpect(jsonPath("messages[4].alias").isEmpty());
 
-    assertGroupCallWith(0, 0);
+    assertGroupCall();
   }
 
   @Test
@@ -262,7 +263,7 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[4].org").isNotEmpty())
         .andExpect(jsonPath("messages[4].msg").isNotEmpty());
 
-    assertGroupCallWith(0, 0);
+    assertGroupCall();
   }
 
   @Test
@@ -301,10 +302,28 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldPassOffsetCountAndUserFilterToChatApi() throws Exception {
+  void getMessagesShouldReturnBadRequestIfSinceIsNotIso8601() throws Exception {
+    givenMessages();
+
+    mockMvc.perform(
+            get("/messages")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
+                .param("since", "1662468145")
+        )
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessagesShouldPassOffsetCountSinceAndUserFilterToChatApi() throws Exception {
     givenMessages();
     var offset = easyRandom.nextInt(9) + 1;
     var count = easyRandom.nextInt(9) + 1;
+    var since = Instant.now();
 
     mockMvc.perform(
             get("/messages")
@@ -315,6 +334,7 @@ class MessageControllerE2EIT {
                 .param("rcGroupId", RandomStringUtils.randomAlphabetic(16))
                 .param("offset", String.valueOf(offset))
                 .param("count", String.valueOf(count))
+                .param("since", since.toString())
         )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
@@ -329,7 +349,7 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("messages[4].org").isNotEmpty())
         .andExpect(jsonPath("messages[4].msg").isNotEmpty());
 
-    assertGroupCallWith(offset, count);
+    assertGroupCall(offset, count, since);
   }
 
   @Test
@@ -1108,7 +1128,11 @@ class MessageControllerE2EIT {
     return forwardMessage;
   }
 
-  private void assertGroupCallWith(int offset, int count) {
+  private void assertGroupCall() {
+    assertGroupCall(0, 0, Instant.MIN);
+  }
+
+  private void assertGroupCall(int offset, int count, Instant instant) {
     verify(restTemplate).exchange(uriArgumentCaptor.capture(), eq(HttpMethod.GET),
         any(HttpEntity.class), eq(MessageStreamDTO.class));
 
@@ -1120,7 +1144,10 @@ class MessageControllerE2EIT {
     assertTrue(query.contains(offsetPair + "&") || query.endsWith(offsetPair));
     var countPair = "count=" + count;
     assertTrue(query.contains(countPair + "&") || query.endsWith(countPair));
-    var queryPair = "query={\"u.username\":{\"$ne\":\"rcTechUserName\"}}";
+    var queryPair = "query={\"$and\":["
+        + "{\"ts\":{\"$gte\":{\"$date\":\"" + instant + "\"}}},"
+        + "{\"u.username\":{\"$ne\":\"rcTechUserName\"}}"
+        + "]}";
     assertTrue(query.contains(queryPair + "&") || query.endsWith(queryPair));
   }
 }

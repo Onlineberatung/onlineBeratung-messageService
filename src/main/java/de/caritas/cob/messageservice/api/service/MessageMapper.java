@@ -15,7 +15,9 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
+import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -102,10 +104,12 @@ public class MessageMapper {
     }
   }
 
-  public String queryOperatorNot(String username) {
-    var queryMap = Map.of("u.username", Map.of("$ne", username));
+  public String queryOperatorSinceAndNot(Instant since, String username) {
+    var olderThan = Map.of("ts", Map.of("$gte", Map.of("$date", since.toString())));
+    var notUser = Map.of("u.username", Map.of("$ne", username));
+    var op = Map.of("$and", List.of(olderThan, notUser));
     try {
-      return objectMapper.writeValueAsString(queryMap);
+      return objectMapper.writeValueAsString(op);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
