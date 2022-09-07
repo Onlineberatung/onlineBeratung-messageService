@@ -230,30 +230,54 @@ paths:
         - Bearer: [ ]
 
   /messages/{messageId}:
+    parameters:
+      - name: rcToken
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: rcUserId
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 17
+          maxLength: 17
+    get:
+      tags:
+        - message-controller
+      summary: 'Finds a message by its ID [Auth: user]'
+      operationId: findMessage
+      responses:
+        200:
+          description: OK - successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessagesDTO'
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        404:
+          description: NOT FOUND - messageId unknown
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
     patch:
       tags:
         - message-controller
       summary: 'Partially updates a message [Auth: user]'
       description: Current support is limited to the reassign status.
       operationId: patchMessage
-      parameters:
-        - name: rcToken
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: rcUserId
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: messageId
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 17
-            maxLength: 17
       requestBody:
         required: true
         content:

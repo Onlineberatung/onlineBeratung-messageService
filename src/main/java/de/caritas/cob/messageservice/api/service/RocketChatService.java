@@ -159,7 +159,10 @@ public class RocketChatService {
 
   private MessagesDTO decryptMessageAndSetMessageType(MessagesDTO msg, String rcGroupId) {
     decryptMessage(msg, rcGroupId);
-    setMessageType(msg);
+    var alias = msg.getAlias();
+    if (nonNull(alias)) {
+      alias.setMessageType(mapper.messageTypeOf(alias));
+    }
 
     return msg;
   }
@@ -170,18 +173,6 @@ public class RocketChatService {
       msg.setOrg(encryptionService.decrypt(msg.getOrg(), rcGroupId));
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
-    }
-  }
-
-  private void setMessageType(MessagesDTO msg) {
-    if (isNull(msg.getAlias()) || nonNull(msg.getAlias().getMessageType())) {
-      return;
-    }
-
-    if (nonNull(msg.getAlias().getForwardMessageDTO())) {
-      msg.getAlias().setMessageType(MessageType.FORWARD);
-    } else if (nonNull(msg.getAlias().getVideoCallMessageDTO())) {
-      msg.getAlias().setMessageType(MessageType.VIDEOCALL);
     }
   }
 
