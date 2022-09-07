@@ -349,11 +349,11 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessageShouldRespondWithMessageIfExists() throws Exception {
+  void getMessageShouldRespondWithOkAndFullMessageIfItExists() throws Exception {
     givenAuthenticatedUser();
     givenAMasterKey();
     givenAValidMessageId();
-    givenMessage(messageId);
+    givenMessage(messageId, true);
 
     mockMvc.perform(
             get("/messages/{messageId}", messageId)
@@ -380,6 +380,54 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("file.type", is(messagesDTO.getFile().getType())))
         .andExpect(jsonPath("t", is(messagesDTO.getT())))
         .andExpect(jsonPath("org", is(message.getMsg())));
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessageShouldRespondWithOkAndMinimumMessageIfItExists() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenMessage(messageId, false);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("_id", is(messageId)))
+        .andExpect(jsonPath("alias").doesNotExist())
+        .andExpect(jsonPath("rid", is(message.getRid())))
+        .andExpect(jsonPath("msg", is(message.getMsg())))
+        .andExpect(jsonPath("ts").doesNotExist())
+        .andExpect(jsonPath("u").doesNotExist())
+        .andExpect(jsonPath("unread", is(false)))
+        .andExpect(jsonPath("_updatedAt").doesNotExist())
+        .andExpect(jsonPath("attachments").doesNotExist())
+        .andExpect(jsonPath("file").doesNotExist())
+        .andExpect(jsonPath("t").doesNotExist())
+        .andExpect(jsonPath("org").doesNotExist());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessageShouldRespondWithNotFoundIfItDoesNotExists() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenAGetChatMessageNotFoundResponse(messageId);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -959,34 +1007,34 @@ class MessageControllerE2EIT {
         .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
   }
 
-  private void givenMessage(String id) throws JsonProcessingException, CustomCryptoException {
+  private void givenMessage(String id, boolean full)
+      throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);
 
     message = easyRandom.nextObject(Message.class);
     message.setId(id);
+    message.setAlias(null);
 
-    var alias = easyRandom.nextObject(AliasMessageDTO.class);
-    messageType = alias.getMessageType();
-    var aliasString = objectMapper.writeValueAsString(alias);
-    var encodedAlias = URLEncoder.encode(aliasString, StandardCharsets.UTF_8);
-    message.setAlias(encodedAlias);
+    if (full) {
+      var alias = easyRandom.nextObject(AliasMessageDTO.class);
+      messageType = alias.getMessageType();
+      var aliasString = objectMapper.writeValueAsString(alias);
+      var encodedAlias = URLEncoder.encode(aliasString, StandardCharsets.UTF_8);
+      message.setAlias(encodedAlias);
 
-    var msg = RandomStringUtils.randomAlphabetic(32);
-    var encryptedMessage = encryptionService.encrypt(msg, message.getRid());
-    message.setMsg(encryptedMessage);
+      messagesDTO = easyRandom.nextObject(MessagesDTO.class);
+      var props = message.getOtherProperties();
+      props.put("u", messagesDTO.getU());
+      props.put("attachments", messagesDTO.getAttachments());
+      props.put("file", messagesDTO.getFile());
+      props.put("org", encryptionService.encrypt(message.getMsg(), message.getRid()));
+      props.put("_updatedAt", messagesDTO.get_updatedAt());
+      props.put("t", messagesDTO.getT());
+      props.put("ts", messagesDTO.getTs());
+      props.put("unread", messagesDTO.isUnread());
+    }
     response.setMessage(message);
-
-    messagesDTO = easyRandom.nextObject(MessagesDTO.class);
-    var props = message.getOtherProperties();
-    props.put("u", messagesDTO.getU());
-    props.put("attachments", messagesDTO.getAttachments());
-    props.put("file", messagesDTO.getFile());
-    props.put("org", encryptedMessage);
-    props.put("_updatedAt", messagesDTO.get_updatedAt());
-    props.put("t", messagesDTO.getT());
-    props.put("ts", messagesDTO.getTs());
-    props.put("unread", messagesDTO.isUnread());
 
     var urlSuffix = "/chat.getMessage?msgId=" + id;
     when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),

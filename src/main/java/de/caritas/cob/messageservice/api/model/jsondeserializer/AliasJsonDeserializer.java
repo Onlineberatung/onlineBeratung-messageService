@@ -44,7 +44,10 @@ public class AliasJsonDeserializer extends JsonDeserializer<AliasMessageDTO> {
   public AliasMessageDTO deserialize(JsonParser jsonParser, DeserializationContext context)
       throws IOException {
 
-    String aliasValue = jsonParser.getValueAsString();
+    return getAliasMessageDTO(jsonParser.getValueAsString());
+  }
+
+  public AliasMessageDTO getAliasMessageDTO(String aliasValue) {
     if (StringUtils.isBlank(aliasValue)) {
       return null;
     }

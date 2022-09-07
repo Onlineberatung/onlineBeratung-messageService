@@ -8,17 +8,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
 import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
+import de.caritas.cob.messageservice.api.helper.UserHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -75,7 +75,9 @@ public class MessageMapper {
     try {
       message.setMsg(encryptionService.decrypt(message.getMsg(), message.getRid()));
       var others = message.getOtherProperties();
-      others.put("org", encryptionService.decrypt((String) others.get("org"), message.getRid()));
+      if (others.containsKey("org")) {
+        others.put("org", encryptionService.decrypt((String) others.get("org"), message.getRid()));
+      }
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     }
@@ -96,26 +98,19 @@ public class MessageMapper {
     messageDto.setMsg(message.getMsg());
     messageDto.setRid(message.getRid());
 
-    var decodedAlias = URLDecoder.decode(message.getAlias(), StandardCharsets.UTF_8);
-    try {
-      var alias = objectMapper.readValue(decodedAlias, AliasMessageDTO.class);
-      if (nonNull(alias)) {
-        alias.setMessageType(messageTypeOf(alias));
-      }
-      messageDto.setAlias(alias);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    var aliasDeserializer = new AliasJsonDeserializer(new UserHelper());
+    var alias = aliasDeserializer.getAliasMessageDTO(message.getAlias());
+    messageDto.setAlias(alias);
 
-    var obsoleteMsg = objectMapper.convertValue(message.getOtherProperties(), MessagesDTO.class);
-    messageDto.setTs(obsoleteMsg.getTs());
-    messageDto.setU(obsoleteMsg.getU());
-    messageDto.setUnread(obsoleteMsg.isUnread());
-    messageDto.set_updatedAt(obsoleteMsg.get_updatedAt());
-    messageDto.setAttachments(obsoleteMsg.getAttachments());
-    messageDto.setFile(obsoleteMsg.getFile());
-    messageDto.setT(obsoleteMsg.getT());
-    messageDto.setOrg(obsoleteMsg.getOrg());
+    var messagesDTO = objectMapper.convertValue(message.getOtherProperties(), MessagesDTO.class);
+    messageDto.setTs(messagesDTO.getTs());
+    messageDto.setU(messagesDTO.getU());
+    messageDto.setUnread(messagesDTO.isUnread());
+    messageDto.set_updatedAt(messagesDTO.get_updatedAt());
+    messageDto.setAttachments(messagesDTO.getAttachments());
+    messageDto.setFile(messagesDTO.getFile());
+    messageDto.setT(messagesDTO.getT());
+    messageDto.setOrg(messagesDTO.getOrg());
 
     return messageDto;
   }
