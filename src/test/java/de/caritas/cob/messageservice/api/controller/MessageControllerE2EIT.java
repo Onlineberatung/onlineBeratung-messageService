@@ -383,6 +383,41 @@ class MessageControllerE2EIT {
   }
 
   @Test
+  @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
+  void getMessageShouldRespondWithOkForAConsultant() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenMessage(messageId, true);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.ANONYMOUS_DEFAULT)
+  void getMessageShouldRespondWithOkForAnonymous() throws Exception {
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenMessage(messageId, true);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk());
+  }
+
+  @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
   void getMessageShouldRespondWithOkAndMinimumMessageIfItExists() throws Exception {
     givenAuthenticatedUser();
