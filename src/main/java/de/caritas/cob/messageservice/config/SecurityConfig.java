@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -72,8 +73,10 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         .hasAuthority(TECHNICAL_DEFAULT)
         .antMatchers("/messages", "/messages/draft", "/messages/videohint/new")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
-        .antMatchers("/messages/{messageId:[0-9A-Za-z]{17}}")
+        .antMatchers(HttpMethod.PATCH, "/messages/{messageId:[0-9A-Za-z]{17}}")
         .hasAnyAuthority(USER_DEFAULT)
+        .antMatchers(HttpMethod.GET, "/messages/{messageId:[0-9A-Za-z]{17}}")
+        .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
         .antMatchers("/messages/new")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, TECHNICAL_DEFAULT, ANONYMOUS_DEFAULT)
         .antMatchers("/messages/forward", "/messages/feedback/new")
