@@ -145,6 +145,9 @@ class MessageControllerE2EIT {
   private ConsultantReassignment consultantReassignment;
   private String messageId;
   private AliasArgs aliasArgs;
+  private Message message;
+  private MessagesDTO messagesDTO;
+  private MessageType messageType;
 
   @AfterEach
   void reset() {
@@ -152,6 +155,8 @@ class MessageControllerE2EIT {
     encryptionService.updateMasterKey("initialMasterKey");
     messages = null;
     messageId = null;
+    message = null;
+    messageType = null;
     aliasArgs = null;
   }
 
@@ -344,7 +349,90 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void patchMessageShouldRespondWithBadRequestWhenMessageIdHasWrongFormat()
+  void getMessageShouldRespondWithOkAndFullMessageIfItExists() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenMessage(messageId, true);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("_id", is(messageId)))
+        .andExpect(jsonPath("alias.messageType", is(messageType.toString())))
+        .andExpect(jsonPath("rid", is(message.getRid())))
+        .andExpect(jsonPath("msg", is(message.getMsg())))
+        .andExpect(jsonPath("ts", is(messagesDTO.getTs())))
+        .andExpect(jsonPath("u._id", is(messagesDTO.getU().get_id())))
+        .andExpect(jsonPath("u.username", is(messagesDTO.getU().getUsername())))
+        .andExpect(jsonPath("u.name", is(messagesDTO.getU().getName())))
+        .andExpect(jsonPath("unread", is(messagesDTO.isUnread())))
+        .andExpect(jsonPath("_updatedAt", is(messagesDTO.get_updatedAt())))
+        .andExpect(jsonPath("attachments", hasSize(messagesDTO.getAttachments().length)))
+        .andExpect(jsonPath("attachments[0].title", is(messagesDTO.getAttachments()[0].getTitle())))
+        .andExpect(jsonPath("file._id", is(messagesDTO.getFile().getId())))
+        .andExpect(jsonPath("file.name", is(messagesDTO.getFile().getName())))
+        .andExpect(jsonPath("file.type", is(messagesDTO.getFile().getType())))
+        .andExpect(jsonPath("t", is(messagesDTO.getT())))
+        .andExpect(jsonPath("org", is(message.getMsg())));
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessageShouldRespondWithOkAndMinimumMessageIfItExists() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenMessage(messageId, false);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("_id", is(messageId)))
+        .andExpect(jsonPath("alias").doesNotExist())
+        .andExpect(jsonPath("rid", is(message.getRid())))
+        .andExpect(jsonPath("msg", is(message.getMsg())))
+        .andExpect(jsonPath("ts").doesNotExist())
+        .andExpect(jsonPath("u").doesNotExist())
+        .andExpect(jsonPath("unread", is(false)))
+        .andExpect(jsonPath("_updatedAt").doesNotExist())
+        .andExpect(jsonPath("attachments").doesNotExist())
+        .andExpect(jsonPath("file").doesNotExist())
+        .andExpect(jsonPath("t").doesNotExist())
+        .andExpect(jsonPath("org").doesNotExist());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void getMessageShouldRespondWithNotFoundIfItDoesNotExists() throws Exception {
+    givenAuthenticatedUser();
+    givenAMasterKey();
+    givenAValidMessageId();
+    givenAGetChatMessageNotFoundResponse(messageId);
+
+    mockMvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithClientErrorWhenMessageIdHasWrongFormat()
       throws Exception {
     givenAuthenticatedUser();
     givenAPatchSupportedReassignArg();
@@ -359,7 +447,7 @@ class MessageControllerE2EIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aliasArgs))
         )
-        .andExpect(status().isBadRequest());
+        .andExpect(status().is4xxClientError());
   }
 
   @Test
@@ -506,7 +594,7 @@ class MessageControllerE2EIT {
     givenAValidMessageId();
     givenAMasterKey();
     givenRocketChatSystemUser();
-    givenASuccessfulGetChatMessageResponse(messageId);
+    givenASuccessfulGetChatMessageReassignmentResponse(messageId);
     givenASuccessfulUpdateChatMessageResponse();
 
     mockMvc.perform(
@@ -919,6 +1007,40 @@ class MessageControllerE2EIT {
         .thenReturn(new ResponseEntity<>(messageStreamDTO, HttpStatus.OK));
   }
 
+  private void givenMessage(String id, boolean full)
+      throws JsonProcessingException, CustomCryptoException {
+    var response = new MessageResponse();
+    response.setSuccess(true);
+
+    message = easyRandom.nextObject(Message.class);
+    message.setId(id);
+    message.setAlias(null);
+
+    if (full) {
+      var alias = easyRandom.nextObject(AliasMessageDTO.class);
+      messageType = alias.getMessageType();
+      var aliasString = objectMapper.writeValueAsString(alias);
+      var encodedAlias = URLEncoder.encode(aliasString, StandardCharsets.UTF_8);
+      message.setAlias(encodedAlias);
+
+      messagesDTO = easyRandom.nextObject(MessagesDTO.class);
+      var props = message.getOtherProperties();
+      props.put("u", messagesDTO.getU());
+      props.put("attachments", messagesDTO.getAttachments());
+      props.put("file", messagesDTO.getFile());
+      props.put("org", encryptionService.encrypt(message.getMsg(), message.getRid()));
+      props.put("_updatedAt", messagesDTO.get_updatedAt());
+      props.put("t", messagesDTO.getT());
+      props.put("ts", messagesDTO.getTs());
+      props.put("unread", messagesDTO.isUnread());
+    }
+    response.setMessage(message);
+
+    var urlSuffix = "/chat.getMessage?msgId=" + id;
+    when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
+        eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
+  }
+
   private void givenAWronglyFormattedMessageId() {
     int idLength = 0;
     while (idLength < 1 || idLength == 17) {
@@ -959,7 +1081,7 @@ class MessageControllerE2EIT {
         eq(SendMessageResponseDTO.class))).thenReturn(successfulResponse);
   }
 
-  private void givenASuccessfulGetChatMessageResponse(String messageId)
+  private void givenASuccessfulGetChatMessageReassignmentResponse(String messageId)
       throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);

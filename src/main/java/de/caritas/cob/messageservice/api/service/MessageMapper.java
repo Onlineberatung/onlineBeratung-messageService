@@ -6,11 +6,15 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
+import de.caritas.cob.messageservice.api.exception.InternalServerErrorException;
+import de.caritas.cob.messageservice.api.exception.NoMasterKeyException;
+import de.caritas.cob.messageservice.api.helper.UserHelper;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.MessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.MessageType;
+import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.service.dto.Message;
@@ -45,11 +49,70 @@ public class MessageMapper {
     return messagesDTO;
   }
 
+  public Message typedMessageOf(Message message) {
+    var messageType = (String) message.getOtherProperties().get("t");
+
+    if (nonNull(messageType)) {
+      AliasMessageDTO alias = null;
+      if (messageType.equalsIgnoreCase("user-muted")) {
+        alias = aliasMessageDtoOf(MessageType.USER_MUTED);
+      } else if (messageType.equalsIgnoreCase("user-unmuted")) {
+        alias = aliasMessageDtoOf(MessageType.USER_UNMUTED);
+      }
+      if (nonNull(alias)) {
+        try {
+          message.setAlias(objectMapper.writeValueAsString(alias));
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
+    return message;
+  }
+
+  public Message decryptedMessageOf(Message message) {
+    try {
+      message.setMsg(encryptionService.decrypt(message.getMsg(), message.getRid()));
+      var others = message.getOtherProperties();
+      if (others.containsKey("org")) {
+        others.put("org", encryptionService.decrypt((String) others.get("org"), message.getRid()));
+      }
+    } catch (CustomCryptoException | NoMasterKeyException ex) {
+      throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
+    }
+
+    return message;
+  }
+
   public AliasMessageDTO aliasMessageDtoOf(MessageType messageType) {
     var alias = new AliasMessageDTO();
     alias.setMessageType(messageType);
 
     return alias;
+  }
+
+  public MessagesDTO messageDtoOf(Message message) {
+    var messageDto = new MessagesDTO();
+    messageDto.set_id(message.getId());
+    messageDto.setMsg(message.getMsg());
+    messageDto.setRid(message.getRid());
+
+    var aliasDeserializer = new AliasJsonDeserializer(new UserHelper());
+    var alias = aliasDeserializer.getAliasMessageDTO(message.getAlias());
+    messageDto.setAlias(alias);
+
+    var messagesDTO = objectMapper.convertValue(message.getOtherProperties(), MessagesDTO.class);
+    messageDto.setTs(messagesDTO.getTs());
+    messageDto.setU(messagesDTO.getU());
+    messageDto.setUnread(messagesDTO.isUnread());
+    messageDto.set_updatedAt(messagesDTO.get_updatedAt());
+    messageDto.setAttachments(messagesDTO.getAttachments());
+    messageDto.setFile(messagesDTO.getFile());
+    messageDto.setT(messagesDTO.getT());
+    messageDto.setOrg(messagesDTO.getOrg());
+
+    return messageDto;
   }
 
   public MessageResponseDTO messageResponseOf(SendMessageResponseDTO sendMessageResponse) {
@@ -113,5 +176,23 @@ public class MessageMapper {
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public MessageType messageTypeOf(AliasMessageDTO alias) {
+    if (nonNull(alias)) {
+      if (nonNull(alias.getMessageType())) {
+        return alias.getMessageType();
+      }
+
+      if (nonNull(alias.getForwardMessageDTO())) {
+        return MessageType.FORWARD;
+      }
+
+      if (nonNull(alias.getVideoCallMessageDTO())) {
+        return MessageType.VIDEOCALL;
+      }
+    }
+
+    return null;
   }
 }

@@ -219,9 +219,13 @@ public class RocketChatServiceTest {
     messageStreamDTO.getMessages().get(0).getAlias().setMessageType(null);
     messageStreamDTO.getMessages().get(0).getAlias().setVideoCallMessageDTO(null);
 
-    messageStreamDTO.getMessages().forEach(messagesDTO ->
-        when(messageMapper.typedMessageOf(eq(messagesDTO)))
-            .thenReturn(messagesDTO));
+    var mapper = new MessageMapper(null, null);
+    messageStreamDTO.getMessages().forEach(messagesDTO -> {
+      when(messageMapper.typedMessageOf(eq(messagesDTO)))
+            .thenReturn(messagesDTO);
+      when(messageMapper.messageTypeOf(eq(messagesDTO.getAlias())))
+            .thenReturn(mapper.messageTypeOf(messagesDTO.getAlias()));
+    });
 
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))
@@ -247,9 +251,13 @@ public class RocketChatServiceTest {
     messageStreamDTO.getMessages().get(0).getAlias().setMessageType(null);
     messageStreamDTO.getMessages().get(0).getAlias().setForwardMessageDTO(null);
 
-    messageStreamDTO.getMessages().forEach(messagesDTO ->
-        when(messageMapper.typedMessageOf(eq(messagesDTO)))
-            .thenReturn(messagesDTO));
+    var mapper = new MessageMapper(null, null);
+    messageStreamDTO.getMessages().forEach(messagesDTO -> {
+      when(messageMapper.typedMessageOf(eq(messagesDTO)))
+          .thenReturn(messagesDTO);
+      when(messageMapper.messageTypeOf(eq(messagesDTO.getAlias())))
+          .thenReturn(mapper.messageTypeOf(messagesDTO.getAlias()));
+    });
 
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))
@@ -276,9 +284,13 @@ public class RocketChatServiceTest {
     messageStreamDTO.getMessages().get(0).getAlias().setForwardMessageDTO(null);
     messageStreamDTO.getMessages().get(0).getAlias().setVideoCallMessageDTO(null);
 
-    messageStreamDTO.getMessages().forEach(messagesDTO ->
-        when(messageMapper.typedMessageOf(eq(messagesDTO)))
-            .thenReturn(messagesDTO));
+    var mapper = new MessageMapper(null, null);
+    messageStreamDTO.getMessages().forEach(messagesDTO -> {
+      when(messageMapper.typedMessageOf(eq(messagesDTO)))
+          .thenReturn(messagesDTO);
+      when(messageMapper.messageTypeOf(eq(messagesDTO.getAlias())))
+          .thenReturn(mapper.messageTypeOf(messagesDTO.getAlias()));
+    });
 
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any()))

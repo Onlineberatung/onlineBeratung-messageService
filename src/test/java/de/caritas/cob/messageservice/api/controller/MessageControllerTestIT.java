@@ -66,6 +66,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.UserDTO;
 import de.caritas.cob.messageservice.api.service.DraftMessageService;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LogService;
+import de.caritas.cob.messageservice.api.service.MessageMapper;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -138,6 +139,10 @@ public class MessageControllerTestIT {
   @MockBean
   @SuppressWarnings("unused")
   private RoleAuthorizationAuthorityMapper roleAuthorizationAuthorityMapper;
+
+  @MockBean
+  @SuppressWarnings("unused")
+  private MessageMapper messageMapper;
 
   @Mock
   private Logger logger;
