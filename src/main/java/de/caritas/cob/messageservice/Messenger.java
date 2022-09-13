@@ -27,9 +27,11 @@ import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.LogService;
 import de.caritas.cob.messageservice.api.service.MessageMapper;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
+import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
+import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -186,6 +188,14 @@ public class Messenger {
     }
 
     return mapper.messageResponseOf(response);
+  }
+
+  public Optional<Message> findMessage(String rcToken, String rcUserId, String messageId) {
+    var message = rocketChatService.findMessage(rcToken, rcUserId, messageId);
+
+    return Optional.ofNullable(message)
+        .map(mapper::decryptedMessageOf)
+        .map(mapper::typedMessageOf);
   }
 
   public boolean patchEventMessage(String rcToken, String rcUserId, String messageId,

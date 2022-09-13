@@ -568,6 +568,50 @@ public class MessageControllerAuthorizationTestIT {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  public void getMessageShouldReturnUnauthorizedWhenNoKeycloakAuthorization() throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(csrfCookie)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(authorities = {
+      AuthorityValue.TECHNICAL_DEFAULT,
+      AuthorityValue.USE_FEEDBACK
+  })
+  public void getMessageShouldReturnForbiddenAndCallNoMethodsWhenNoSupportedAuthority()
+      throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+            get("/messages/{messageId}", messageId)
+                .cookie(csrfCookie)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void getMessageShouldReturnForbiddenAndCallNoMethodsWhenNoCsrfToken() throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+            get("/messages/{messageId}", messageId)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16)))
+        .andExpect(status().isForbidden());
+  }
+
   private AliasOnlyMessageDTO givenAValidAliasOnlyMessageDTO() {
     var alias = easyRandom.nextObject(AliasOnlyMessageDTO.class);
     alias.setArgs(null);

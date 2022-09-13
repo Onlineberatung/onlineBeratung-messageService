@@ -189,9 +189,29 @@ paths:
           required: true
           schema:
             type: string
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+            description: 0 means all messages
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+            example: "2022-01-10T15:23:44.921Z"
+            description: ISO 8601 UTC
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
@@ -210,30 +230,54 @@ paths:
         - Bearer: [ ]
 
   /messages/{messageId}:
+    parameters:
+      - name: rcToken
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: rcUserId
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 17
+          maxLength: 17
+    get:
+      tags:
+        - message-controller
+      summary: 'Finds a message by its ID [Auth: user]'
+      operationId: findMessage
+      responses:
+        200:
+          description: OK - successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/MessagesDTO'
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        404:
+          description: NOT FOUND - messageId unknown
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
     patch:
       tags:
         - message-controller
       summary: 'Partially updates a message [Auth: user]'
       description: Current support is limited to the reassign status.
       operationId: patchMessage
-      parameters:
-        - name: rcToken
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: rcUserId
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: messageId
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 17
-            maxLength: 17
       requestBody:
         required: true
         content:
@@ -325,7 +369,7 @@ paths:
         required: true
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
         201:
           description: CREATED - message was successfully created
         400:
@@ -351,7 +395,7 @@ paths:
             type: string
       responses:
         200:
-          description: OK - successfull operation
+          description: OK - successful operation
           content:
             'application/json':
               schema:
