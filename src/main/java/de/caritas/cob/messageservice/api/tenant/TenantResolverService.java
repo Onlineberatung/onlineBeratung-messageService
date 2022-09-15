@@ -40,7 +40,7 @@ public class TenantResolverService {
   }
 
   private List<TenantResolver> tenantIdCrossValidationResolvers() {
-    return newArrayList(subdomainTenantResolver);
+    return newArrayList(customHeaderTenantResolver, subdomainTenantResolver);
   }
 
   private ArrayList<TenantResolver> authenticatedTenantResolvers() {
