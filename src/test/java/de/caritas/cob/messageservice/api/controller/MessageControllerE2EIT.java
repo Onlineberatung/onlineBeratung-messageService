@@ -162,7 +162,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  void getMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
+  void findMessagesShouldRespondWithMutedUnmutedAlias() throws Exception {
     givenSomeMessagesWithMutedUnmutedType();
 
     mockMvc.perform(
@@ -189,7 +189,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldRespondWithAliasArgsConsultantReassign() throws Exception {
+  void findMessagesShouldRespondWithAliasArgsConsultantReassign() throws Exception {
     givenAMasterKey();
     var groupId = RandomStringUtils.randomAlphabetic(16);
     givenAMessageWithAnEncryptedConsultantReassignment(groupId);
@@ -220,7 +220,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  void getMessagesShouldRespondWithEmptyAlias() throws Exception {
+  void findMessagesShouldRespondWithEmptyAlias() throws Exception {
     givenMessagesWithoutClearAlias();
 
     mockMvc.perform(
@@ -244,7 +244,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  void getMessagesShouldContainOrgMessage() throws Exception {
+  void findMessagesShouldContainOrgMessage() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -273,7 +273,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldReturnBadRequestIfOffsetIsNegative() throws Exception {
+  void findMessagesShouldReturnBadRequestIfOffsetIsNegative() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -290,7 +290,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldReturnBadRequestIfCountIsNegative() throws Exception {
+  void findMessagesShouldReturnBadRequestIfCountIsNegative() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -307,7 +307,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldReturnBadRequestIfSinceIsNotIso8601() throws Exception {
+  void findMessagesShouldReturnBadRequestIfSinceIsNotIso8601() throws Exception {
     givenMessages();
 
     mockMvc.perform(
@@ -324,7 +324,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessagesShouldPassOffsetCountSinceAndUserFilterToChatApi() throws Exception {
+  void findMessagesShouldPassOffsetCountSinceAndUserFilterToChatApi() throws Exception {
     givenMessages();
     var offset = easyRandom.nextInt(9) + 1;
     var count = easyRandom.nextInt(9) + 1;
@@ -349,7 +349,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessageShouldRespondWithOkAndFullMessageIfItExists() throws Exception {
+  void findMessageShouldRespondWithOkAndFullMessageIfItExists() throws Exception {
     givenAuthenticatedUser();
     givenAMasterKey();
     givenAValidMessageId();
@@ -384,7 +384,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.CONSULTANT_DEFAULT)
-  void getMessageShouldRespondWithOkForAConsultant() throws Exception {
+  void findMessageShouldRespondWithOkForAConsultant() throws Exception {
     givenAuthenticatedUser();
     givenAMasterKey();
     givenAValidMessageId();
@@ -402,7 +402,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.ANONYMOUS_DEFAULT)
-  void getMessageShouldRespondWithOkForAnonymous() throws Exception {
+  void findMessageShouldRespondWithOkForAnonymous() throws Exception {
     givenAMasterKey();
     givenAValidMessageId();
     givenMessage(messageId, true);
@@ -419,7 +419,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessageShouldRespondWithOkAndMinimumMessageIfItExists() throws Exception {
+  void findMessageShouldRespondWithOkAndMinimumMessageIfItExists() throws Exception {
     givenAuthenticatedUser();
     givenAMasterKey();
     givenAValidMessageId();
@@ -449,7 +449,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void getMessageShouldRespondWithNotFoundIfItDoesNotExists() throws Exception {
+  void findMessageShouldRespondWithNotFoundIfItDoesNotExists() throws Exception {
     givenAuthenticatedUser();
     givenAMasterKey();
     givenAValidMessageId();
