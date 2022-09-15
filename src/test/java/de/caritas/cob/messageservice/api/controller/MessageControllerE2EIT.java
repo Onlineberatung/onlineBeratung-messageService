@@ -907,6 +907,14 @@ class MessageControllerE2EIT {
     assertThat(sendMessageRequest.getAlias()).containsSequence("messageType");
     assertThat(sendMessageRequest.getAlias()).containsSequence("REASSIGN_CONSULTANT");
     assertThat(sendMessageRequest.getMsg()).startsWith("enc:");
+
+    var decryptedMsg = encryptionService.decrypt(sendMessageRequest.getMsg(), RC_GROUP_ID);
+    var decryptedConsultantReassignment =
+        objectMapper.readValue(decryptedMsg, ConsultantReassignment.class);
+    assertEquals(
+        aliasOnlyMessage.getArgs().getFromConsultantId(),
+        decryptedConsultantReassignment.getFromConsultantId()
+    );
   }
 
   @Test

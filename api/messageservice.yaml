@@ -719,6 +719,9 @@ components:
           type: string
         toAskerName:
           type: string
+        fromConsultantId:
+          type: string
+          format: UUID
         fromConsultantName:
           type: string
         status:
