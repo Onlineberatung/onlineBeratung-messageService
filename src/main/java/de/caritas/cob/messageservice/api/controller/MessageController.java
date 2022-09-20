@@ -62,7 +62,7 @@ public class MessageController implements MessagesApi {
    * @return {@link ResponseEntity} containing {@link MessageStreamDTO}
    */
   @Override
-  public ResponseEntity<MessageStreamDTO> getMessageStream(String rcToken, String rcUserId,
+  public ResponseEntity<MessageStreamDTO> findMessages(String rcToken, String rcUserId,
       String rcGroupId, Integer offset, Integer count, Instant since) {
     if (isNull(since)) {
       since = Instant.MIN;

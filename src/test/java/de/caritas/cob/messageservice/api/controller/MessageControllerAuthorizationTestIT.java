@@ -82,7 +82,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  public void getMessageStream_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
+  public void findMessages_Should_ReturnUnauthorizedAndCallNoMethods_WhenNoKeycloakAuthorization()
       throws Exception {
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).cookie(csrfCookie).header(CSRF_HEADER, CSRF_VALUE)
@@ -94,7 +94,7 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.TECHNICAL_DEFAULT})
-  public void getMessageStream_Should_ReturnForbiddenAndCallNoMethods_WhenNoUserOrConsultantDefaultAuthority()
+  public void findMessages_Should_ReturnForbiddenAndCallNoMethods_WhenNoUserOrConsultantDefaultAuthority()
       throws Exception {
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).cookie(csrfCookie).header(CSRF_HEADER, CSRF_VALUE)
@@ -106,7 +106,7 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.CONSULTANT_DEFAULT, AuthorityValue.USER_DEFAULT})
-  public void getMessageStream_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
+  public void findMessages_Should_ReturnForbiddenAndCallNoMethods_WhenNoCsrfTokens()
       throws Exception {
 
     mvc.perform(get(PATH_GET_MESSAGE_STREAM).contentType(MediaType.APPLICATION_JSON)
@@ -481,7 +481,7 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.ANONYMOUS_DEFAULT})
-  public void getMessagesStream_Should_ReturnNoContent_When_AnonyousAuthority()
+  public void findMessages_Should_ReturnNoContent_When_AnonymousAuthority()
       throws Exception {
     mvc.perform(get(PATH_GET_MESSAGE_STREAM)
             .cookie(csrfCookie)
@@ -569,7 +569,7 @@ public class MessageControllerAuthorizationTestIT {
   }
 
   @Test
-  public void getMessageShouldReturnUnauthorizedWhenNoKeycloakAuthorization() throws Exception {
+  public void findMessageShouldReturnUnauthorizedWhenNoKeycloakAuthorization() throws Exception {
     givenAValidMessageId();
 
     mvc.perform(
@@ -586,7 +586,7 @@ public class MessageControllerAuthorizationTestIT {
       AuthorityValue.TECHNICAL_DEFAULT,
       AuthorityValue.USE_FEEDBACK
   })
-  public void getMessageShouldReturnForbiddenAndCallNoMethodsWhenNoSupportedAuthority()
+  public void findMessageShouldReturnForbiddenAndCallNoMethodsWhenNoSupportedAuthority()
       throws Exception {
     givenAValidMessageId();
 
@@ -601,7 +601,7 @@ public class MessageControllerAuthorizationTestIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  public void getMessageShouldReturnForbiddenAndCallNoMethodsWhenNoCsrfToken() throws Exception {
+  public void findMessageShouldReturnForbiddenAndCallNoMethodsWhenNoCsrfToken() throws Exception {
     givenAValidMessageId();
 
     mvc.perform(
