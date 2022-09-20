@@ -171,7 +171,7 @@ paths:
       tags:
         - message-controller
       summary: 'Get Rocket.Chat message stream [Authorization: Role: user, anonymous, consultant]'
-      operationId: getMessageStream
+      operationId: findMessages
       parameters:
         - name: rcToken
           in: header
@@ -719,6 +719,9 @@ components:
           type: string
         toAskerName:
           type: string
+        fromConsultantId:
+          type: string
+          format: UUID
         fromConsultantName:
           type: string
         status:
