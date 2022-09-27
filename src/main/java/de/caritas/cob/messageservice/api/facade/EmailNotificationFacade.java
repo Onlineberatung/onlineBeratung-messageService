@@ -8,11 +8,14 @@ import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
 import de.caritas.cob.messageservice.userservice.generated.web.model.ReassignmentNotificationDTO;
+import java.util.Set;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /*
@@ -24,12 +27,16 @@ public class EmailNotificationFacade {
 
   private final @NonNull ServiceHelper serviceHelper;
   private final @NonNull UserControllerApi userControllerApi;
+  private final @NonNull Environment environment;
+
   @Value("${user.service.api.liveproxy.url}")
   private String userServiceApiUrl;
 
   @EventListener(ApplicationReadyEvent.class)
   public void setBasePath() {
-    userControllerApi.getApiClient().setBasePath(userServiceApiUrl);
+    if (!Set.of(environment.getActiveProfiles()).contains("testing")) {
+      userControllerApi.getApiClient().setBasePath(userServiceApiUrl);
+    }
   }
 
   /**
@@ -38,6 +45,7 @@ public class EmailNotificationFacade {
    *
    * @param rcGroupId - Rocket.Chat group id
    */
+  @Async
   public void sendEmailAboutNewChatMessage(String rcGroupId) {
     addDefaultHeaders(userControllerApi.getApiClient());
     userControllerApi

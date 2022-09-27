@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +44,10 @@ class EmailNotificationFacadeTest {
 
   @Mock
   private UserControllerApi userControllerApi;
+
+  @Mock
+  @SuppressWarnings("unused")
+  private Environment environment;
 
   @BeforeEach
   public void setup() throws NoSuchFieldException, SecurityException {
