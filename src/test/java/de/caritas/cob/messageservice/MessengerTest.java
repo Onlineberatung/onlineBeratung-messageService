@@ -39,6 +39,7 @@ import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.commons.collections4.SetUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.Before;
@@ -116,7 +117,8 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID,
+        Optional.empty());
   }
 
   @Test(expected = InternalServerErrorException.class)
@@ -128,7 +130,7 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   @Test(expected = InternalServerErrorException.class)
@@ -141,7 +143,7 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   @Test(expected = InternalServerErrorException.class)
@@ -153,7 +155,7 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   @Test
@@ -165,7 +167,7 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(1)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(1)).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   @Test
@@ -177,7 +179,7 @@ public class MessengerTest {
 
     messenger.postGroupMessage(groupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(Mockito.anyString());
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(Mockito.anyString(), Mockito.any(Optional.class));
   }
 
   /**
@@ -198,7 +200,7 @@ public class MessengerTest {
 
     messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   @Test(expected = InternalServerErrorException.class)
@@ -230,7 +232,7 @@ public class MessengerTest {
 
     messenger.postFeedbackGroupMessage(feedbackGroupMessage);
 
-    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_FEEDBACK_GROUP_ID);
+    verify(emailNotificationFacade, times(0)).sendEmailAboutNewChatMessage(RC_FEEDBACK_GROUP_ID, Optional.empty());
   }
 
   @Test(expected = InternalServerErrorException.class)
@@ -410,7 +412,7 @@ public class MessengerTest {
 
     messenger.createEvent(RC_GROUP_ID, MessageType.MASTER_KEY_LOST, null);
 
-    verify(emailNotificationFacade).sendEmailAboutNewChatMessage(RC_GROUP_ID);
+    verify(emailNotificationFacade).sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
   }
 
   private ChatMessageBuilder createFeedbackGroupMessage() {

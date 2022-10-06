@@ -4,10 +4,12 @@ import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
+import de.caritas.cob.messageservice.api.tenant.TenantContext;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
 import de.caritas.cob.messageservice.userservice.generated.web.model.ReassignmentNotificationDTO;
+import java.util.Optional;
 import java.util.Set;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class EmailNotificationFacade {
   private final @NonNull UserControllerApi userControllerApi;
   private final @NonNull Environment environment;
 
+  @Value("${multitenancy.enabled}")
+  private boolean multitenancy;
+
   @Value("${user.service.api.liveproxy.url}")
   private String userServiceApiUrl;
 
@@ -46,7 +51,10 @@ public class EmailNotificationFacade {
    * @param rcGroupId - Rocket.Chat group id
    */
   @Async
-  public void sendEmailAboutNewChatMessage(String rcGroupId) {
+  public void sendEmailAboutNewChatMessage(String rcGroupId, Optional<Long> tenantId) {
+    if (multitenancy) {
+      TenantContext.setCurrentTenant(tenantId.orElseThrow());
+    }
     addDefaultHeaders(userControllerApi.getApiClient());
     userControllerApi
         .sendNewMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
