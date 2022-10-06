@@ -30,6 +30,7 @@ import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
+import de.caritas.cob.messageservice.api.tenant.TenantContext;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import java.util.Optional;
 import lombok.NonNull;
@@ -95,7 +96,8 @@ public class Messenger {
       this.liveEventNotificationService.sendLiveEvent(chatMessage.getRcGroupId());
     }
     if (isTrue(chatMessage.isSendNotification())) {
-      emailNotificationFacade.sendEmailAboutNewChatMessage(chatMessage.getRcGroupId());
+      emailNotificationFacade.sendEmailAboutNewChatMessage(chatMessage.getRcGroupId(),
+          Optional.ofNullable(TenantContext.getCurrentTenant()));
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
@@ -180,7 +182,7 @@ public class Messenger {
     );
 
     if (MASTER_KEY_LOST.equals(messageType)) {
-      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId);
+      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId, Optional.ofNullable(TenantContext.getCurrentTenant()));
     }
 
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
