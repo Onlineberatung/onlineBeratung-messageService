@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /*
@@ -50,7 +49,6 @@ public class EmailNotificationFacade {
    *
    * @param rcGroupId - Rocket.Chat group id
    */
-  @Async
   public void sendEmailAboutNewChatMessage(String rcGroupId, Optional<Long> tenantId) {
     if (multitenancy) {
       TenantContext.setCurrentTenant(tenantId.orElseThrow());
