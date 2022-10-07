@@ -29,7 +29,7 @@ class EmailNotificationFacadeIT {
   private UserControllerApi userControllerApi;
 
   @Test
-  @Disabled("temporarily disabling it, as @Async does not work, as AuthenticatedUser request scope does not exist ")
+  @Disabled("temporarily disabling it, as @Async does not work, as AuthenticatedUser request scope does not exist. TODO fix it in VIC-1707 ")
   void sendEmailAboutNewChatMessageShouldRunInAnotherThread() {
     var threadCount = ManagementFactory.getThreadMXBean().getThreadCount();
 
