@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -23,6 +25,9 @@ class LiveEventNotificationServiceIT {
 
   @Autowired
   private LiveEventNotificationService underTest;
+
+  @Autowired
+  private ApplicationContext context;
 
   @MockBean
   @Qualifier("liveproxyControllerApi")
@@ -40,5 +45,6 @@ class LiveEventNotificationServiceIT {
     underTest.sendLiveEvent(RandomStringUtils.randomAlphanumeric(16));
 
     assertEquals(threadCount + 1, ManagementFactory.getThreadMXBean().getThreadCount());
+    assertNotNull(context.getBean("requestContextListener"));
   }
 }
