@@ -2,6 +2,7 @@ package de.caritas.cob.messageservice.api.facade;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +65,8 @@ class EmailNotificationFacadeTest {
   }
 
   private void givenApiClientAndHeadersAreConfigured() {
-    when(serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders()).thenReturn(new HttpHeaders());
+    when(serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(any(), any()))
+        .thenReturn(new HttpHeaders());
     when(userControllerApi.getApiClient()).thenReturn(mock(ApiClient.class));
   }
 
@@ -75,7 +77,7 @@ class EmailNotificationFacadeTest {
     TenantContext.clear();
     ReflectionTestUtils.setField(emailNotificationFacade, "multitenancy", true);
     // when
-    emailNotificationFacade.sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.of(1L));
+    emailNotificationFacade.sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.of(1L), null);
 
     // then
     var expectedMessage = new NewMessageNotificationDTO().rcGroupId(RC_GROUP_ID);
@@ -105,14 +107,14 @@ class EmailNotificationFacadeTest {
   }
 
   private void sendEmailNotification() {
-    emailNotificationFacade.sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty());
+    emailNotificationFacade.sendEmailAboutNewChatMessage(RC_GROUP_ID, Optional.empty(), null);
   }
 
   @Test
   void sendFeedbackEmailNotification_Should_sendExpectedFeedbackNotificationMailViaUserService() {
     givenApiClientAndHeadersAreConfigured();
     // when
-    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(RC_GROUP_ID);
+    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(RC_GROUP_ID, Optional.empty(), null);
 
     // then
     var expectedMessage = new NewMessageNotificationDTO().rcGroupId(RC_GROUP_ID);
@@ -126,7 +128,8 @@ class EmailNotificationFacadeTest {
     var aliasArgs = new EasyRandom().nextObject(AliasArgs.class);
 
     // when
-    emailNotificationFacade.sendEmailAboutReassignRequest(RC_GROUP_ID, aliasArgs);
+    emailNotificationFacade.sendEmailAboutReassignRequest(RC_GROUP_ID, aliasArgs, Optional.empty(),
+        null);
 
     // then
     var expectedMessage = new ReassignmentNotificationDTO()
@@ -144,7 +147,8 @@ class EmailNotificationFacadeTest {
     var consultantReassignment = new EasyRandom().nextObject(ConsultantReassignment.class);
 
     // when
-    emailNotificationFacade.sendEmailAboutReassignDecision(RC_GROUP_ID, consultantReassignment);
+    emailNotificationFacade.sendEmailAboutReassignDecision(RC_GROUP_ID, consultantReassignment,
+        Optional.empty(), null);
 
     // then
     var expectedMessage = new ReassignmentNotificationDTO()
