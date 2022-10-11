@@ -1,7 +1,7 @@
 package de.caritas.cob.messageservice.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,7 +10,6 @@ import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import java.lang.management.ManagementFactory;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.Test;
@@ -59,8 +58,7 @@ class LiveEventNotificationServiceIT {
   }
 
   @Test
-  void sendLiveEventShouldNeverCallAuthenticatedUserMethodsWhenAccessTokenGiven()
-      throws InterruptedException {
+  void sendLiveEventShouldNeverCallAuthenticatedUserMethodsWhenAccessTokenGiven() {
     when(liveproxyControllerApi.getApiClient()).thenReturn(apiClient);
 
     underTest.sendLiveEvent(
@@ -69,13 +67,12 @@ class LiveEventNotificationServiceIT {
         Optional.of(easyRandom.nextLong())
     );
 
-    TimeUnit.SECONDS.sleep(1); // wait for the async thread
-    verify(authenticatedUser, never()).getAccessToken();
+    verify(authenticatedUser, timeout(1000).times(0))
+        .getAccessToken();
   }
 
   @Test
-  void sendLiveEventShouldCallAuthenticatedUserMethodsWhenAccessTokenMissing()
-      throws InterruptedException {
+  void sendLiveEventShouldCallAuthenticatedUserMethodsWhenAccessTokenMissing() {
     when(liveproxyControllerApi.getApiClient()).thenReturn(apiClient);
 
     underTest.sendLiveEvent(
@@ -84,7 +81,6 @@ class LiveEventNotificationServiceIT {
         Optional.of(easyRandom.nextLong())
     );
 
-    TimeUnit.SECONDS.sleep(1); // wait for the async thread
-    verify(authenticatedUser).getAccessToken();
+    verify(authenticatedUser, timeout(1000)).getAccessToken();
   }
 }
