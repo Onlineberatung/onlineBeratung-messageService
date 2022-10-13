@@ -93,11 +93,15 @@ public class Messenger {
     this.draftMessageService.deleteDraftMessageIfExist(chatMessage.getRcGroupId());
 
     if (!this.rocketChatSystemUserId.equals(chatMessage.getRcUserId())) {
-      this.liveEventNotificationService.sendLiveEvent(chatMessage.getRcGroupId());
+      liveEventNotificationService.sendLiveEvent(
+          chatMessage.getRcGroupId(),
+          authenticatedUser.getAccessToken(),
+          TenantContext.getCurrentTenantOption()
+      );
     }
     if (isTrue(chatMessage.isSendNotification())) {
       emailNotificationFacade.sendEmailAboutNewChatMessage(chatMessage.getRcGroupId(),
-          Optional.ofNullable(TenantContext.getCurrentTenant()));
+          TenantContext.getCurrentTenantOption(), authenticatedUser.getAccessToken());
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
@@ -111,8 +115,16 @@ public class Messenger {
 
   private void notifyAndClearDraftForFeedbackGroup(String rcFeedbackGroupId) {
     draftMessageService.deleteDraftMessageIfExist(rcFeedbackGroupId);
-    liveEventNotificationService.sendLiveEvent(rcFeedbackGroupId);
-    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(rcFeedbackGroupId);
+    liveEventNotificationService.sendLiveEvent(
+        rcFeedbackGroupId,
+        authenticatedUser.getAccessToken(),
+        TenantContext.getCurrentTenantOption()
+    );
+    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(
+        rcFeedbackGroupId,
+        TenantContext.getCurrentTenantOption(),
+        authenticatedUser.getAccessToken()
+    );
   }
 
   /**
@@ -182,11 +194,20 @@ public class Messenger {
     );
 
     if (MASTER_KEY_LOST.equals(messageType)) {
-      emailNotificationFacade.sendEmailAboutNewChatMessage(rcGroupId, Optional.ofNullable(TenantContext.getCurrentTenant()));
+      emailNotificationFacade.sendEmailAboutNewChatMessage(
+          rcGroupId,
+          TenantContext.getCurrentTenantOption(),
+          authenticatedUser.getAccessToken()
+      );
     }
 
     if (nonNull(aliasArgs) && aliasArgs.getStatus().equals(ReassignStatus.REQUESTED)) {
-      emailNotificationFacade.sendEmailAboutReassignRequest(rcGroupId, aliasArgs);
+      emailNotificationFacade.sendEmailAboutReassignRequest(
+          rcGroupId,
+          aliasArgs,
+          TenantContext.getCurrentTenantOption(),
+          authenticatedUser.getAccessToken()
+      );
     }
 
     return mapper.messageResponseOf(response);
@@ -219,7 +240,11 @@ public class Messenger {
     var isUpdated = rocketChatService.updateMessage(updatedMessage);
     if (isUpdated && status == ReassignStatus.CONFIRMED) {
       emailNotificationFacade.sendEmailAboutReassignDecision(
-          updatedMessage.getRoomId(), consultantReassignment);
+          updatedMessage.getRoomId(),
+          consultantReassignment,
+          TenantContext.getCurrentTenantOption(),
+          authenticatedUser.getAccessToken()
+      );
     }
 
     return isUpdated;

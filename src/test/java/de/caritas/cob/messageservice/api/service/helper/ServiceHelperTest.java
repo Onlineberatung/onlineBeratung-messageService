@@ -3,11 +3,13 @@ package de.caritas.cob.messageservice.api.service.helper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
+import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.service.TenantHeaderSupplier;
 import java.util.Enumeration;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +20,6 @@ import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -70,7 +71,8 @@ public class ServiceHelperTest {
   @Test
   public void getKeycloakAndCsrfHttpHeaders_Should_Return_HeaderWithCorrectContentType() {
 
-    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(
+        RandomStringUtils.randomAlphanumeric(16), Optional.empty());
     assertEquals(MediaType.APPLICATION_JSON_UTF8, result.getContentType());
 
   }
@@ -78,7 +80,8 @@ public class ServiceHelperTest {
   @Test
   public void getKeycloakAndCsrfHttpHeaders_Should_Return_HeaderWithCookiePropertyNameFromProperties() {
 
-    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(
+        RandomStringUtils.randomAlphanumeric(16), Optional.empty());
     assertTrue(result.get("Cookie").toString().startsWith("[" + CSRF_TOKEN_COOKIE_VALUE + "="));
 
   }
@@ -86,7 +89,8 @@ public class ServiceHelperTest {
   @Test
   public void getKeycloakAndCsrfHttpHeaders_Should_Return_HeaderWithPropertyNameFromProperties() {
 
-    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(
+        RandomStringUtils.randomAlphanumeric(16), Optional.empty());
     assertNotNull(result.get(CSRF_TOKEN_HEADER_VALUE));
 
   }
@@ -94,7 +98,8 @@ public class ServiceHelperTest {
   @Test
   public void getKeycloakAndCsrfHttpHeaders_Should_Return_HeaderWithBearerAuthorization() {
 
-    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+    HttpHeaders result = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(
+        RandomStringUtils.randomAlphanumeric(16), Optional.empty());
     assertNotNull(result.get(AUTHORIZATION));
 
   }

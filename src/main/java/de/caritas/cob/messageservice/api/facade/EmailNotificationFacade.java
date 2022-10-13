@@ -51,17 +51,18 @@ public class EmailNotificationFacade {
    * @param rcGroupId - Rocket.Chat group id
    */
   @Async
-  public void sendEmailAboutNewChatMessage(String rcGroupId, Optional<Long> tenantId) {
+  public void sendEmailAboutNewChatMessage(String rcGroupId, Optional<Long> tenantId,
+      String accessToken) {
     if (multitenancy) {
       TenantContext.setCurrentTenant(tenantId.orElseThrow());
     }
-    addDefaultHeaders(userControllerApi.getApiClient());
+    addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi
         .sendNewMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
   }
 
-  private void addDefaultHeaders(ApiClient apiClient) {
-    var headers = this.serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders();
+  private void addDefaultHeaders(ApiClient apiClient, String accessToken, Optional<Long> tenantId) {
+    var headers = serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(accessToken, tenantId);
     headers.forEach((key, value) -> apiClient.addDefaultHeader(key, value.iterator().next()));
   }
 
@@ -71,29 +72,34 @@ public class EmailNotificationFacade {
    *
    * @param rcGroupId - Rocket.Chat group id
    */
-  public void sendEmailAboutNewFeedbackMessage(String rcGroupId) {
-    addDefaultHeaders(userControllerApi.getApiClient());
+  @Async
+  public void sendEmailAboutNewFeedbackMessage(String rcGroupId, Optional<Long> tenantId,
+      String accessToken) {
+    addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi
         .sendNewFeedbackMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
   }
 
-  public void sendEmailAboutReassignRequest(String rcGroupId, AliasArgs aliasArgs) {
+  @Async
+  public void sendEmailAboutReassignRequest(String rcGroupId, AliasArgs aliasArgs,
+      Optional<Long> tenantId, String accessToken) {
     var reassignmentNotification = new ReassignmentNotificationDTO()
         .rcGroupId(rcGroupId)
         .toConsultantId(aliasArgs.getToConsultantId())
         .fromConsultantName(aliasArgs.getFromConsultantName());
-    addDefaultHeaders(userControllerApi.getApiClient());
+    addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
 
+  @Async
   public void sendEmailAboutReassignDecision(String roomId,
-      ConsultantReassignment consultantReassignment) {
+      ConsultantReassignment consultantReassignment, Optional<Long> tenantId, String accessToken) {
     var reassignmentNotification = new ReassignmentNotificationDTO()
         .rcGroupId(roomId)
         .toConsultantId(consultantReassignment.getToConsultantId())
         .fromConsultantName(consultantReassignment.getFromConsultantName())
         .isConfirmed(consultantReassignment.getStatus() == ReassignStatus.CONFIRMED);
-    addDefaultHeaders(userControllerApi.getApiClient());
+    addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
 }
