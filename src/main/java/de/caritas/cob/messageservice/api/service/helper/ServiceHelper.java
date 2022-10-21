@@ -1,6 +1,10 @@
 package de.caritas.cob.messageservice.api.service.helper;
 
+import static java.util.Objects.isNull;
+
+import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 import de.caritas.cob.messageservice.api.service.TenantHeaderSupplier;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import de.caritas.cob.messageservice.api.helper.AuthenticatedUser;
 
 @Component
 @Slf4j
@@ -31,23 +34,25 @@ public class ServiceHelper {
    * 
    * @return
    */
-  public HttpHeaders getKeycloakAndCsrfAndOriginHttpHeaders() {
+  public HttpHeaders getKeycloakAndCsrfAndOriginHttpHeaders(String accessToken,
+      Optional<Long> tenantId) {
     HttpHeaders headers = new HttpHeaders();
     addCsrfHeaders(headers);
-    tenantHeaderSupplier.addTenantHeader(headers);
-    addAuthorizationHeader(headers);
+    tenantHeaderSupplier.addTenantHeader(headers, tenantId);
+    addAuthorizationHeader(headers, accessToken);
+
     return headers;
   }
 
-  private void addAuthorizationHeader(HttpHeaders headers) {
-    headers.add("Authorization", "Bearer " + authenticatedUser.getAccessToken());
+  private void addAuthorizationHeader(HttpHeaders headers, String accessToken) {
+    var token = isNull(accessToken) ? authenticatedUser.getAccessToken() : accessToken;
+    headers.add("Authorization", "Bearer " + token);
   }
 
   /**
    * Adds CSRF cookie and header value to the given {@link HttpHeaders} object
    * 
-   * @param httpHeaders
-   * @param csrfToken
+   * @param httpHeaders headers
    */
   private HttpHeaders addCsrfHeaders(HttpHeaders httpHeaders) {
     String csrfToken = UUID.randomUUID().toString();
