@@ -31,6 +31,10 @@
     <openapi.generator.maven.version>6.2.0</openapi.generator.maven.version>
     <liquibase-core.version>4.9.1</liquibase-core.version>
     <liquibase-maven-plugin.version>4.1.1</liquibase-maven-plugin.version>
+    <springfox-bean-validators.version>3.0.0</springfox-bean-validators.version>
+    <springfox-swagger-ui.version>3.0.0</springfox-swagger-ui.version>
+    <springfox-swagger2.version>3.0.0</springfox-swagger2.version>
+    <spring-security-test.version>5.5.7</spring-security-test.version>
   </properties>
 
   <dependencies>
@@ -82,17 +86,17 @@
     <dependency>
       <groupId>io.springfox</groupId>
       <artifactId>springfox-swagger2</artifactId>
-      <version>3.0.0</version>
+      <version>${springfox-swagger2.version}</version>
     </dependency>
     <dependency>
       <groupId>io.springfox</groupId>
       <artifactId>springfox-bean-validators</artifactId>
-      <version>3.0.0</version>
+      <version>${springfox-bean-validators.version}</version>
     </dependency>
     <dependency>
       <groupId>io.springfox</groupId>
       <artifactId>springfox-swagger-ui</artifactId>
-      <version>3.0.0</version>
+      <version>${springfox-swagger-ui.version}</version>
     </dependency>
 
     <!-- Keycloak dependencies -->
@@ -187,6 +191,7 @@
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
+      <version>${spring-security-test.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
