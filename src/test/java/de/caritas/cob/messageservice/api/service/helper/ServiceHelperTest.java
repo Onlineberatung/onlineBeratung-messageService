@@ -16,8 +16,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.reflect.Whitebox;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -52,12 +52,8 @@ public class ServiceHelperTest {
   @Before
   public void setup() throws NoSuchFieldException, SecurityException {
     givenRequestContextIsSet();
-    FieldSetter.setField(serviceHelper,
-        serviceHelper.getClass().getDeclaredField(FIELD_NAME_CSRF_TOKEN_HEADER_PROPERTY),
-        CSRF_TOKEN_HEADER_VALUE);
-    FieldSetter.setField(serviceHelper,
-        serviceHelper.getClass().getDeclaredField(FIELD_NAME_CSRF_TOKEN_COOKIE_PROPERTY),
-        CSRF_TOKEN_COOKIE_VALUE);
+    Whitebox.setInternalState(serviceHelper, FIELD_NAME_CSRF_TOKEN_HEADER_PROPERTY, CSRF_TOKEN_HEADER_VALUE);
+    Whitebox.setInternalState(serviceHelper, FIELD_NAME_CSRF_TOKEN_COOKIE_PROPERTY, CSRF_TOKEN_COOKIE_VALUE);
   }
 
   private void givenRequestContextIsSet() {

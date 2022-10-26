@@ -2,7 +2,6 @@ package de.caritas.cob.messageservice.api.service;
 
 import static de.caritas.cob.messageservice.api.service.RocketChatService.E2E_ENCRYPTION_TYPE;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_GET_GROUP_INFO_URL;
-import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_NAME_RC_POST_GROUP_MESSAGES_READ;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_GET_GROUP_INFO_URL;
 import static de.caritas.cob.messageservice.testhelper.RocketChatFieldConstants.FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.internal.util.reflection.FieldSetter.setField;
+
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -54,6 +53,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -100,46 +100,32 @@ public class RocketChatServiceTest {
 
   @Before
   public void setup() throws NoSuchFieldException, SecurityException {
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcHeaderAuthToken"),
-        RC_TOKEN);
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcHeaderUserId"),
-        RC_USER_ID);
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcQueryParamRoomId"),
-        RC_GROUP_ID);
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcQueryParamOffset"),
-        String.valueOf(RC_OFFSET));
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcQueryParamCount"),
-        String.valueOf(RC_COUNT));
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcQueryParamSort"),
-        "sort");
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcQueryParamSortValue"), "{\"ts\":1}");
-    setField(rocketChatService, rocketChatService.getClass().getDeclaredField("rcSendMessageUrl"),
-        "http://localhost/api/v1/chat.sendMessage");
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_POST_GROUP_MESSAGES_READ),
-        FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ);
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField(FIELD_NAME_RC_GET_GROUP_INFO_URL),
-        FIELD_VALUE_RC_GET_GROUP_INFO_URL);
+    Whitebox.setInternalState(rocketChatService, "rcHeaderAuthToken", RC_TOKEN);
+    Whitebox.setInternalState(rocketChatService, "rcHeaderUserId", RC_USER_ID);
+    Whitebox.setInternalState(rocketChatService, "rcQueryParamRoomId", RC_GROUP_ID);
+    Whitebox.setInternalState(rocketChatService, "rcQueryParamOffset", String.valueOf(RC_OFFSET));
+    Whitebox.setInternalState(rocketChatService, "rcQueryParamCount", String.valueOf(RC_COUNT));
+    Whitebox.setInternalState(rocketChatService, "rcQueryParamSort", "sort");
+    Whitebox.setInternalState(rocketChatService, "rcQueryParamSortValue", "{\"ts\":1}");
+    Whitebox.setInternalState(rocketChatService, "rcSendMessageUrl", "http://localhost/api/v1/chat.sendMessage");
+    Whitebox.setInternalState(rocketChatService, "rcPostGroupMessagesRead", FIELD_VALUE_RC_POST_GROUP_MESSAGES_READ);
+    Whitebox.setInternalState(rocketChatService, FIELD_NAME_RC_GET_GROUP_INFO_URL, FIELD_VALUE_RC_GET_GROUP_INFO_URL);
     setInternalState(LogService.class, "LOGGER", logger);
   }
 
   @Test(expected = InternalServerErrorException.class)
   public void getGroupMessages_Should_ThrowInternalServerErrorException_When_BuildMessageStreamUriFails()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"), null);
 
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", (Object[]) null);
     rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, 0, 0, Instant.now());
   }
 
   @Test(expected = InternalServerErrorException.class)
   public void getGroupMessages_Should_ThrowInternalServerErrorException_When_RocketChatRequestFails()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl",  "http://localhost/api/v1/groups.messages");
+
     HttpClientErrorException ex = new HttpClientErrorException(HttpStatus.BAD_REQUEST);
     when(restTemplate.exchange(any(), any(HttpMethod.class), any(),
         ArgumentMatchers.<Class<MessageStreamDTO>>any())).thenThrow(ex);
@@ -150,9 +136,8 @@ public class RocketChatServiceTest {
   @Test(expected = InternalServerErrorException.class)
   public void getGroupMessages_Should_ThrowInternalServerErrorException_When_DecryptionOfMessageFails()
       throws NoSuchFieldException, CustomCryptoException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl",  "http://localhost/api/v1/groups.messages");
+
     EasyRandom easyRandom = new EasyRandom();
     MessageStreamDTO messageStreamDTO = easyRandom.nextObject(MessageStreamDTO.class);
     messageStreamDTO.setMessages(easyRandom.objects(MessagesDTO.class, 5)
@@ -171,9 +156,8 @@ public class RocketChatServiceTest {
   @Test
   public void getGroupMessages_Should_ReturnMessageStreamDTO_When_ProvidedWithValidParameters()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
+
     List<MessagesDTO> messages = new ArrayList<>();
     ResponseEntity<MessageStreamDTO> entity = new ResponseEntity<>(
         new MessageStreamDTO().messages(messages), HttpStatus.OK);
@@ -189,9 +173,8 @@ public class RocketChatServiceTest {
   @Test
   public void getGroupMessages_Should_DecryptAllMessages()
       throws NoSuchFieldException, CustomCryptoException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
+
     EasyRandom easyRandom = new EasyRandom();
     MessageStreamDTO messageStreamDTO = easyRandom.nextObject(MessageStreamDTO.class);
     messageStreamDTO.setMessages(easyRandom.objects(MessagesDTO.class, 5)
@@ -209,9 +192,7 @@ public class RocketChatServiceTest {
   @Test
   public void getGroupMessages_Should_SetForwardAsMessageType_ForForwardedMessages()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
     EasyRandom easyRandom = new EasyRandom();
     MessageStreamDTO messageStreamDTO = easyRandom.nextObject(MessageStreamDTO.class);
     messageStreamDTO.setMessages(easyRandom.objects(MessagesDTO.class, 5)
@@ -241,9 +222,8 @@ public class RocketChatServiceTest {
   @Test
   public void getGroupMessages_Should_SetVideocallAsMessageType_ForVideocallMessages()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
     EasyRandom easyRandom = new EasyRandom();
     MessageStreamDTO messageStreamDTO = easyRandom.nextObject(MessageStreamDTO.class);
     messageStreamDTO.setMessages(easyRandom.objects(MessagesDTO.class, 5)
@@ -273,9 +253,7 @@ public class RocketChatServiceTest {
   @Test
   public void getGroupMessages_Should_SetFurtherStepsAsMessageType_ForFurtherStepsMessages()
       throws NoSuchFieldException {
-    setField(rocketChatService,
-        rocketChatService.getClass().getDeclaredField("rcGetGroupMessageUrl"),
-        "http://localhost/api/v1/groups.messages");
+    Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
     EasyRandom easyRandom = new EasyRandom();
     MessageStreamDTO messageStreamDTO = easyRandom.nextObject(MessageStreamDTO.class);
     messageStreamDTO.setMessages(easyRandom.objects(MessagesDTO.class, 5)

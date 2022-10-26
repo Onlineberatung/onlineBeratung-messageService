@@ -77,7 +77,7 @@ public class SpringFoxConfig {
         .reference("token").scopes(new AuthorizationScope[0]).build());
   }
 
-  private List<? extends SecurityScheme> securitySchemes() {
+  private List<SecurityScheme> securitySchemes() {
     return singletonList(new ApiKey("Bearer", "Authorization", "header"));
   }
 
