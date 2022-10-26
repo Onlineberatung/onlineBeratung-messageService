@@ -4,21 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.MockitoJUnitRunner;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
+import org.powermock.reflect.Whitebox;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EncryptionServiceTest {
@@ -40,8 +34,9 @@ public class EncryptionServiceTest {
 
   @Before
   public void setup() throws NoSuchFieldException {
-    FieldSetter.setField(encryptionService,
-        encryptionService.getClass().getDeclaredField("fragment_applicationKey"), KEY_APPLICATION);
+    Whitebox.setInternalState(encryptionService, "fragment_applicationKey", KEY_APPLICATION);
+
+
     encryptionService.updateMasterKey(KEY_MASTER);
   }
 
