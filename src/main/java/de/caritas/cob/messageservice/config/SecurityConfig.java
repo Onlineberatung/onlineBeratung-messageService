@@ -64,6 +64,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
 
+    @SuppressWarnings("java:S1075") // URIs should not be hardcoded
     final var SINGLE_MESSAGE_PATH = "/messages/{messageId:[0-9A-Za-z]{17}}";
     http.csrf().disable()
         .addFilterBefore(new StatelessCsrfFilter(csrfCookieProperty, csrfHeaderProperty,
