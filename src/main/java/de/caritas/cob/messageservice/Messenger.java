@@ -264,4 +264,12 @@ public class Messenger {
         aliasMessageDTO);
     return mapper.messageResponseOf(response);
   }
+
+  public boolean deleteMessage(String messageId) {
+    return false;
+  }
+
+  public boolean deleteAttachment(String messageId) {
+    return false;
+  }
 }

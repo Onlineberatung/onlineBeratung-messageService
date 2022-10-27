@@ -3,6 +3,7 @@ package de.caritas.cob.messageservice.api.controller;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.createSuccessfulMessageResult;
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -648,10 +649,11 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void patchMessageShouldRespondWithNotImplemented() throws Exception {
+  void deleteMessageShouldRespondWithNotFoundGivenMessageDoesNotExist() throws Exception {
     givenAuthenticatedUser();
     givenAValidMessageId();
     givenAValidAttachmentId();
+    givenAGetChatMessageNotFoundResponse(messageId);
 
     mockMvc.perform(
             delete("/messages/{messageId}", messageId)
@@ -661,7 +663,48 @@ class MessageControllerE2EIT {
                 .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
                 .queryParam("attachmentId", attachmentId)
         )
-        .andExpect(status().isNotImplemented());
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithForbiddenGivenMessageIsNotFromUser() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAValidAttachmentId();
+    givenAMasterKey();
+    givenMessage(messageId, true, RandomStringUtils.randomAlphabetic(16));
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .queryParam("attachmentId", attachmentId)
+        )
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithInternalServerErrorIfDeletionFails() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAValidAttachmentId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+                .queryParam("attachmentId", attachmentId)
+        )
+        .andExpect(status().isInternalServerError());
   }
 
   @Test
@@ -1072,6 +1115,11 @@ class MessageControllerE2EIT {
 
   private void givenMessage(String id, boolean full)
       throws JsonProcessingException, CustomCryptoException {
+    givenMessage(id, full, null);
+  }
+
+  private void givenMessage(String id, boolean full, String userId)
+      throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);
 
@@ -1087,6 +1135,10 @@ class MessageControllerE2EIT {
       message.setAlias(encodedAlias);
 
       messagesDTO = easyRandom.nextObject(MessagesDTO.class);
+      if (nonNull(userId)) {
+        messagesDTO.getU().set_id(userId);
+      }
+
       var props = message.getOtherProperties();
       props.put("u", messagesDTO.getU());
       props.put("attachments", messagesDTO.getAttachments());

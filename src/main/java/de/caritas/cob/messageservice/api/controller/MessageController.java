@@ -294,7 +294,26 @@ public class MessageController implements MessagesApi {
   @Override
   public ResponseEntity<Void> deleteMessage(String rcToken, String rcUserId, String messageId,
       String attachmentId) {
-    return MessagesApi.super.deleteMessage(rcToken, rcUserId, messageId, attachmentId);
+    var creatorId = messenger
+        .findMessage(rcToken, rcUserId, messageId)
+        .map(mapper::messageDtoOf)
+        .map(messageDto -> messageDto.getU().get_id());
+
+    if (creatorId.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    if (!creatorId.get().equals(rcUserId)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    if (!messenger.deleteMessage(messageId)) {
+      return ResponseEntity.internalServerError().build();
+    }
+
+    return nonNull(attachmentId) && !messenger.deleteAttachment(attachmentId)
+        ? ResponseEntity.status(HttpStatus.MULTI_STATUS).build()
+        : ResponseEntity.noContent().build();
   }
 
   /**
