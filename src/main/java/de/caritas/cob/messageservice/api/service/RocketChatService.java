@@ -26,6 +26,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
+import de.caritas.cob.messageservice.api.service.dto.StringifiedMessageResponse;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.net.URI;
@@ -54,6 +55,7 @@ public class RocketChatService {
 
   public static final String E2E_ENCRYPTION_TYPE = "e2e";
 
+  private static final String ENDPOINT_MESSAGE_DELETE = "/method.call/deleteMessage";
   private static final String ENDPOINT_MESSAGE_GET = "/chat.getMessage?msgId=";
   private static final String ENDPOINT_MESSAGE_UPDATE = "/chat.update";
 
@@ -393,6 +395,21 @@ public class RocketChatService {
     }
 
     return null;
+  }
+
+  public boolean deleteMessage(String rcToken, String rcUserId, String messageId) {
+    var url = baseUrl + ENDPOINT_MESSAGE_DELETE;
+    var deleteMessage = mapper.deleteMessageOf(messageId);
+    var entity = new HttpEntity<>(deleteMessage, getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
+      return nonNull(response.getBody()) && response.getBody().getSuccess()
+          && !response.getBody().getMessage().contains("\"error\"");
+    } catch (HttpClientErrorException exception) {
+      log.error("Deleting message failed.", exception);
+      return false;
+    }
   }
 
   @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive

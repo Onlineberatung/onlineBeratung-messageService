@@ -17,16 +17,21 @@ import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.dto.DeleteMessage;
 import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.MethodMessage;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class MessageMapper {
 
@@ -194,5 +199,25 @@ public class MessageMapper {
     }
 
     return null;
+  }
+
+  public DeleteMessage deleteMessageOf(String messageId) {
+    var params = Map.of("_id", messageId);
+
+    var message = new MethodMessage();
+    message.setParams(List.of(params));
+    message.setId(new Random().nextInt(100));
+    message.setMsg("method");
+    message.setMethod("deleteMessage");
+
+    var deleteMessage = new DeleteMessage();
+    try {
+      var messageString = objectMapper.writeValueAsString(message);
+      deleteMessage.setMessage(messageString);
+    } catch (JsonProcessingException e) {
+      log.error("Serializing {} did not work.", message);
+    }
+
+    return deleteMessage;
   }
 }

@@ -57,6 +57,7 @@ import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
+import de.caritas.cob.messageservice.api.service.dto.StringifiedMessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
@@ -695,6 +696,7 @@ class MessageControllerE2EIT {
     givenAMasterKey();
     var rcUserId = RandomStringUtils.randomAlphabetic(16);
     givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(false);
 
     mockMvc.perform(
             delete("/messages/{messageId}", messageId)
@@ -705,6 +707,27 @@ class MessageControllerE2EIT {
                 .queryParam("attachmentId", attachmentId)
         )
         .andExpect(status().isInternalServerError());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNoContentIfDeletionSucceeds() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAValidAttachmentId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(true);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isNoContent());
   }
 
   @Test
@@ -1154,6 +1177,26 @@ class MessageControllerE2EIT {
     var urlSuffix = "/chat.getMessage?msgId=" + id;
     when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
         eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
+  }
+
+  private void givenDeletableMessage(boolean success) {
+    var urlSuffix = "/api/v1/method.call/deleteMessage";
+    var messageResponse = easyRandom.nextObject(StringifiedMessageResponse.class);
+    messageResponse.setSuccess(true);
+    if (success) {
+      while (messageResponse.getMessage().contains("\"error\"")) {
+        messageResponse.setMessage(RandomStringUtils.randomAlphanumeric(32));
+      }
+    } else {
+      messageResponse.setMessage(
+          RandomStringUtils.randomAlphanumeric(12)
+              + "\"error\""
+              + RandomStringUtils.randomAlphanumeric(12));
+    }
+
+    when(restTemplate.postForEntity(
+        endsWith(urlSuffix), any(HttpEntity.class), eq(StringifiedMessageResponse.class)))
+        .thenReturn(ResponseEntity.ok(messageResponse));
   }
 
   private void givenAWronglyFormattedMessageId() {

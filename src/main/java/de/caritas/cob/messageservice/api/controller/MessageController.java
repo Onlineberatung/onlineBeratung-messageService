@@ -307,7 +307,7 @@ public class MessageController implements MessagesApi {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
-    if (!messenger.deleteMessage(messageId)) {
+    if (!messenger.deleteMessage(rcToken, rcUserId, messageId)) {
       return ResponseEntity.internalServerError().build();
     }
 
