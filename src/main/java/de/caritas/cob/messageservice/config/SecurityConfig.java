@@ -77,6 +77,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         .hasAnyAuthority(USER_DEFAULT)
         .antMatchers(HttpMethod.GET, "/messages/{messageId:[0-9A-Za-z]{17}}")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
+        .antMatchers(HttpMethod.DELETE, "/messages/{messageId:[0-9A-Za-z]{17}}")
+        .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
         .antMatchers("/messages/new")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, TECHNICAL_DEFAULT, ANONYMOUS_DEFAULT)
         .antMatchers("/messages/forward", "/messages/feedback/new")

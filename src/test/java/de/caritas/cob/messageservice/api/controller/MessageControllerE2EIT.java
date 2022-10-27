@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -144,6 +145,7 @@ class MessageControllerE2EIT {
   private List<MessagesDTO> messages;
   private ConsultantReassignment consultantReassignment;
   private String messageId;
+  private String attachmentId;
   private AliasArgs aliasArgs;
   private Message message;
   private MessagesDTO messagesDTO;
@@ -645,6 +647,24 @@ class MessageControllerE2EIT {
   }
 
   @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void patchMessageShouldRespondWithNotImplemented() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAValidAttachmentId();
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+                .queryParam("attachmentId", attachmentId)
+        )
+        .andExpect(status().isNotImplemented());
+  }
+
+  @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
@@ -1094,6 +1114,10 @@ class MessageControllerE2EIT {
 
   private void givenAValidMessageId() {
     messageId = RandomStringUtils.randomAlphanumeric(17);
+  }
+
+  private void givenAValidAttachmentId() {
+    attachmentId = RandomStringUtils.randomAlphanumeric(17);
   }
 
   private void givenAPatchSupportedReassignArg() {

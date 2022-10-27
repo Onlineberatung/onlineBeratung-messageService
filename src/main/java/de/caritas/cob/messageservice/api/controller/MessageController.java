@@ -291,6 +291,12 @@ public class MessageController implements MessagesApi {
         : ResponseEntity.notFound().build();
   }
 
+  @Override
+  public ResponseEntity<Void> deleteMessage(String rcToken, String rcUserId, String messageId,
+      String attachmentId) {
+    return MessagesApi.super.deleteMessage(rcToken, rcUserId, messageId, attachmentId);
+  }
+
   /**
    * Posts a message which contains an alias with the provided {@link MessageType} in the specified
    * Rocket.Chat group.

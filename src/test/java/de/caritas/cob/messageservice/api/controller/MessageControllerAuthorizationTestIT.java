@@ -7,14 +7,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.Messenger;
+import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.AliasOnlyMessageDTO;
 import de.caritas.cob.messageservice.api.model.MessageDTO;
@@ -35,12 +36,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 @RunWith(SpringRunner.class)
-@TestPropertySource(properties = "spring.profiles.active=testing")
+@ActiveProfiles("testing")
 @SpringBootTest
 @AutoConfigureMockMvc
 public class MessageControllerAuthorizationTestIT {
@@ -566,6 +567,50 @@ public class MessageControllerAuthorizationTestIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aliasArgs)))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  public void deleteMessageShouldReturnUnauthorizedWhenNoKeycloakAuthorization() throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+        delete("/messages/{messageId}", messageId)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+    ).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(authorities = {
+      AuthorityValue.TECHNICAL_DEFAULT,
+      AuthorityValue.USE_FEEDBACK
+  })
+  public void deleteMessageShouldReturnForbiddenAndCallNoMethodsWhenNoUserDefaultAuthority()
+      throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+        delete("/messages/{messageId}", messageId)
+            .cookie(csrfCookie)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+    ).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  public void deleteMessageShouldReturnForbiddenAndCallNoMethodsWhenNoCsrfToken() throws Exception {
+    givenAValidMessageId();
+
+    mvc.perform(
+        delete("/messages/{messageId}", messageId)
+            .header(CSRF_HEADER, CSRF_VALUE)
+            .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+            .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+    ).andExpect(status().isForbidden());
   }
 
   @Test
