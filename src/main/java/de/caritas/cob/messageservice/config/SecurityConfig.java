@@ -63,6 +63,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http);
+
+    final var SINGLE_MESSAGE_PATH = "/messages/{messageId:[0-9A-Za-z]{17}}";
     http.csrf().disable()
         .addFilterBefore(new StatelessCsrfFilter(csrfCookieProperty, csrfHeaderProperty,
                 csrfWhitelistHeaderProperty), CsrfFilter.class)
@@ -73,11 +75,11 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         .hasAuthority(TECHNICAL_DEFAULT)
         .antMatchers("/messages", "/messages/draft", "/messages/videohint/new")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
-        .antMatchers(HttpMethod.PATCH, "/messages/{messageId:[0-9A-Za-z]{17}}")
+        .antMatchers(HttpMethod.PATCH, SINGLE_MESSAGE_PATH)
         .hasAnyAuthority(USER_DEFAULT)
-        .antMatchers(HttpMethod.GET, "/messages/{messageId:[0-9A-Za-z]{17}}")
+        .antMatchers(HttpMethod.GET, SINGLE_MESSAGE_PATH)
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
-        .antMatchers(HttpMethod.DELETE, "/messages/{messageId:[0-9A-Za-z]{17}}")
+        .antMatchers(HttpMethod.DELETE, SINGLE_MESSAGE_PATH)
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, ANONYMOUS_DEFAULT)
         .antMatchers("/messages/new")
         .hasAnyAuthority(USER_DEFAULT, CONSULTANT_DEFAULT, TECHNICAL_DEFAULT, ANONYMOUS_DEFAULT)
