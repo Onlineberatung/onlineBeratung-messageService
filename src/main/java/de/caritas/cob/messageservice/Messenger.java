@@ -269,7 +269,7 @@ public class Messenger {
     return rocketChatService.deleteMessage(rcToken, rcUserId, messageId);
   }
 
-  public boolean deleteAttachment(String messageId) {
+  public boolean deleteAttachment(String attachmentId) {
     return false;
   }
 }
