@@ -5,9 +5,9 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class MethodMessage {
+public class MethodMessageWithParamMap {
 
-  private String msg;
+  private String msg = "method";
 
   private int id;
 

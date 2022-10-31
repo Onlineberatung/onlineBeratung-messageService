@@ -55,6 +55,7 @@ public class RocketChatService {
 
   public static final String E2E_ENCRYPTION_TYPE = "e2e";
 
+  private static final String ENDPOINT_FILE_DELETE = "/method.call/deleteFileMessage";
   private static final String ENDPOINT_MESSAGE_DELETE = "/method.call/deleteMessage";
   private static final String ENDPOINT_MESSAGE_GET = "/chat.getMessage?msgId=";
   private static final String ENDPOINT_MESSAGE_UPDATE = "/chat.update";
@@ -408,6 +409,21 @@ public class RocketChatService {
           && !response.getBody().getMessage().contains("\"error\"");
     } catch (HttpClientErrorException exception) {
       log.error("Deleting message failed.", exception);
+      return false;
+    }
+  }
+
+  public boolean deleteAttachment(String rcToken, String rcUserId, String attachmentId) {
+    var url = baseUrl + ENDPOINT_FILE_DELETE;
+    var deleteFile = mapper.deleteFileOf(attachmentId);
+    var entity = new HttpEntity<>(deleteFile, getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
+      return nonNull(response.getBody()) && response.getBody().getSuccess()
+          && !response.getBody().getMessage().contains("\"error\"");
+    } catch (HttpClientErrorException exception) {
+      log.error("Deleting file failed.", exception);
       return false;
     }
   }

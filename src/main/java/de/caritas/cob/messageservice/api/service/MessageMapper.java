@@ -17,9 +17,10 @@ import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
-import de.caritas.cob.messageservice.api.service.dto.DeleteMessage;
+import de.caritas.cob.messageservice.api.service.dto.MethodCall;
 import de.caritas.cob.messageservice.api.service.dto.Message;
-import de.caritas.cob.messageservice.api.service.dto.MethodMessage;
+import de.caritas.cob.messageservice.api.service.dto.MethodMessageWithParamList;
+import de.caritas.cob.messageservice.api.service.dto.MethodMessageWithParamMap;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import java.time.Instant;
 import java.util.Date;
@@ -201,16 +202,32 @@ public class MessageMapper {
     return null;
   }
 
-  public DeleteMessage deleteMessageOf(String messageId) {
+  public MethodCall deleteMessageOf(String messageId) {
     var params = Map.of("_id", messageId);
 
-    var message = new MethodMessage();
+    var message = new MethodMessageWithParamMap();
     message.setParams(List.of(params));
     message.setId(new Random().nextInt(100));
-    message.setMsg("method");
     message.setMethod("deleteMessage");
 
-    var deleteMessage = new DeleteMessage();
+    var deleteMessage = new MethodCall();
+    try {
+      var messageString = objectMapper.writeValueAsString(message);
+      deleteMessage.setMessage(messageString);
+    } catch (JsonProcessingException e) {
+      log.error("Serializing {} did not work.", message);
+    }
+
+    return deleteMessage;
+  }
+
+  public MethodCall deleteFileOf(String fileId) {
+    var message = new MethodMessageWithParamList();
+    message.setParams(List.of(fileId));
+    message.setId(new Random().nextInt(100));
+    message.setMethod("deleteFileMessage");
+
+    var deleteMessage = new MethodCall();
     try {
       var messageString = objectMapper.writeValueAsString(message);
       deleteMessage.setMessage(messageString);
