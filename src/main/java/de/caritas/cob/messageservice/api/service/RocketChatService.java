@@ -42,6 +42,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -405,8 +406,7 @@ public class RocketChatService {
 
     try {
       var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
-      return nonNull(response.getBody()) && response.getBody().getSuccess()
-          && !response.getBody().getMessage().contains("\"error\"");
+      return isSuccessful(response);
     } catch (HttpClientErrorException exception) {
       log.error("Deleting message failed.", exception);
       return false;
@@ -420,12 +420,17 @@ public class RocketChatService {
 
     try {
       var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
-      return nonNull(response.getBody()) && response.getBody().getSuccess()
-          && !response.getBody().getMessage().contains("\"error\"");
+      return isSuccessful(response);
     } catch (HttpClientErrorException exception) {
       log.error("Deleting file failed.", exception);
       return false;
     }
+  }
+
+  private boolean isSuccessful(ResponseEntity<StringifiedMessageResponse> response) {
+    var body = response.getBody();
+
+    return nonNull(body) && body.getSuccess() && !body.getMessage().contains("\"error\"");
   }
 
   @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive
