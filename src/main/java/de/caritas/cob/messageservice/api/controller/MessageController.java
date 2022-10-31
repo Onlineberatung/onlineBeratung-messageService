@@ -311,10 +311,9 @@ public class MessageController implements MessagesApi {
       return ResponseEntity.internalServerError().build();
     }
 
-    if (deleteAttachment && message.hasFile()) {
-      if (!messenger.deleteAttachment(rcToken, rcUserId, message.getFileId())) {
-        return ResponseEntity.status(HttpStatus.MULTI_STATUS).build();
-      }
+    if (deleteAttachment && message.hasFile()
+        && !messenger.deleteAttachment(rcToken, rcUserId, message.getFileId())) {
+      return ResponseEntity.status(HttpStatus.MULTI_STATUS).build();
     }
 
     return ResponseEntity.noContent().build();
