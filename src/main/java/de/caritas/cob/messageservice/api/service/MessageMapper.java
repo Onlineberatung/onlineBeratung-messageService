@@ -36,6 +36,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MessageMapper {
 
+  @SuppressWarnings("java:S2245")
+  // Using pseudorandom number generators (PRNGs) is security-sensitive
   private static final Random random = new Random();
 
   private final ObjectMapper objectMapper;
@@ -204,8 +206,6 @@ public class MessageMapper {
     return null;
   }
 
-  @SuppressWarnings("java:S2245")
-  // Using pseudorandom number generators (PRNGs) is security-sensitive
   public MethodCall deleteMessageOf(String messageId) {
     var params = Map.of("_id", messageId);
 
@@ -225,8 +225,6 @@ public class MessageMapper {
     return deleteMessage;
   }
 
-  @SuppressWarnings("java:S2245")
-  // Using pseudorandom number generators (PRNGs) is security-sensitive
   public MethodCall deleteFileOf(String fileId) {
     var message = new MethodMessageWithParamList();
     message.setParams(List.of(fileId));
