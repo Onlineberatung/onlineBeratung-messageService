@@ -788,6 +788,67 @@ class MessageControllerE2EIT {
   }
 
   @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNoContentIfDeleteMessageSucceedsButMessageHasNoFile()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId, false);
+    givenDeletableMessage(true);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+                .queryParam("deleteAttachment", "true")
+        )
+        .andExpect(status().isNoContent());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithMultiStatusIfDeleteMessageSucceedsButDeleteAttachmentFails()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(true);
+    givenDeletableFile(false);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+                .queryParam("deleteAttachment", "true")
+        )
+        .andExpect(status().isMultiStatus());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
@@ -1199,6 +1260,11 @@ class MessageControllerE2EIT {
   }
 
   private void givenMessage(String id, boolean full, String userId)
+      throws CustomCryptoException, JsonProcessingException {
+    givenMessage(id, full, userId, true);
+  }
+
+  private void givenMessage(String id, boolean full, String userId, boolean hasFileId)
       throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);
@@ -1222,7 +1288,9 @@ class MessageControllerE2EIT {
       var props = message.getOtherProperties();
       props.put("u", messagesDTO.getU());
       props.put("attachments", messagesDTO.getAttachments());
-      props.put("file", messagesDTO.getFile());
+      if (hasFileId) {
+        props.put("file", messagesDTO.getFile());
+      }
       props.put("org", encryptionService.encrypt(message.getMsg(), message.getRid()));
       props.put("_updatedAt", messagesDTO.get_updatedAt());
       props.put("t", messagesDTO.getT());
