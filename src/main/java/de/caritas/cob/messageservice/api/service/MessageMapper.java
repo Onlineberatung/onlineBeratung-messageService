@@ -36,6 +36,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MessageMapper {
 
+  private static final Random random = new Random();
+
   private final ObjectMapper objectMapper;
   private final EncryptionService encryptionService;
 
@@ -202,12 +204,14 @@ public class MessageMapper {
     return null;
   }
 
+  @SuppressWarnings("java:S2245")
+  // Using pseudorandom number generators (PRNGs) is security-sensitive
   public MethodCall deleteMessageOf(String messageId) {
     var params = Map.of("_id", messageId);
 
     var message = new MethodMessageWithParamMap();
     message.setParams(List.of(params));
-    message.setId(new Random().nextInt(100));
+    message.setId(random.nextInt(100));
     message.setMethod("deleteMessage");
 
     var deleteMessage = new MethodCall();
@@ -221,10 +225,12 @@ public class MessageMapper {
     return deleteMessage;
   }
 
+  @SuppressWarnings("java:S2245")
+  // Using pseudorandom number generators (PRNGs) is security-sensitive
   public MethodCall deleteFileOf(String fileId) {
     var message = new MethodMessageWithParamList();
     message.setParams(List.of(fileId));
-    message.setId(new Random().nextInt(100));
+    message.setId(random.nextInt(100));
     message.setMethod("deleteFileMessage");
 
     var deleteMessage = new MethodCall();
