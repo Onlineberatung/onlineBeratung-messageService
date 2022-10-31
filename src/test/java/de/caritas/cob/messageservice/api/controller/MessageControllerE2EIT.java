@@ -650,7 +650,7 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
-  void deleteMessageShouldRespondWithNotFoundGivenMessageDoesNotExist() throws Exception {
+  void deleteMessageShouldRespondWithNotImplemented() throws Exception {
     givenAuthenticatedUser();
     givenAValidMessageId();
     givenAValidAttachmentId();
@@ -662,7 +662,7 @@ class MessageControllerE2EIT {
                 .header(CSRF_HEADER, CSRF_VALUE)
                 .header("rcToken", RandomStringUtils.randomAlphabetic(16))
                 .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .queryParam("attachmentId", attachmentId)
+                .queryParam("deleteMessage", "true")
         )
         .andExpect(status().isNotFound());
   }
