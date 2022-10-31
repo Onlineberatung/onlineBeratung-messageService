@@ -293,8 +293,8 @@ public class MessageController implements MessagesApi {
 
   @Override
   public ResponseEntity<Void> deleteMessage(String rcToken, String rcUserId, String messageId,
-      String attachmentId) {
-    return MessagesApi.super.deleteMessage(rcToken, rcUserId, messageId, attachmentId);
+      Boolean deleteAttachment) {
+    return MessagesApi.super.deleteMessage(rcToken, rcUserId, messageId, deleteAttachment);
   }
 
   /**
