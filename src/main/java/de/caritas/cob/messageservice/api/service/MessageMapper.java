@@ -17,18 +17,28 @@ import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.jsondeserializer.AliasJsonDeserializer;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
+import de.caritas.cob.messageservice.api.service.dto.MethodCall;
 import de.caritas.cob.messageservice.api.service.dto.Message;
+import de.caritas.cob.messageservice.api.service.dto.MethodMessageWithParamList;
+import de.caritas.cob.messageservice.api.service.dto.MethodMessageWithParamMap;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class MessageMapper {
+
+  @SuppressWarnings("java:S2245")
+  // Using pseudorandom number generators (PRNGs) is security-sensitive
+  private static final Random random = new Random();
 
   private final ObjectMapper objectMapper;
   private final EncryptionService encryptionService;
@@ -194,5 +204,41 @@ public class MessageMapper {
     }
 
     return null;
+  }
+
+  public MethodCall deleteMessageOf(String messageId) {
+    var params = Map.of("_id", messageId);
+
+    var message = new MethodMessageWithParamMap();
+    message.setParams(List.of(params));
+    message.setId(random.nextInt(100));
+    message.setMethod("deleteMessage");
+
+    var deleteMessage = new MethodCall();
+    try {
+      var messageString = objectMapper.writeValueAsString(message);
+      deleteMessage.setMessage(messageString);
+    } catch (JsonProcessingException e) {
+      log.error("Serializing {} did not work.", message);
+    }
+
+    return deleteMessage;
+  }
+
+  public MethodCall deleteFileOf(String fileId) {
+    var message = new MethodMessageWithParamList();
+    message.setParams(List.of(fileId));
+    message.setId(random.nextInt(100));
+    message.setMethod("deleteFileMessage");
+
+    var deleteMessage = new MethodCall();
+    try {
+      var messageString = objectMapper.writeValueAsString(message);
+      deleteMessage.setMessage(messageString);
+    } catch (JsonProcessingException e) {
+      log.error("Serializing {} did not work.", message);
+    }
+
+    return deleteMessage;
   }
 }
