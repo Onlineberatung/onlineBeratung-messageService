@@ -292,8 +292,7 @@ public class MessageController implements MessagesApi {
   }
 
   @Override
-  public ResponseEntity<Void> deleteMessage(String rcToken, String rcUserId, String messageId,
-      Boolean deleteAttachment) {
+  public ResponseEntity<Void> deleteMessage(String rcToken, String rcUserId, String messageId) {
     var message = messenger
         .findMessage(rcToken, rcUserId, messageId)
         .map(mapper::messageDtoOf)
@@ -311,8 +310,7 @@ public class MessageController implements MessagesApi {
       return ResponseEntity.internalServerError().build();
     }
 
-    if (deleteAttachment && message.hasFile()
-        && !messenger.deleteAttachment(rcToken, rcUserId, message.getFileId())) {
+    if (message.hasFile() && !messenger.deleteAttachment(rcToken, rcUserId, message.getFileId())) {
       return ResponseEntity.status(HttpStatus.MULTI_STATUS).build();
     }
 

@@ -750,7 +750,7 @@ class MessageControllerE2EIT {
     verify(restTemplate).postForEntity(
         endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
     );
-    verify(restTemplate, never()).postForEntity(
+    verify(restTemplate).postForEntity(
         endsWith("/api/v1/method.call/deleteFileMessage"), any(),
         eq(StringifiedMessageResponse.class)
     );
@@ -774,7 +774,6 @@ class MessageControllerE2EIT {
                 .header(CSRF_HEADER, CSRF_VALUE)
                 .header("rcToken", RandomStringUtils.randomAlphabetic(16))
                 .header("rcUserId", rcUserId)
-                .queryParam("deleteAttachment", "true")
         )
         .andExpect(status().isNoContent());
 
@@ -804,7 +803,6 @@ class MessageControllerE2EIT {
                 .header(CSRF_HEADER, CSRF_VALUE)
                 .header("rcToken", RandomStringUtils.randomAlphabetic(16))
                 .header("rcUserId", rcUserId)
-                .queryParam("deleteAttachment", "true")
         )
         .andExpect(status().isNoContent());
 
@@ -835,7 +833,6 @@ class MessageControllerE2EIT {
                 .header(CSRF_HEADER, CSRF_VALUE)
                 .header("rcToken", RandomStringUtils.randomAlphabetic(16))
                 .header("rcUserId", rcUserId)
-                .queryParam("deleteAttachment", "true")
         )
         .andExpect(status().isMultiStatus());
 
