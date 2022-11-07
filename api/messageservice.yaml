@@ -302,7 +302,7 @@ paths:
     delete:
       tags:
         - message-controller
-      summary: 'Marks a message as deleted, removes its text and attachment if one exists [Auth: 
+      summary: 'Marks a message as deleted, removes its text and optionally an attachment [Auth: 
         user, consultant, anonymous]'
       description: In order to delete a containing attachment, the flag must be set to true.
       operationId: deleteMessage
