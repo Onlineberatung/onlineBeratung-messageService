@@ -306,12 +306,6 @@ paths:
         user, consultant, anonymous]'
       description: In order to delete a containing attachment, the flag must be set to true.
       operationId: deleteMessage
-      parameters:
-        - name: deleteAttachment
-          in: query
-          schema:
-            type: boolean
-            default: false
       responses:
         204:
           description: NO CONTENT - message (and attachment) has been deleted
