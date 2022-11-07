@@ -1,6 +1,7 @@
 package de.caritas.cob.messageservice.config.apiclient;
 
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
+import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 @RequiredArgsConstructor
-public class UserServiceApiControllerFactory {
+public class ApiControllerFactory {
 
   private final RestTemplate restTemplate;
 
@@ -20,5 +21,11 @@ public class UserServiceApiControllerFactory {
     var apiClient = new ApiClient(restTemplate).setBasePath(userServiceBasePath);
 
     return new UserControllerApi(apiClient);
+  }
+
+  public LiveproxyControllerApi liveproxyControllerApi() {
+    var apiClient = new ApiClient(restTemplate).setBasePath(userServiceBasePath);
+
+    return new LiveproxyControllerApi(apiClient);
   }
 }

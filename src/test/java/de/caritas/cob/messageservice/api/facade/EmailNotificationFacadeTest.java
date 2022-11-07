@@ -12,7 +12,7 @@ import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
-import de.caritas.cob.messageservice.config.apiclient.UserServiceApiControllerFactory;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
@@ -44,7 +44,7 @@ class EmailNotificationFacadeTest {
   private UserControllerApi userControllerApi;
 
   @Mock
-  private UserServiceApiControllerFactory clientFactory;
+  private ApiControllerFactory clientFactory;
 
   @Mock
   @SuppressWarnings("unused")

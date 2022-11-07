@@ -5,7 +5,7 @@ import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
-import de.caritas.cob.messageservice.config.apiclient.UserServiceApiControllerFactory;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
 import de.caritas.cob.messageservice.userservice.generated.web.model.ReassignmentNotificationDTO;
@@ -25,7 +25,7 @@ public class EmailNotificationFacade {
 
   private final @NonNull ServiceHelper serviceHelper;
 
-  private final @NonNull UserServiceApiControllerFactory clientFactory;
+  private final @NonNull ApiControllerFactory clientFactory;
 
   @Value("${multitenancy.enabled}")
   private boolean multitenancy;
