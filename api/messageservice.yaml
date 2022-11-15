@@ -684,6 +684,7 @@ components:
     MessageType:
       type: string
       enum:
+        - "INITIAL_APPOINTMENT_DEFINED"
         - "APPOINTMENT_SET"
         - "APPOINTMENT_CANCELLED"
         - "APPOINTMENT_RESCHEDULED"
