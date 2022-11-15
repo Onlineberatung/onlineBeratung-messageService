@@ -12,7 +12,7 @@ import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
-import de.caritas.cob.messageservice.config.UserServiceApiControllerFactory;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -43,11 +44,16 @@ class EmailNotificationFacadeTest {
   private UserControllerApi userControllerApi;
 
   @Mock
-  private UserServiceApiControllerFactory userServiceApiControllerFactory;
+  private ApiControllerFactory clientFactory;
+
+  @Mock
+  @SuppressWarnings("unused")
+  private Environment environment;
 
   @Test
   void sendEmailNotification_Should_sendExpectedNotificationMailViaUserService() {
     // given
+    when(clientFactory.userControllerApi()).thenReturn(userControllerApi);
     givenApiClientAndHeadersAreConfigured();
     // when
     sendEmailNotification();
@@ -57,7 +63,6 @@ class EmailNotificationFacadeTest {
   }
 
   private void givenApiClientAndHeadersAreConfigured() {
-    when(userServiceApiControllerFactory.createControllerApi()).thenReturn(userControllerApi);
     when(serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(any(), any()))
         .thenReturn(new HttpHeaders());
     when(userControllerApi.getApiClient()).thenReturn(mock(ApiClient.class));
@@ -66,6 +71,7 @@ class EmailNotificationFacadeTest {
   @Test
   void sendEmailAboutNewChatMessage_Should_sendExpectedNotificationMailViaUserServiceAndSetTenantContextFromACallingServiceForMultitenancyEnabled() {
     // given
+    when(clientFactory.userControllerApi()).thenReturn(userControllerApi);
     givenApiClientAndHeadersAreConfigured();
     TenantContext.clear();
     ReflectionTestUtils.setField(emailNotificationFacade, "multitenancy", true);
@@ -90,9 +96,7 @@ class EmailNotificationFacadeTest {
     // when
 
     // when/ then
-    assertThrows(NoSuchElementException.class, () -> {
-      sendEmailNotification();
-    });
+    assertThrows(NoSuchElementException.class, this::sendEmailNotification);
 
     // clean up
     TenantContext.clear();
@@ -105,6 +109,7 @@ class EmailNotificationFacadeTest {
 
   @Test
   void sendFeedbackEmailNotification_Should_sendExpectedFeedbackNotificationMailViaUserService() {
+    when(clientFactory.userControllerApi()).thenReturn(userControllerApi);
     givenApiClientAndHeadersAreConfigured();
     // when
     emailNotificationFacade.sendEmailAboutNewFeedbackMessage(RC_GROUP_ID, Optional.empty(), null);
@@ -117,6 +122,7 @@ class EmailNotificationFacadeTest {
   @Test
   void sendEmailAboutReassignRequest_Should_sendExpectedReassignNotificationMailViaUserService() {
     // given
+    when(clientFactory.userControllerApi()).thenReturn(userControllerApi);
     givenApiClientAndHeadersAreConfigured();
     var aliasArgs = new EasyRandom().nextObject(AliasArgs.class);
 
@@ -136,6 +142,7 @@ class EmailNotificationFacadeTest {
   @Test
   void sendEmailAboutReassignDecision_Should_sendExpectedReassignNotificationMailViaUserService() {
     // given
+    when(clientFactory.userControllerApi()).thenReturn(userControllerApi);
     givenApiClientAndHeadersAreConfigured();
     var consultantReassignment = new EasyRandom().nextObject(ConsultantReassignment.class);
 

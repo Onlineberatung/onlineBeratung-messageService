@@ -3,8 +3,8 @@ package de.caritas.cob.messageservice.api.service;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
-import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import org.springframework.web.client.RestClientException;
 @RequiredArgsConstructor
 public class LiveEventNotificationService {
 
-  private final @NonNull LiveproxyControllerApi liveproxyControllerApi;
+  private final @NonNull ApiControllerFactory clientFactory;
   private final @NonNull ServiceHelper serviceHelper;
 
   /**
@@ -29,10 +29,11 @@ public class LiveEventNotificationService {
    */
   @Async
   public void sendLiveEvent(String rcGroupId, String accessToken, Optional<Long> tenantId) {
+    var liveProxyControllerApi = clientFactory.liveproxyControllerApi();
     if (isNotBlank(rcGroupId)) {
-      addDefaultHeaders(liveproxyControllerApi.getApiClient(), accessToken, tenantId);
+      addDefaultHeaders(liveProxyControllerApi.getApiClient(), accessToken, tenantId);
       try {
-        this.liveproxyControllerApi.sendLiveEvent(rcGroupId);
+        liveProxyControllerApi.sendLiveEvent(rcGroupId);
       } catch (RestClientException e) {
         LogService.logInternalServerError(
             String.format("Unable to trigger live event for rc group id %s", rcGroupId), e);

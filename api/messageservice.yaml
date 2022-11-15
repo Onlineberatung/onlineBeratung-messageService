@@ -299,6 +299,29 @@ paths:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
         - Bearer: [ ]
+    delete:
+      tags:
+        - message-controller
+      summary: 'Marks a message as deleted, removes its text and its attachment if it exists [Auth: 
+        user, consultant, anonymous]'
+      operationId: deleteMessage
+      responses:
+        204:
+          description: NO CONTENT - message (and attachment) has been deleted
+        207:
+          description: MULTI-STATUS - message has been deleted, attachmentId unknown
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization
+        404:
+          description: NOT FOUND - messageId unknown
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
 
   /messages/forward:
     post:
