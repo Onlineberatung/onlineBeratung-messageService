@@ -3,6 +3,7 @@ package de.caritas.cob.messageservice.api.controller;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_USER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.createSuccessfulMessageResult;
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -17,8 +18,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +58,7 @@ import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
+import de.caritas.cob.messageservice.api.service.dto.StringifiedMessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import java.net.URI;
@@ -645,6 +649,203 @@ class MessageControllerE2EIT {
   }
 
   @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNotFoundIfMessageDoesNotExist() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAGetChatMessageNotFoundResponse(messageId);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isNotFound());
+
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithForbiddenIfMessageIsNotFromUser() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    givenMessage(messageId, true, RandomStringUtils.randomAlphabetic(16));
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
+        )
+        .andExpect(status().isForbidden());
+
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithInternalServerErrorIfDeletionFails() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(false);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isInternalServerError());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNoContentIfDeleteMessageSucceeds() throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(true);
+    givenDeletableFile(true);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isNoContent());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNoContentIfDeleteMessageAndAttachmentSucceed()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(true);
+    givenDeletableFile(true);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isNoContent());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithNoContentIfDeleteMessageSucceedsButMessageHasNoFile()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId, false);
+    givenDeletableMessage(true);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isNoContent());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate, never()).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void deleteMessageShouldRespondWithMultiStatusIfDeleteMessageSucceedsButDeleteAttachmentFails()
+      throws Exception {
+    givenAuthenticatedUser();
+    givenAValidMessageId();
+    givenAMasterKey();
+    var rcUserId = RandomStringUtils.randomAlphabetic(16);
+    givenMessage(messageId, true, rcUserId);
+    givenDeletableMessage(true);
+    givenDeletableFile(false);
+
+    mockMvc.perform(
+            delete("/messages/{messageId}", messageId)
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", rcUserId)
+        )
+        .andExpect(status().isMultiStatus());
+
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteMessage"), any(), eq(StringifiedMessageResponse.class)
+    );
+    verify(restTemplate).postForEntity(
+        endsWith("/api/v1/method.call/deleteFileMessage"), any(),
+        eq(StringifiedMessageResponse.class)
+    );
+  }
+
+  @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
@@ -1052,6 +1253,16 @@ class MessageControllerE2EIT {
 
   private void givenMessage(String id, boolean full)
       throws JsonProcessingException, CustomCryptoException {
+    givenMessage(id, full, null);
+  }
+
+  private void givenMessage(String id, boolean full, String userId)
+      throws CustomCryptoException, JsonProcessingException {
+    givenMessage(id, full, userId, true);
+  }
+
+  private void givenMessage(String id, boolean full, String userId, boolean hasFileId)
+      throws JsonProcessingException, CustomCryptoException {
     var response = new MessageResponse();
     response.setSuccess(true);
 
@@ -1067,10 +1278,16 @@ class MessageControllerE2EIT {
       message.setAlias(encodedAlias);
 
       messagesDTO = easyRandom.nextObject(MessagesDTO.class);
+      if (nonNull(userId)) {
+        messagesDTO.getU().set_id(userId);
+      }
+
       var props = message.getOtherProperties();
       props.put("u", messagesDTO.getU());
       props.put("attachments", messagesDTO.getAttachments());
-      props.put("file", messagesDTO.getFile());
+      if (hasFileId) {
+        props.put("file", messagesDTO.getFile());
+      }
       props.put("org", encryptionService.encrypt(message.getMsg(), message.getRid()));
       props.put("_updatedAt", messagesDTO.get_updatedAt());
       props.put("t", messagesDTO.getT());
@@ -1082,6 +1299,46 @@ class MessageControllerE2EIT {
     var urlSuffix = "/chat.getMessage?msgId=" + id;
     when(restTemplate.exchange(endsWith(urlSuffix), eq(HttpMethod.GET), any(HttpEntity.class),
         eq(MessageResponse.class))).thenReturn(ResponseEntity.ok().body(response));
+  }
+
+  private void givenDeletableMessage(boolean success) {
+    var urlSuffix = "/api/v1/method.call/deleteMessage";
+    var messageResponse = easyRandom.nextObject(StringifiedMessageResponse.class);
+    messageResponse.setSuccess(true);
+    if (success) {
+      while (messageResponse.getMessage().contains("\"error\"")) {
+        messageResponse.setMessage(RandomStringUtils.randomAlphanumeric(32));
+      }
+    } else {
+      messageResponse.setMessage(
+          RandomStringUtils.randomAlphanumeric(12)
+              + "\"error\""
+              + RandomStringUtils.randomAlphanumeric(12));
+    }
+
+    when(restTemplate.postForEntity(
+        endsWith(urlSuffix), any(HttpEntity.class), eq(StringifiedMessageResponse.class)))
+        .thenReturn(ResponseEntity.ok(messageResponse));
+  }
+
+  private void givenDeletableFile(boolean success) {
+    var urlSuffix = "/api/v1/method.call/deleteFileMessage";
+    var messageResponse = easyRandom.nextObject(StringifiedMessageResponse.class);
+    messageResponse.setSuccess(true);
+    if (success) {
+      while (messageResponse.getMessage().contains("\"error\"")) {
+        messageResponse.setMessage(RandomStringUtils.randomAlphanumeric(32));
+      }
+    } else {
+      messageResponse.setMessage(
+          RandomStringUtils.randomAlphanumeric(12)
+              + "\"error\""
+              + RandomStringUtils.randomAlphanumeric(12));
+    }
+
+    when(restTemplate.postForEntity(
+        endsWith(urlSuffix), any(HttpEntity.class), eq(StringifiedMessageResponse.class)))
+        .thenReturn(ResponseEntity.ok(messageResponse));
   }
 
   private void givenAWronglyFormattedMessageId() {

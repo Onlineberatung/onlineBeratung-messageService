@@ -26,6 +26,7 @@ import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageRe
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
+import de.caritas.cob.messageservice.api.service.dto.StringifiedMessageResponse;
 import de.caritas.cob.messageservice.api.service.dto.UpdateMessage;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import java.net.URI;
@@ -41,6 +42,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -54,6 +56,8 @@ public class RocketChatService {
 
   public static final String E2E_ENCRYPTION_TYPE = "e2e";
 
+  private static final String ENDPOINT_FILE_DELETE = "/method.call/deleteFileMessage";
+  private static final String ENDPOINT_MESSAGE_DELETE = "/method.call/deleteMessage";
   private static final String ENDPOINT_MESSAGE_GET = "/chat.getMessage?msgId=";
   private static final String ENDPOINT_MESSAGE_UPDATE = "/chat.update";
 
@@ -393,6 +397,40 @@ public class RocketChatService {
     }
 
     return null;
+  }
+
+  public boolean deleteMessage(String rcToken, String rcUserId, String messageId) {
+    var url = baseUrl + ENDPOINT_MESSAGE_DELETE;
+    var deleteMessage = mapper.deleteMessageOf(messageId);
+    var entity = new HttpEntity<>(deleteMessage, getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
+      return isSuccessful(response);
+    } catch (HttpClientErrorException exception) {
+      log.error("Deleting message failed.", exception);
+      return false;
+    }
+  }
+
+  public boolean deleteAttachment(String rcToken, String rcUserId, String attachmentId) {
+    var url = baseUrl + ENDPOINT_FILE_DELETE;
+    var deleteFile = mapper.deleteFileOf(attachmentId);
+    var entity = new HttpEntity<>(deleteFile, getRocketChatHeader(rcToken, rcUserId));
+
+    try {
+      var response = restTemplate.postForEntity(url, entity, StringifiedMessageResponse.class);
+      return isSuccessful(response);
+    } catch (HttpClientErrorException exception) {
+      log.error("Deleting file failed.", exception);
+      return false;
+    }
+  }
+
+  private boolean isSuccessful(ResponseEntity<StringifiedMessageResponse> response) {
+    var body = response.getBody();
+
+    return nonNull(body) && body.getSuccess() && !body.getMessage().contains("\"error\"");
   }
 
   @SuppressWarnings("java:S5852") // Using slow regular expressions is security-sensitive

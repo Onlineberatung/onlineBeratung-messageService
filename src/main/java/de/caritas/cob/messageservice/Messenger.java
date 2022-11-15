@@ -264,4 +264,12 @@ public class Messenger {
         aliasMessageDTO);
     return mapper.messageResponseOf(response);
   }
+
+  public boolean deleteMessage(String rcToken, String rcUserId, String messageId) {
+    return rocketChatService.deleteMessage(rcToken, rcUserId, messageId);
+  }
+
+  public boolean deleteAttachment(String rcToken, String rcUserId, String attachmentId) {
+    return rocketChatService.deleteAttachment(rcToken, rcUserId, attachmentId);
+  }
 }

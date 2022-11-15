@@ -1,5 +1,8 @@
 package de.caritas.cob.messageservice.api.model.rocket.chat.message;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.caritas.cob.messageservice.api.model.AliasMessageDTO;
@@ -11,6 +14,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 
 /**
@@ -72,4 +76,19 @@ public class MessagesDTO {
 
   @ApiModelProperty
   private String org;
+
+  @JsonIgnore
+  public @NonNull String getCreatorId() {
+    return u.get_id();
+  }
+
+  @JsonIgnore
+  public String getFileId() {
+    return isNull(file) ? null : file.getId();
+  }
+
+  @JsonIgnore
+  public boolean hasFile() {
+    return nonNull(file) && nonNull(file.getId());
+  }
 }
