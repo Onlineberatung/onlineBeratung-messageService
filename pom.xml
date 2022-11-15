@@ -28,7 +28,7 @@
     <!-- force at least version 2.16 due to https://logging.apache.org/log4j/2.x/security.html -->
     <log4j.version>2.17.1</log4j.version>
     <jackson.databind.nullable.version>0.2.3</jackson.databind.nullable.version>
-    <openapi.generator.maven.version>6.2.0</openapi.generator.maven.version>
+    <openapi.generator.maven.version>6.2.1</openapi.generator.maven.version>
     <liquibase-core.version>4.9.1</liquibase-core.version>
     <liquibase-maven-plugin.version>4.1.1</liquibase-maven-plugin.version>
     <springfox-boot-starter.version>3.0.0</springfox-boot-starter.version>
@@ -66,6 +66,23 @@
       <groupId>net.sf.ehcache</groupId>
       <artifactId>ehcache</artifactId>
       <version>2.10.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.plexus</groupId>
+      <artifactId>plexus-build-api</artifactId>
+      <version>0.0.7</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.plexus</groupId>
+          <artifactId>plexus-utils</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>3.3.0</version>
     </dependency>
 
     <!-- OpenApi/Swagger dependencies -->
