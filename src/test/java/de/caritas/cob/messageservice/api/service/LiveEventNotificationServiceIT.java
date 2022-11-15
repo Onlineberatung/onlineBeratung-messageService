@@ -14,7 +14,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.DirtiesContext;
@@ -33,7 +32,6 @@ class LiveEventNotificationServiceIT {
   private LiveEventNotificationService underTest;
 
   @MockBean
-  @Qualifier("liveproxyControllerApi")
   @SuppressWarnings("unused")
   private LiveproxyControllerApi liveproxyControllerApi;
 
