@@ -6,13 +6,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import de.caritas.cob.messageservice.api.model.AliasArgs;
 import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
+import de.caritas.cob.messageservice.config.UserServiceApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
@@ -20,13 +20,11 @@ import de.caritas.cob.messageservice.userservice.generated.web.model.Reassignmen
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.jeasy.random.EasyRandom;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,13 +43,7 @@ class EmailNotificationFacadeTest {
   private UserControllerApi userControllerApi;
 
   @Mock
-  @SuppressWarnings("unused")
-  private Environment environment;
-
-  @BeforeEach
-  public void setup() throws NoSuchFieldException, SecurityException {
-    setField(emailNotificationFacade, "userServiceApiUrl", "http://localhost");
-  }
+  private UserServiceApiControllerFactory userServiceApiControllerFactory;
 
   @Test
   void sendEmailNotification_Should_sendExpectedNotificationMailViaUserService() {
@@ -65,6 +57,7 @@ class EmailNotificationFacadeTest {
   }
 
   private void givenApiClientAndHeadersAreConfigured() {
+    when(userServiceApiControllerFactory.createControllerApi()).thenReturn(userControllerApi);
     when(serviceHelper.getKeycloakAndCsrfAndOriginHttpHeaders(any(), any()))
         .thenReturn(new HttpHeaders());
     when(userControllerApi.getApiClient()).thenReturn(mock(ApiClient.class));

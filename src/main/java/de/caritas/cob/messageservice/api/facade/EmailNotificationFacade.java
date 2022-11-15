@@ -5,6 +5,7 @@ import de.caritas.cob.messageservice.api.model.ConsultantReassignment;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
+import de.caritas.cob.messageservice.config.UserServiceApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.UserControllerApi;
 import de.caritas.cob.messageservice.userservice.generated.web.model.NewMessageNotificationDTO;
@@ -27,22 +28,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EmailNotificationFacade {
 
+  private final @NonNull UserServiceApiControllerFactory userServiceFactory;
   private final @NonNull ServiceHelper serviceHelper;
-  private final @NonNull UserControllerApi userControllerApi;
-  private final @NonNull Environment environment;
 
   @Value("${multitenancy.enabled}")
   private boolean multitenancy;
-
-  @Value("${user.service.api.liveproxy.url}")
-  private String userServiceApiUrl;
-
-  @EventListener(ApplicationReadyEvent.class)
-  public void setBasePath() {
-    if (!Set.of(environment.getActiveProfiles()).contains("testing")) {
-      userControllerApi.getApiClient().setBasePath(userServiceApiUrl);
-    }
-  }
 
   /**
    * Sends a new message notification via the UserService (user data needed for sending the mail
@@ -56,6 +46,7 @@ public class EmailNotificationFacade {
     if (multitenancy) {
       TenantContext.setCurrentTenant(tenantId.orElseThrow());
     }
+    var userControllerApi = userServiceFactory.createControllerApi();
     addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi
         .sendNewMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
@@ -75,6 +66,7 @@ public class EmailNotificationFacade {
   @Async
   public void sendEmailAboutNewFeedbackMessage(String rcGroupId, Optional<Long> tenantId,
       String accessToken) {
+    var userControllerApi = userServiceFactory.createControllerApi();
     addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi
         .sendNewFeedbackMessageNotification(new NewMessageNotificationDTO().rcGroupId(rcGroupId));
@@ -87,6 +79,7 @@ public class EmailNotificationFacade {
         .rcGroupId(rcGroupId)
         .toConsultantId(aliasArgs.getToConsultantId())
         .fromConsultantName(aliasArgs.getFromConsultantName());
+    var userControllerApi = userServiceFactory.createControllerApi();
     addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
@@ -99,6 +92,7 @@ public class EmailNotificationFacade {
         .toConsultantId(consultantReassignment.getToConsultantId())
         .fromConsultantName(consultantReassignment.getFromConsultantName())
         .isConfirmed(consultantReassignment.getStatus() == ReassignStatus.CONFIRMED);
+    var userControllerApi = userServiceFactory.createControllerApi();
     addDefaultHeaders(userControllerApi.getApiClient(), accessToken, tenantId);
     userControllerApi.sendReassignmentNotification(reassignmentNotification);
   }
