@@ -302,9 +302,8 @@ paths:
     delete:
       tags:
         - message-controller
-      summary: 'Marks a message as deleted, removes its text and optionally an attachment [Auth: 
+      summary: 'Marks a message as deleted, removes its text and its attachment if it exists [Auth: 
         user, consultant, anonymous]'
-      description: In order to delete a containing attachment, the flag must be set to true.
       operationId: deleteMessage
       responses:
         204:
@@ -708,6 +707,7 @@ components:
     MessageType:
       type: string
       enum:
+        - "INITIAL_APPOINTMENT_DEFINED"
         - "APPOINTMENT_SET"
         - "APPOINTMENT_CANCELLED"
         - "APPOINTMENT_RESCHEDULED"
