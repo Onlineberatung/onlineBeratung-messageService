@@ -49,12 +49,12 @@ public class DraftMessageServiceTest {
   public void saveDraftMessage_Should_returnNewMessageType_When_noMessageForUserAndRcGroupExists()
       throws CustomCryptoException {
 
-    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message",
         "rcGroupId", null);
 
     assertThat(savedDraftType, is(NEW_MESSAGE));
     verify(this.draftMessageRepository, times(1)).save(any());
-    verify(this.encryptionService, times(2)).encrypt(any(), any());
+    verify(this.encryptionService).encrypt(any(), any());
   }
 
   @Test
@@ -63,11 +63,11 @@ public class DraftMessageServiceTest {
     when(this.draftMessageRepository.findByUserIdAndRcGroupId(any(), any()))
         .thenReturn(Optional.of(new DraftMessage()));
 
-    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message", "original",
+    SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage("message",
         "rcGroupId", "p");
 
     assertThat(savedDraftType, is(OVERWRITTEN_MESSAGE));
-    verify(this.encryptionService, times(2)).encrypt(any(), any());
+    verify(this.encryptionService).encrypt(any(), any());
 
     verify(this.draftMessageRepository).save(captor.capture());
     assertThat("p", is(captor.getValue().getT()));
@@ -76,10 +76,8 @@ public class DraftMessageServiceTest {
   @Test
   public void saveDraftMessage_should_not_encrypt_message_if_already_e2e_encrypted()
       throws CustomCryptoException {
-    draftMessageService.saveDraftMessage("message", "original",
-        "rcGroupId", "e2e");
+    draftMessageService.saveDraftMessage("message", "rcGroupId", "e2e");
 
-    verify(this.encryptionService).encrypt("original", "rcGroupId");
     verifyNoMoreInteractions(this.encryptionService);
     verify(this.draftMessageRepository).save(captor.capture());
     assertThat("e2e", is(captor.getValue().getT()));
@@ -108,7 +106,7 @@ public class DraftMessageServiceTest {
     when(this.encryptionService.encrypt(any(), any()))
         .thenThrow(new CustomCryptoException(new Exception()));
 
-    this.draftMessageService.saveDraftMessage("message", "original", "rcGroupId", "e2e");
+    this.draftMessageService.saveDraftMessage("message", "rcGroupId", "text");
   }
 
   @Test

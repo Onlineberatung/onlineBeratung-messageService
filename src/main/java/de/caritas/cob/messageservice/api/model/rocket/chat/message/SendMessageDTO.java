@@ -17,7 +17,6 @@ public class SendMessageDTO {
 
   private String rid;
   private String msg;
-  private String org;
   private String alias;
   private String t;
 

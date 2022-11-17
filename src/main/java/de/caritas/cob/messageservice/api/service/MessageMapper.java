@@ -84,10 +84,6 @@ public class MessageMapper {
   public Message decryptedMessageOf(Message message) {
     try {
       message.setMsg(encryptionService.decrypt(message.getMsg(), message.getRid()));
-      var others = message.getOtherProperties();
-      if (others.containsKey("org")) {
-        others.put("org", encryptionService.decrypt((String) others.get("org"), message.getRid()));
-      }
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     }
@@ -120,7 +116,6 @@ public class MessageMapper {
     messageDto.setAttachments(messagesDTO.getAttachments());
     messageDto.setFile(messagesDTO.getFile());
     messageDto.setT(messagesDTO.getT());
-    messageDto.setOrg(messagesDTO.getOrg());
 
     return messageDto;
   }
@@ -135,8 +130,7 @@ public class MessageMapper {
         .updatedAt(message.getUpdatedAt() != null ? message.getUpdatedAt().toString()
             : new Date().toString())
         .e2e(message.getE2e())
-        .t(message.getT())
-        .org(message.getOrg());
+        .t(message.getT());
   }
 
   public String messageStringOf(AliasArgs aliasArgs) {

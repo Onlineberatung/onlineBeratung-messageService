@@ -74,9 +74,6 @@ public class MessagesDTO {
   @ApiModelProperty
   private String t;
 
-  @ApiModelProperty
-  private String org;
-
   @JsonIgnore
   public @NonNull String getCreatorId() {
     return u.get_id();

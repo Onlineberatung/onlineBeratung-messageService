@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import de.caritas.cob.messageservice.api.service.helper.ServiceHelper;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.ApiClient;
 import de.caritas.cob.messageservice.userservice.generated.web.LiveproxyControllerApi;
 import java.util.Optional;
@@ -30,14 +31,14 @@ public class LiveEventNotificationServiceTest {
   @InjectMocks private LiveEventNotificationService liveEventNotificationService;
 
   @Mock private LiveproxyControllerApi liveproxyControllerApi;
-
   @Mock private ServiceHelper serviceHelper;
-
+  @Mock private ApiControllerFactory clientFactory;
   @Mock private Logger logger;
 
   @Before
   public void setup() {
     setInternalState(LogService.class, "LOGGER", logger);
+    when(clientFactory.liveproxyControllerApi()).thenReturn(liveproxyControllerApi);
   }
 
   @Test

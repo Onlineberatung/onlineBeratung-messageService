@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,7 +16,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,9 +86,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -261,15 +257,15 @@ class MessageControllerE2EIT {
         )
         .andExpect(status().isOk())
         .andExpect(jsonPath("messages", hasSize(5)))
-        .andExpect(jsonPath("messages[0].org").isNotEmpty())
+        .andExpect(jsonPath("messages[0].org").doesNotExist())
         .andExpect(jsonPath("messages[0].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[1].org").isNotEmpty())
+        .andExpect(jsonPath("messages[1].org").doesNotExist())
         .andExpect(jsonPath("messages[1].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[2].org").isNotEmpty())
+        .andExpect(jsonPath("messages[2].org").doesNotExist())
         .andExpect(jsonPath("messages[2].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[3].org").isNotEmpty())
+        .andExpect(jsonPath("messages[3].org").doesNotExist())
         .andExpect(jsonPath("messages[3].msg").isNotEmpty())
-        .andExpect(jsonPath("messages[4].org").isNotEmpty())
+        .andExpect(jsonPath("messages[4].org").doesNotExist())
         .andExpect(jsonPath("messages[4].msg").isNotEmpty());
 
     assertGroupCall();
@@ -383,7 +379,7 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("file.name", is(messagesDTO.getFile().getName())))
         .andExpect(jsonPath("file.type", is(messagesDTO.getFile().getType())))
         .andExpect(jsonPath("t", is(messagesDTO.getT())))
-        .andExpect(jsonPath("org", is(message.getMsg())));
+        .andExpect(jsonPath("org").doesNotExist());
   }
 
   @Test
@@ -878,40 +874,6 @@ class MessageControllerE2EIT {
 
   @Test
   @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
-  @DirtiesContext
-  void sendMessageShouldTransmitOrgMessage() throws Exception {
-    givenAuthenticatedUser();
-    givenRocketChatSystemUser();
-    var rcGroupId = RandomStringUtils.randomAlphabetic(16);
-    givenSuccessfulSendMessageResponse("p", rcGroupId);
-    var encMessageWithOrg = createMessage("enc.secret_message", "p")
-        .org("plain text message");
-    givenEncryptionCapturing(encMessageWithOrg.getMessage(), encMessageWithOrg.getOrg());
-
-    mockMvc.perform(
-            post("/messages/new")
-                .cookie(CSRF_COOKIE)
-                .header(CSRF_HEADER, CSRF_VALUE)
-                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
-                .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
-                .header("rcGroupId", rcGroupId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(encMessageWithOrg))
-        )
-        .andExpect(status().isCreated());
-
-    var body = sendMessagePayloadCaptor.getValue().getBody();
-    assertThat(body).isNotNull();
-    var sendMessageRequest = body.getMessage();
-    assertThat(sendMessageRequest.getRid()).isEqualTo(rcGroupId);
-    assertThat(sendMessageRequest.getAlias()).isNull();
-    assertThat(sendMessageRequest.getT()).isEqualTo("p");
-    assertThat(sendMessageRequest.getMsg()).isEqualTo("encCameIn");
-    assertThat(sendMessageRequest.getOrg()).isEqualTo("plainCameIn");
-  }
-
-  @Test
-  @WithMockUser(authorities = {AuthorityValue.USER_DEFAULT})
   void sendMessageShouldReturnSendMessageResultOnSuccessfulRequest() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
@@ -992,14 +954,12 @@ class MessageControllerE2EIT {
         .andExpect(jsonPath("ts").isNotEmpty())
         .andExpect(jsonPath("_updatedAt").isNotEmpty())
         .andExpect(jsonPath("rid", is(rcFeedbackGroupId)))
-        .andExpect(jsonPath("org", is(not(feedbackMessage.getOrg()))))
-        .andExpect(jsonPath("org", startsWith("enc:")))
+        .andExpect(jsonPath("org").doesNotExist())
         .andExpect(jsonPath("t", is(nullValue())))
         .andExpect(jsonPath("_id").isNotEmpty());
 
     var messageRequestPayload = sendMessagePayloadCaptor.getValue().getBody();
     assertNotNull(messageRequestPayload);
-    assertTrue(messageRequestPayload.getMessage().getOrg().startsWith("enc:"));
   }
 
   @Test
@@ -1177,14 +1137,6 @@ class MessageControllerE2EIT {
     encryptionService.updateMasterKey(RandomStringUtils.randomAlphanumeric(16));
   }
 
-  private void givenEncryptionCapturing(String encMessage, String plainMessage)
-      throws CustomCryptoException {
-    var encServiceMock = mock(EncryptionService.class);
-    ReflectionTestUtils.setField(rocketChatService, "encryptionService", encServiceMock);
-    when(encServiceMock.encrypt(eq(encMessage), anyString())).thenReturn("encCameIn");
-    when(encServiceMock.encrypt(eq(plainMessage), anyString())).thenReturn("plainCameIn");
-  }
-
   private void givenSomeMessagesWithMutedUnmutedType() {
     var messages = easyRandom.objects(MessagesDTO.class, 5).collect(Collectors.toList());
     messages.get(1).setT("user-muted");
@@ -1221,7 +1173,6 @@ class MessageControllerE2EIT {
     consultantReassignment.setStatus(ReassignStatus.REQUESTED);
 
     var message = easyRandom.nextObject(MessagesDTO.class);
-    message.setOrg(null);
     message.setRid(groupId);
     var alias = new AliasMessageDTO();
     alias.setMessageType(MessageType.REASSIGN_CONSULTANT);
@@ -1514,7 +1465,6 @@ class MessageControllerE2EIT {
     var feedbackMessage = new MessageDTO();
     feedbackMessage.setMessage(text);
     feedbackMessage.setT(type);
-    feedbackMessage.setOrg(RandomStringUtils.randomAlphanumeric(32));
 
     return feedbackMessage;
   }
