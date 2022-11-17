@@ -1,7 +1,6 @@
 package de.caritas.cob.messageservice.api.service;
 
 import static com.github.jknack.handlebars.internal.lang3.StringUtils.EMPTY;
-import static com.github.jknack.handlebars.internal.lang3.StringUtils.isNotBlank;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -174,7 +173,6 @@ public class RocketChatService {
   private void decryptMessage(MessagesDTO msg, String rcGroupId) {
     try {
       msg.setMsg(encryptionService.decrypt(msg.getMsg(), rcGroupId));
-      msg.setOrg(encryptionService.decrypt(msg.getOrg(), rcGroupId));
     } catch (CustomCryptoException | NoMasterKeyException ex) {
       throw new InternalServerErrorException(ex, LogService::logEncryptionServiceError);
     }
@@ -197,8 +195,8 @@ public class RocketChatService {
     var headers = getRocketChatHeader(chatMessage.getRcToken(), chatMessage.getRcUserId());
 
     var msg = extractMessageText(chatMessage, escapeMsg);
-    var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), msg,
-        extractOrgMessageText(chatMessage), chatMessage.getAlias(), chatMessage.getType());
+    var sendMessage = new SendMessageDTO(chatMessage.getRcGroupId(), msg, chatMessage.getAlias(),
+        chatMessage.getType());
     var payload = new SendMessageWrapper(sendMessage);
 
     var request = new HttpEntity<>(payload, headers);
@@ -218,13 +216,6 @@ public class RocketChatService {
       return chatMessage.getText();
     }
     return encryptText(chatMessage.getText(), chatMessage.getRcGroupId(), escapeMsg);
-  }
-
-  private String extractOrgMessageText(ChatMessage chatMessage) throws CustomCryptoException {
-    if (isNotBlank(chatMessage.getOrgText())) {
-      return encryptText(chatMessage.getOrgText(), chatMessage.getRcGroupId(), true);
-    }
-    return chatMessage.getOrgText();
   }
 
   private boolean isMessageE2eEncrypted(ChatMessage chatMessage) {

@@ -212,7 +212,7 @@ public class RocketChatCredentialsHelperTest {
     // create and set system B user
     RocketChatCredentials systemB = new RocketChatCredentials(SYSTEM_USER_B_TOKEN, SYSTEM_USER_B_ID,
         SYSTEM_USER_B_USERNAME, LocalDateTime.now().minusMinutes(1));
-    Whitebox.setInternalState(rcCredentialHelper, FIELD_NAME_SYSTEM_USER_A, systemB);
+    Whitebox.setInternalState(rcCredentialHelper, FIELD_NAME_SYSTEM_USER_B, systemB);
 
     // prepare logout intercept for system user
     HttpHeaders headersLogoutSys = new HttpHeaders();

@@ -526,9 +526,6 @@ components:
         t:
           type: string
           example: "c"
-        org:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
 
     MessageStreamDTO:
       type: object
@@ -565,9 +562,6 @@ components:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
         msg:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
-        org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
         ts:
@@ -615,9 +609,6 @@ components:
         e2e:
           type: string
           example: "pending"
-        org:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
         rid:
           type: string
           example: "fR2Rz7dmWmHdXE8uz"
@@ -654,9 +645,6 @@ components:
         - rcUserId
       properties:
         message:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
-        org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
         timestamp:
@@ -839,9 +827,6 @@ components:
         - message
       properties:
         message:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
-        org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
         t:

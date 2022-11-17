@@ -3,9 +3,7 @@ package de.caritas.cob.messageservice.api.service;
 import static com.anarsoft.vmlens.concurrent.junit.TestUtil.runMultithreaded;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +55,7 @@ public class DraftMessageServiceIT {
 
     runMultithreaded(() -> {
       try {
-        draftMessageService.saveDraftMessage("message", "original", rcGroupId, "e2e");
+        draftMessageService.saveDraftMessage("message", rcGroupId, "e2e");
         draftMessageService.deleteDraftMessageIfExist(rcGroupId);
       } catch (Exception e) {
         errorCount.incrementAndGet();
@@ -71,12 +69,11 @@ public class DraftMessageServiceIT {
   public void should_store_and_load_draft_messages() {
     var rcGroupId = "gvkUGHASLÖD";
 
-    draftMessageService.saveDraftMessage("message", "original", rcGroupId, "e2e");
+    draftMessageService.saveDraftMessage("message", rcGroupId, "e2e");
     var loadedDraftMessage = draftMessageService.findAndDecryptDraftMessage(rcGroupId);
 
     assertThat(loadedDraftMessage.isPresent(), is(true));
     assertThat(loadedDraftMessage.get().getMessage(), is(("message")));
     assertThat(loadedDraftMessage.get().getT(), is(("e2e")));
-    assertThat(loadedDraftMessage.get().getOrg(), is(("original")));
   }
 }

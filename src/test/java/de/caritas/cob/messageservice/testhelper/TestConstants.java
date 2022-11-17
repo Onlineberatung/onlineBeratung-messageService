@@ -113,7 +113,6 @@ public class TestConstants {
     result.setUpdatedAt(new Date());
     result.setRid(roomId);
     result.setT(type);
-    result.setOrg("enc:" + RandomStringUtils.randomAlphanumeric(32));
 
     var successfulResponse = new SendMessageResponseDTO();
     successfulResponse.setMessage(result);

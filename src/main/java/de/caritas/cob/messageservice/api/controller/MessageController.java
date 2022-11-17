@@ -111,7 +111,6 @@ public class MessageController implements MessagesApi {
     var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
         .rcGroupId(rcGroupId)
         .text(message.getMessage())
-        .orgText(message.getOrg())
         .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
         .type(message.getT()).build();
 
@@ -145,7 +144,7 @@ public class MessageController implements MessagesApi {
 
     var forwardMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
         .rcGroupId(rcGroupId).text(forwardMessageDTO.getMessage())
-        .orgText(forwardMessageDTO.getOrg()).type(forwardMessageDTO.getT()).alias(alias.get())
+        .type(forwardMessageDTO.getT()).alias(alias.get())
         .build();
     var response = messenger.postFeedbackGroupMessage(forwardMessage);
 
@@ -168,7 +167,7 @@ public class MessageController implements MessagesApi {
 
     var feedbackMessage = ChatMessage.builder()
         .rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcFeedbackGroupId).type(message.getT())
-        .text(message.getMessage()).orgText(message.getOrg())
+        .text(message.getMessage())
         .build();
 
     var response = messenger.postFeedbackGroupMessage(feedbackMessage);
@@ -205,7 +204,7 @@ public class MessageController implements MessagesApi {
       @Valid @RequestBody DraftMessageDTO message) {
 
     SavedDraftType savedDraftType = this.draftMessageService.saveDraftMessage(message.getMessage(),
-        message.getOrg(), rcGroupId, message.getT());
+        rcGroupId, message.getT());
 
     return new ResponseEntity<>(savedDraftType.getHttpStatus());
   }
