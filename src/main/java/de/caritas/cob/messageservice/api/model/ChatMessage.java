@@ -11,7 +11,6 @@ public class ChatMessage {
   private String rcUserId;
   private String rcGroupId;
   private String text;
-  private String orgText;
   private String alias;
   private String type;
   private boolean sendNotification;

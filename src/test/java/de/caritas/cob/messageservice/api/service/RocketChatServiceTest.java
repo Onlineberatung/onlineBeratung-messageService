@@ -20,9 +20,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
@@ -171,8 +169,7 @@ public class RocketChatServiceTest {
   }
 
   @Test
-  public void getGroupMessages_Should_DecryptAllMessages()
-      throws NoSuchFieldException, CustomCryptoException {
+  public void getGroupMessages_Should_DecryptAllMessages() throws CustomCryptoException {
     Whitebox.setInternalState(rocketChatService, "rcGetGroupMessageUrl", "http://localhost/api/v1/groups.messages");
 
     EasyRandom easyRandom = new EasyRandom();
@@ -186,7 +183,7 @@ public class RocketChatServiceTest {
 
     rocketChatService.getGroupMessages(RC_TOKEN, RC_USER_ID, RC_GROUP_ID, 0, 0, Instant.now());
 
-    verify(encryptionService, times(10)).decrypt(anyString(), anyString());
+    verify(encryptionService, times(5)).decrypt(anyString(), anyString());
   }
 
   @Test
@@ -345,20 +342,6 @@ public class RocketChatServiceTest {
     rocketChatService.postGroupMessage(e2eEncryptedMessage);
 
     verifyNoInteractions(encryptionService);
-  }
-
-  @Test
-  public void postGroupMessage_should_encrypt_org_text_of_e2e_encrypted_messages()
-      throws CustomCryptoException {
-    var e2eEncryptedMessage = ChatMessage.builder().rcToken(RC_TOKEN).rcUserId(RC_USER_ID)
-        .rcGroupId(RC_GROUP_ID).text("e2eEncryptedMessage")
-        .orgText("original message")
-        .type(E2E_ENCRYPTION_TYPE).build();
-
-    rocketChatService.postGroupMessage(e2eEncryptedMessage);
-
-    verify(encryptionService).encrypt("original message", RC_GROUP_ID);
-    verifyNoMoreInteractions(encryptionService);
   }
 
   /**
