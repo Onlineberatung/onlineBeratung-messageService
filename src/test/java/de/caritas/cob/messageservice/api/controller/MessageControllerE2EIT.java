@@ -45,12 +45,14 @@ import de.caritas.cob.messageservice.api.model.MessageType;
 import de.caritas.cob.messageservice.api.model.ReassignStatus;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO;
 import de.caritas.cob.messageservice.api.model.VideoCallMessageDTO.EventTypeEnum;
+import de.caritas.cob.messageservice.api.model.draftmessage.entity.DraftMessage;
 import de.caritas.cob.messageservice.api.model.rocket.chat.RocketChatCredentials;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GetGroupInfoDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.group.GroupDto;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.MessagesDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageResponseDTO;
 import de.caritas.cob.messageservice.api.model.rocket.chat.message.SendMessageWrapper;
+import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
@@ -110,7 +112,11 @@ class MessageControllerE2EIT {
   private EncryptionService encryptionService;
 
   @Autowired
+  @SuppressWarnings("unused")
   private RocketChatService rocketChatService;
+
+  @Autowired
+  private DraftMessageRepository draftMessageRepository;
 
   @MockBean
   private RestTemplate restTemplate;
@@ -148,6 +154,7 @@ class MessageControllerE2EIT {
   private Message message;
   private MessagesDTO messagesDTO;
   private MessageType messageType;
+  private DraftMessage draftMessage;
 
   @AfterEach
   void reset() {
@@ -158,6 +165,11 @@ class MessageControllerE2EIT {
     message = null;
     messageType = null;
     aliasArgs = null;
+
+    if (nonNull(draftMessage)) {
+      draftMessageRepository.deleteById(draftMessage.getId());
+      draftMessage = null;
+    }
   }
 
   @Test
@@ -463,6 +475,26 @@ class MessageControllerE2EIT {
                 .header("rcUserId", RandomStringUtils.randomAlphabetic(16))
         )
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(authorities = AuthorityValue.USER_DEFAULT)
+  void findDraftMessageShouldRespondWithE2eEncryptedMessage() throws Exception {
+    givenAMasterKey();
+    givenASuccessfulE2eDraftMessageResponse();
+    givenAuthenticatedUser(draftMessage.getUserId());
+
+    mockMvc.perform(
+            get("/messages/draft")
+                .cookie(CSRF_COOKIE)
+                .header(CSRF_HEADER, CSRF_VALUE)
+                .header("rcToken", RandomStringUtils.randomAlphabetic(16))
+                .header("rcUserId", draftMessage.getUserId())
+                .header("rcGroupId", draftMessage.getRcGroupId())
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("message", is(draftMessage.getMessage())))
+        .andExpect(jsonPath("t", is("e2e")));
   }
 
   @Test
@@ -1319,6 +1351,10 @@ class MessageControllerE2EIT {
     when(authenticatedUser.getUserId()).thenReturn(RandomStringUtils.randomAlphabetic(16));
   }
 
+  private void givenAuthenticatedUser(String userId) {
+    when(authenticatedUser.getUserId()).thenReturn(userId);
+  }
+
   private void givenRocketChatSystemUser() throws RocketChatUserNotInitializedException {
     var rcCredentials = new RocketChatCredentials();
     rcCredentials.setRocketChatToken(RandomStringUtils.randomAlphabetic(16));
@@ -1379,6 +1415,16 @@ class MessageControllerE2EIT {
     var urlSuffix = "/api/v1/chat.update";
     when(restTemplate.postForObject(endsWith(urlSuffix), any(HttpEntity.class),
         eq(MessageResponse.class))).thenReturn(response);
+  }
+
+  private void givenASuccessfulE2eDraftMessageResponse() {
+    draftMessage = easyRandom.nextObject(DraftMessage.class);
+    draftMessage.setId(null);
+    draftMessage.setUserId(UUID.randomUUID().toString());
+    draftMessage.setT("e2e");
+    draftMessage.setMessage("enc." + RandomStringUtils.randomAlphanumeric(32));
+
+    draftMessageRepository.save(draftMessage);
   }
 
   private void givenAGetChatMessageNotFoundResponse(String messageId)
