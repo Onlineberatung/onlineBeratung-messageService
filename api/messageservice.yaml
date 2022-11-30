@@ -647,6 +647,10 @@ components:
         message:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
+        org:
+          type: string
+          example: "Lorem ipsum dolor sit amet, consetetur..."
+          description: "Legacy fallback for stringified messages"
         timestamp:
           type: string
           description: "Full qualified timestamp"
