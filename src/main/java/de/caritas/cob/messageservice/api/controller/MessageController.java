@@ -108,7 +108,9 @@ public class MessageController implements MessagesApi {
       @RequestHeader String rcUserId, @RequestHeader String rcGroupId,
       @Valid @RequestBody MessageDTO message) {
 
-    var groupMessage = ChatMessage.builder().rcToken(rcToken).rcUserId(rcUserId)
+    var groupMessage = ChatMessage.builder()
+        .rcToken(rcToken)
+        .rcUserId(rcUserId)
         .rcGroupId(rcGroupId)
         .text(message.getMessage())
         .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
@@ -166,9 +168,12 @@ public class MessageController implements MessagesApi {
       @Valid @RequestBody MessageDTO message) {
 
     var feedbackMessage = ChatMessage.builder()
-        .rcToken(rcToken).rcUserId(rcUserId).rcGroupId(rcFeedbackGroupId).type(message.getT())
+        .rcToken(rcToken)
+        .rcUserId(rcUserId)
+        .rcGroupId(rcFeedbackGroupId)
         .text(message.getMessage())
-        .build();
+        .sendNotification(Boolean.TRUE.equals(message.getSendNotification()))
+        .type(message.getT()).build();
 
     var response = messenger.postFeedbackGroupMessage(feedbackMessage);
 

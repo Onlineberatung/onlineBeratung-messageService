@@ -82,15 +82,14 @@ public class Messenger {
    * @param feedbackGroupMessage the message
    */
   public MessageResponseDTO postFeedbackGroupMessage(ChatMessage feedbackGroupMessage) {
-    var rcFeedbackGroupId = feedbackGroupMessage.getRcGroupId();
     validateFeedbackChatId(feedbackGroupMessage);
     var response = postRocketChatGroupMessage(feedbackGroupMessage);
-    notifyAndClearDraftForFeedbackGroup(rcFeedbackGroupId);
+    notifyAndClearDraftForFeedbackGroup(feedbackGroupMessage);
     return response;
   }
 
   private void notifyAndClearDraft(ChatMessage chatMessage) {
-    this.draftMessageService.deleteDraftMessageIfExist(chatMessage.getRcGroupId());
+    draftMessageService.deleteDraftMessageIfExist(chatMessage.getRcGroupId());
 
     if (!this.rocketChatSystemUserId.equals(chatMessage.getRcUserId())) {
       liveEventNotificationService.sendLiveEvent(
@@ -100,8 +99,10 @@ public class Messenger {
       );
     }
     if (isTrue(chatMessage.isSendNotification())) {
-      emailNotificationFacade.sendEmailAboutNewChatMessage(chatMessage.getRcGroupId(),
-          TenantContext.getCurrentTenantOption(), authenticatedUser.getAccessToken());
+      emailNotificationFacade.sendEmailAboutNewChatMessage(
+          chatMessage.getRcGroupId(),
+          TenantContext.getCurrentTenantOption(),
+          authenticatedUser.getAccessToken());
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
@@ -113,18 +114,23 @@ public class Messenger {
         : UserRole.ASKER;
   }
 
-  private void notifyAndClearDraftForFeedbackGroup(String rcFeedbackGroupId) {
-    draftMessageService.deleteDraftMessageIfExist(rcFeedbackGroupId);
-    liveEventNotificationService.sendLiveEvent(
-        rcFeedbackGroupId,
-        authenticatedUser.getAccessToken(),
-        TenantContext.getCurrentTenantOption()
-    );
-    emailNotificationFacade.sendEmailAboutNewFeedbackMessage(
-        rcFeedbackGroupId,
-        TenantContext.getCurrentTenantOption(),
-        authenticatedUser.getAccessToken()
-    );
+  private void notifyAndClearDraftForFeedbackGroup(ChatMessage feedbackGroupMessage) {
+    draftMessageService.deleteDraftMessageIfExist(feedbackGroupMessage.getRcGroupId());
+
+    if (!this.rocketChatSystemUserId.equals(feedbackGroupMessage.getRcUserId())) {
+      liveEventNotificationService.sendLiveEvent(
+          feedbackGroupMessage.getRcGroupId(),
+          authenticatedUser.getAccessToken(),
+          TenantContext.getCurrentTenantOption()
+      );
+    }
+    if (isTrue(feedbackGroupMessage.isSendNotification())) {
+      emailNotificationFacade.sendEmailAboutNewFeedbackMessage(
+          feedbackGroupMessage.getRcGroupId(),
+          TenantContext.getCurrentTenantOption(),
+          authenticatedUser.getAccessToken()
+      );
+    }
   }
 
   /**
