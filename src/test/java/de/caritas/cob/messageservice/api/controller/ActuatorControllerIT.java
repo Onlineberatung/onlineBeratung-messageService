@@ -21,6 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest(classes = MessageServiceApplication.class)
 @TestPropertySource(properties = "spring.profiles.active=testing")
 @AutoConfigureMockMvc(addFilters = false)
+@TestPropertySource(properties = "multitenancy.enabled=true")
 class ActuatorControllerIT {
 
   @Autowired private WebApplicationContext context;

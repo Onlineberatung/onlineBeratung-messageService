@@ -30,7 +30,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class HttpTenantFilter extends OncePerRequestFilter {
 
   private static final String[] TENANCY_FILTER_WHITELIST =
-      new String[] {"/actuator/health", "/actuator/health/**", "/swagger-ui.html", "/favicon.ico"};
+      new String[]{"/actuator/health", "/actuator/health/**", "/swagger-ui.html", "/favicon.ico"};
   private final TenantResolverService tenantResolverService;
 
   private final DefaultRequiresTenantFilterMatcher requiresTenantFilterMatcher =
@@ -40,7 +40,6 @@ public class HttpTenantFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
     if (requiresTenantFilterMatcher.matches(request)) {
-
       log.debug("Trying to resolve tenant for request coming from URI {}", request.getRequestURI());
       Long tenantId = tenantResolverService.resolve(request);
       log.debug("Setting current tenant context to: " + tenantId);
@@ -56,6 +55,7 @@ public class HttpTenantFilter extends OncePerRequestFilter {
   }
 
   class DefaultRequiresTenantFilterMatcher implements RequestMatcher {
+
     @Override
     public boolean matches(HttpServletRequest request) {
 
