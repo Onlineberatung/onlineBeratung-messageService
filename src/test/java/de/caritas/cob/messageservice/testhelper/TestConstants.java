@@ -53,6 +53,8 @@ public class TestConstants {
   /* Consultant */
   public static final String CONSULTANT_ID = "d63f4cc0-215d-40e2-a866-2d3e910f0590";
 
+  public static final String ADVICESEEKER_ID = "c34g4cc0-215d-40e2-a866-2d3e910f0440";
+
   /*
    * Messages
    */

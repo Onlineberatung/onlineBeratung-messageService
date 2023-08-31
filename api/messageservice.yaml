@@ -526,6 +526,8 @@ components:
         t:
           type: string
           example: "c"
+        receivingUserId:
+          type: string
 
     MessageStreamDTO:
       type: object

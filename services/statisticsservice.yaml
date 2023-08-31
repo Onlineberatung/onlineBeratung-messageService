@@ -109,6 +109,9 @@ components:
           type: boolean
           description: indicates whether the message has an attachment
           example: true
+        receiverId:
+          type: string
+          description: receiving user id of the message (taken from session). Can be null for groupchat.
 
     StartVideoCallStatisticsEventMessage:
       type: object
