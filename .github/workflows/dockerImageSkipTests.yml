@@ -59,6 +59,7 @@ jobs:
             - text: View CI
               url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   push_to_registry:
+    needs: [build]
     strategy:
       matrix:
         registry: ["ghcr.io"]
