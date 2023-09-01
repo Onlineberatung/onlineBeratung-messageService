@@ -115,7 +115,7 @@ public class Messenger {
   private String resolveRecipentUserId(ChatMessage chatMessage) {
     de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO sessionBelongingToRcGroupId = sessionService.findSessionBelongingToRcGroupId(
         chatMessage.getRcToken(), chatMessage.getRcGroupId());
-    if (sessionBelongingToRcGroupId.getSessions() != null) {
+    if (sessionBelongingToRcGroupId != null && sessionBelongingToRcGroupId.getSessions() != null) {
       var session = sessionBelongingToRcGroupId.getSessions().stream().findFirst();
       if (authenticatedUser.isConsultant()) {
         return session.isPresent() ? session.get().getUser().getId() : null;
