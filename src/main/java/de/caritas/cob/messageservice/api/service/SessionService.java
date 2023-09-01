@@ -2,7 +2,7 @@ package de.caritas.cob.messageservice.api.service;
 
 import com.google.common.collect.Lists;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
-import de.caritas.cob.messageservice.config.apiclient.UserServiceApiControllerFactory;
+import de.caritas.cob.messageservice.config.apiclient.ApiControllerFactory;
 import de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SessionService {
 
-  private final @NonNull UserServiceApiControllerFactory userControllerApiControllerFactory;
   private final @NonNull SecurityHeaderSupplier securityHeaderSupplier;
   private final @NonNull TenantHeaderSupplier tenantHeaderSupplier;
+  private final @NonNull ApiControllerFactory clientFactory;
 
 
   public GroupSessionListResponseDTO findSessionBelongingToRcGroupId(String rcToken, String rcGroupId) {
-    var userControllerApi = userControllerApiControllerFactory.createControllerApi();
+    var userControllerApi = clientFactory.userControllerApi();
     addDefaultHeaders(userControllerApi.getApiClient());
 
     return userControllerApi.getSessionsForGroupOrFeedbackGroupIds(rcToken, Lists.newArrayList(rcGroupId));
