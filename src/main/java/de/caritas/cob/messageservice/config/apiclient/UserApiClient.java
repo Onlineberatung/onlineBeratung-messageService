@@ -38,8 +38,8 @@ public class UserApiClient extends de.caritas.cob.messageservice.userservice.gen
   public MultiValueMap<String, String> parameterToMultiValueMap(
       CollectionFormat collectionFormat, String name, Object value) {
 
-    if ("rcGroupsIds[]".equals(name)) {
-      name = "rcGroupsIds";
+    if ("rcGroupIds[]".equals(name)) {
+      name = "rcGroupIds";
     }
     if (noValidFilterParams(name, value)) {
       return super.parameterToMultiValueMap(collectionFormat, name, value);
