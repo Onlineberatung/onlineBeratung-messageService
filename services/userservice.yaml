@@ -4,6 +4,24 @@ info:
   description: This information will be replaced by the SpringFox config information
   version: 0.0.1
 paths:
+  /users/{username}:
+    get:
+      tags:
+        - user-controller
+      summary: Checks if a given user exists, provided a username
+      operationId: userExists
+      parameters:
+        - name: username
+          in: path
+          description: username
+          required: true
+          schema:
+              type: string
+      responses:
+        200:
+          description: OK - user exists
+        404:
+          description: NOT FOUND - user does not exist
   /users/askers/new:
     post:
       tags:
@@ -307,6 +325,44 @@ paths:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
         - Bearer: [ ]
+
+  /users/sessions/rocketChatGroupId:
+    get:
+      tags:
+        - user-controller
+      summary: 'Returns the session for given consultant id and user id.'
+      operationId: getRocketChatGroupId
+      parameters:
+        - name: consultantId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: askerId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK - successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RocketChatGroupIdDTO'
+        204:
+          description: NO CONTENT - no sessions for given session ID
+        400:
+          description: BAD REQUEST - invalid/incomplete request
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization or CSRF token
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+
   /users/sessions/{sessionId}/archive:
     put:
       tags:
@@ -481,8 +537,7 @@ paths:
       tags:
         - user-controller
       summary: 'Partially updates account properties of the currently authenticated user'
-      description: 'Supported fields so far are encourage2fa and displayName
-        [Authorization: Role: consultant, user]'
+      description: 'For supported fields see PatchUserDTO [Auth: consultant, user]'
       operationId: patchUser
       requestBody:
         required: true
@@ -493,6 +548,36 @@ paths:
       responses:
         204:
           description: NO CONTENT - successful operation
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization or CSRF token
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /users/notifications:
+    get:
+      tags:
+        - user-controller
+      summary: 'Returns notification settings for the currently authenticated user [Authorization:
+        Role: technical-calcom]'
+      operationId: getUserEmailNotifications
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK - successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/EmailNotificationsDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
         401:
@@ -843,6 +928,71 @@ paths:
           description: INTERNAL SERVER ERROR - server encountered unexpected condition
       security:
         - Bearer: [ ]
+  /users/consultants:
+    get:
+      tags:
+        - user-controller
+      summary: 'Returns an alphabetically sorted list of consultants depending on
+        the query filter parameters [Authorization: Authority: VIEW_AGENCY_CONSULTANTS]'
+      operationId: getConsultants
+      parameters:
+        - name: agencyId
+          in: query
+          description: Agency Id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConsultantResponseDTO'
+        204:
+          description: successful operation, but no content
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - no/invalid role/authorization or CSRF token
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /users/consultants/{consultantId}:
+    get:
+      tags:
+        - user-controller
+      summary: 'Returns registration relevant data of a consultant [Authorization: none]'
+      operationId: getConsultantPublicData
+      parameters:
+        - name: consultantId
+          in: path
+          description: Consultant Id
+          required: true
+          schema:
+            type: string
+            format: UUID
+      responses:
+        200:
+          description: successful operation
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ConsultantResponseDTO'
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        403:
+          description: FORBIDDEN - no/invalid CSRF token
+        409:
+          description: CONFLICT - invalid/unavailable username
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
   /users/sessions/{sessionId}/consultant/{consultantId}:
     put:
       tags:
@@ -883,7 +1033,7 @@ paths:
     delete:
       tags:
         - user-controller
-      summary: 'Remove a consultant from a session
+      summary: 'Remove a consultant from a session 
         [Auth: ASSIGN_CONSULTANT_TO_ENQUIRY or ASSIGN_CONSULTANT_TO_SESSION]'
       operationId: removeFromSession
       parameters:
@@ -1038,9 +1188,39 @@ paths:
     post:
       tags:
         - user-controller
-      summary: 'Create a new group chat [Authorization: Role: consultant with authority
+      summary: 'Create a new group chat with chat_agency relation so that all advice seekers from that agency can see this chat. [Authorization: Role: consultant with authority
         CREATE_NEW_CHAT]'
-      operationId: createChat
+      operationId: createChatV1
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/ChatDTO'
+        required: true
+      responses:
+        201:
+          description: CREATED - group chat was created successfully
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/CreateChatResponseDTO'
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        403:
+          description: FORBIDDEN - no/invalid CSRF token
+        409:
+          description: CONFLICT - group chat with same name already existing
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /users/chat/v2/new:
+    post:
+      tags:
+        - user-controller
+      summary: 'Create a new group chat that will be visible to the user only by invitation [Authorization: Role: consultant with authority
+        CREATE_NEW_CHAT]'
+      operationId: createChatV2
       requestBody:
         content:
           'application/json':
@@ -1107,7 +1287,7 @@ paths:
     post:
       tags:
         - user-controller
-      summary: 'Ban a user from a group chat
+      summary: 'Ban a user from a group chat 
         [Authorization: Role: consultant with authority UPDATE_CHAT]'
       operationId: banFromChat
       parameters:
@@ -1232,6 +1412,30 @@ paths:
                 $ref: '#/components/schemas/ChatInfoResponseDTO'
         400:
           description: BAD REQUEST - invalid/incomplete request or body object
+        404:
+          description: NOT FOUND - Chat not found
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /users/chat/{groupId}/assign:
+    put:
+      tags:
+        - user-controller
+      summary: 'Assign the user to the given chat [Authorization: Role: consultant or user]'
+      operationId: assignChat
+      parameters:
+        - name: groupId
+          in: path
+          description: the rocket chat group uuid part
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK - successful operation
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
         401:
           description: UNAUTHORIZED - no/invalid Keycloak token
         403:
@@ -1248,6 +1452,37 @@ paths:
         - user-controller
       summary: 'Join a chat [Authorization: Role: consultant or user]'
       operationId: joinChat
+      parameters:
+        - name: chatId
+          in: path
+          description: Chat Id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK - successful operation
+        400:
+          description: BAD REQUEST - invalid/incomplete request or body object
+        401:
+          description: UNAUTHORIZED - no/invalid Keycloak token
+        403:
+          description: FORBIDDEN - No permission for chat
+        404:
+          description: NOT FOUND - Chat not found
+        409:
+          description: CONFLICT - Chat has not startet yet
+        500:
+          description: INTERNAL SERVER ERROR - server encountered unexpected condition
+      security:
+        - Bearer: [ ]
+  /users/chat/{chatId}/verify:
+    put:
+      tags:
+        - user-controller
+      summary: 'Verify consultant has access to this chat [Authorization: Role: consultant]'
+      operationId: verifyCanModerateChat
       parameters:
         - name: chatId
           in: path
@@ -1569,7 +1804,7 @@ components:
   schemas:
     UserDTO:
       allOf:
-        - $ref: '#/components/schemas/MandatorySessionDataDTO'
+        - $ref: '#/components/schemas/SessionDataDTO'
       type: object
       required:
         - username
@@ -1607,24 +1842,22 @@ components:
         mainTopicId:
           type: integer
           example: 15
-
-    SessionDataDTO:
-      allOf:
-        - $ref: '#/components/schemas/MandatorySessionDataDTO'
-      type: object
-      properties:
-        addictiveDrugs:
+        topicIds:
+          type: array
+          items:
+            type: integer
+          example: [12,15]
+        counsellingRelation:
           type: string
-          example: 2,4
-          description: comma separated list of addictive drug IDs
-        relation:
-          type: string
-          example: 2
+          example: 'SELF_COUNSELLING'
         gender:
           type: string
-          example: 0
+          example: 'DIVERSE'
+        preferredLanguage:
+          $ref: "#/components/schemas/LanguageCode"
 
-    MandatorySessionDataDTO:
+
+    SessionDataDTO:
       type: object
       properties:
         age:
@@ -1826,6 +2059,7 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           example: 12132
         name:
           type: string
@@ -1849,6 +2083,8 @@ components:
           $ref: '#/components/schemas/VideoCallMessageDTO'
         messageType:
           $ref: '#/components/schemas/MessageType'
+        content:
+          type: string
 
     ForwardMessageDTO:
       type: object
@@ -1878,6 +2114,7 @@ components:
         org:
           type: string
           example: "Lorem ipsum dolor sit amet, consetetur..."
+          description: "Legacy fallback for stringified messages"
 
     VideoCallMessageDTO:
       type: object
@@ -1902,6 +2139,9 @@ components:
     MessageType:
       type: string
       enum:
+        - "APPOINTMENT_SET"
+        - "APPOINTMENT_CANCELLED"
+        - "APPOINTMENT_RESCHEDULED"
         - "FURTHER_STEPS"
         - "UPDATE_SESSION_DATA"
         - "FORWARD"
@@ -1911,6 +2151,8 @@ components:
         - "USER_UNMUTED"
         - "E2EE_ACTIVATED"
         - "MASTER_KEY_LOST"
+        - "REASSIGN_CONSULTANT"
+        - "REASSIGN_CONSULTANT_RESET_LAST_MESSAGE"
 
     LastMessageDTO:
       type: object
@@ -1973,6 +2215,26 @@ components:
         isTeamSession:
           type: boolean
           example: false
+        age:
+          type: integer
+          example: 17
+        gender:
+          type: string
+          example: 0
+        counsellingRelation:
+          type: string
+          example: 'SELF_COUNSELLING'
+        mainTopic:
+          $ref: '#/components/schemas/SessionTopicDTO'
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionTopicDTO'
+        referer:
+          type: string
+          pattern: "^[a-zA-Z0-9]{1,8}$"
+          maxLength: 8
+          example: '12345678'
 
     UserChatDTO:
       type: object
@@ -2046,9 +2308,14 @@ components:
     SessionUserDTO:
       type: object
       properties:
+        id:
+          type: string
+          example: 926b9777-4eef-443d-925a-4aa534797bd7
         username:
           type: string
           example: max94
+        isDeleted:
+          type: boolean
         sessionData:
           type: string
           description: LinkedHashMap<String, Object>
@@ -2093,6 +2360,9 @@ components:
     SessionConsultantForUserDTO:
       type: object
       properties:
+        id:
+          type: string
+          example: consultantId
         username:
           type: string
           example: beraterXYZ
@@ -2117,9 +2387,6 @@ components:
           $ref: '#/components/schemas/LanguageCode'
         t:
           type: string
-        org:
-          type: string
-          example: "Lorem ipsum dolor sit amet, consetetur..."
 
     CreateEnquiryMessageResponseDTO:
       type: object
@@ -2167,7 +2434,11 @@ components:
           type: string
           format: email
           example: maxmuster@mann.com
-        isAbsent:
+        available:
+          description: consultants can mark themselves as not available for one-on-one chats
+          type: boolean
+        absent:
+          description: consultants can mark themselves as absent
           type: boolean
           example: false
         isFormalLanguage:
@@ -2180,6 +2451,8 @@ components:
             description: each an ISO 639-1 code
             default: de
             example: de, en
+        preferredLanguage:
+          $ref: "#/components/schemas/LanguageCode"
         absenceMessage:
           type: string
           example: Bin mal weg...
@@ -2225,6 +2498,19 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/EmailToggle'
+        appointmentFeatureEnabled:
+          type: boolean
+          example: true
+        termsAndConditionsConfirmation:
+          type: string
+          example: 2022-12-07T11:51:01
+          description: "Datetime stamp when the user accepted terms and condition"
+        dataPrivacyConfirmation:
+          type: string
+          example: 2022-12-07T11:51:01
+          description: "Datetime stamp when the user accepted data privacy"
+        emailNotifications:
+          $ref: "#/components/schemas/EmailNotificationsDTO"
 
     PatchUserDTO:
       type: object
@@ -2247,6 +2533,21 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/EmailToggle'
+        preferredLanguage:
+          $ref: '#/components/schemas/LanguageCode'
+        termsAndConditionsConfirmation:
+          type: boolean
+          example: true
+          description: Flag that indicates has the user accepted new terms and conditions text
+        dataPrivacyConfirmation:
+          type: boolean
+          example: true
+          description: Flag that indicates does the user accepted new data privacy text
+        available:
+          description: mark consultant as (not) available for one-on-one chats, no effect on others
+          type: boolean
+        emailNotifications:
+          $ref: "#/components/schemas/EmailNotificationsDTO"
 
     UpdateConsultantDTO:
       type: object
@@ -2274,6 +2575,16 @@ components:
           example: de, en
           items:
             $ref: '#/components/schemas/LanguageCode'
+        termsAndConditionsConfirmation:
+          type: boolean
+          example: true
+          description: Flag that indicates has the user accepted new terms and conditions text
+        dataPrivacyConfirmation:
+          type: boolean
+          example: true
+          description: Flag that indicates does the user accepted new data privacy text
+        emailNotifications:
+          $ref: "#/components/schemas/EmailNotificationsDTO"
 
     LanguageCode:
       type: string
@@ -2332,6 +2643,11 @@ components:
         consultingType:
           type: integer
           example: 1
+        tenantId:
+          type: integer
+          format: int64
+          example: 12
+
 
     MobileTokenDTO:
       type: object
@@ -2345,6 +2661,23 @@ components:
       properties:
         value:
           type: object
+
+    ConsultantResponseDTO:
+      type: object
+      properties:
+        consultantId:
+          type: string
+          example: aadc0ecf-c048-4bfc-857d-8c9b2e425500
+        firstName:
+          type: string
+          example: Max
+        lastName:
+          type: string
+          example: Mustermann
+        displayName:
+          type: string
+        username:
+          type: string
 
     PasswordDTO:
       type: object
@@ -2390,14 +2723,10 @@ components:
       type: object
       required:
         - groupId
-        - chatLink
       properties:
         groupId:
           type: string
           example: WCET6GWir78pNMyyD
-        chatLink:
-          type: string
-          example: https://{baseUrl}}/{consultingTypeName}/GEYDA
 
     ChatInfoResponseDTO:
       type: object
@@ -2443,6 +2772,8 @@ components:
           type: string
         utcOffset:
           type: string
+        userId:
+          type: string
 
     E2eKeyDTO:
       type: object
@@ -2458,14 +2789,10 @@ components:
       type: object
       required:
         - groupId
-        - chatLink
       properties:
         groupId:
           type: string
           example: WCET6GWir78pNMyyD
-        chatLink:
-          type: string
-          example: https://{baseUrl}}/{consultingTypeName}/GEYDA
 
     NewRegistrationDto:
       type: object
@@ -2489,6 +2816,27 @@ components:
         consultantId:
           type: string
           description: used for direct consultant registration
+        age:
+          type: string
+          example: 12
+        gender:
+          type: string
+          example: 'DIVERSE'
+        topicIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          example: [ 12,15 ]
+        counsellingRelation:
+          type: string
+          example: 'SELF_COUNSELLING'
+        referer:
+          type: string
+          pattern: "^[a-zA-Z0-9]{1,8}$"
+          maxLength: 8
+          example: '12345678'
+
 
     NewRegistrationResponseDto:
       type: object
@@ -2550,6 +2898,13 @@ components:
           type: string
           example: p@ssw0rd
 
+    RocketChatGroupIdDTO:
+      type: object
+      properties:
+        groupId:
+          type: string
+          example: rc123456
+
     EmailDTO:
       type: object
       required:
@@ -2601,6 +2956,38 @@ components:
           default: true
           nullable: false
           description: indicates if 2FA is supposed to be encouraged
+
+    EmailNotificationsDTO:
+      type: object
+      required:
+        - emailNotificationsEnabled
+      properties:
+        emailNotificationsEnabled:
+          type: boolean
+          example: true
+          default: false
+        settings:
+           $ref: "#/components/schemas/NotificationsSettingsDTO"
+
+    NotificationsSettingsDTO:
+      type: object
+      properties:
+        initialEnquiryNotificationEnabled:
+          type: boolean
+          example: true
+          default: false
+        newChatMessageNotificationEnabled:
+          type: boolean
+          example: true
+          default: false
+        reassignmentNotificationEnabled:
+          type: boolean
+          example: true
+          default: false
+        appointmentNotificationEnabled:
+          type: boolean
+          example: true
+          default: false
 
     OtpType:
       type: string

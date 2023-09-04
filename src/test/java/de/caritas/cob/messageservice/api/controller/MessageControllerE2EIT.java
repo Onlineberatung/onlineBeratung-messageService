@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import de.caritas.cob.messageservice.api.authorization.Authority.AuthorityValue;
 import de.caritas.cob.messageservice.api.exception.CustomCryptoException;
 import de.caritas.cob.messageservice.api.exception.RocketChatUserNotInitializedException;
@@ -56,11 +57,13 @@ import de.caritas.cob.messageservice.api.repository.DraftMessageRepository;
 import de.caritas.cob.messageservice.api.service.EncryptionService;
 import de.caritas.cob.messageservice.api.service.LiveEventNotificationService;
 import de.caritas.cob.messageservice.api.service.RocketChatService;
+import de.caritas.cob.messageservice.api.service.SessionService;
 import de.caritas.cob.messageservice.api.service.dto.Message;
 import de.caritas.cob.messageservice.api.service.dto.MessageResponse;
 import de.caritas.cob.messageservice.api.service.dto.StringifiedMessageResponse;
 import de.caritas.cob.messageservice.api.service.helper.RocketChatCredentialsHelper;
 import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
+import de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -77,6 +80,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -145,6 +149,9 @@ class MessageControllerE2EIT {
 
   @Captor
   private ArgumentCaptor<URI> uriArgumentCaptor;
+
+  @MockBean
+  SessionService sessionService;
 
   private AliasOnlyMessageDTO aliasOnlyMessage;
   private List<MessagesDTO> messages;
@@ -878,6 +885,8 @@ class MessageControllerE2EIT {
   void sendMessageShouldTransmitTypeOfMessage() throws Exception {
     givenAuthenticatedUser();
     givenRocketChatSystemUser();
+    when(sessionService.findSessionBelongingToRcGroupId(
+        Mockito.anyString(), Mockito.anyString())).thenReturn(new GroupSessionListResponseDTO());
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse("p", rcGroupId);
     givenAMasterKey();
@@ -912,6 +921,10 @@ class MessageControllerE2EIT {
     var rcGroupId = RandomStringUtils.randomAlphabetic(16);
     givenSuccessfulSendMessageResponse("e2e", rcGroupId);
     givenAMasterKey();
+    when(sessionService.findSessionBelongingToRcGroupId(
+        Mockito.anyString(), Mockito.anyString())).thenReturn(new GroupSessionListResponseDTO().sessions(
+        Lists.newArrayList(new de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionResponseDTO()
+                .user(new de.caritas.cob.messageservice.userservice.generated.web.model.SessionUserDTO().id("userId")))));
 
     MessageDTO encryptedMessage = createMessage("enc.secret_message", "e2e");
 

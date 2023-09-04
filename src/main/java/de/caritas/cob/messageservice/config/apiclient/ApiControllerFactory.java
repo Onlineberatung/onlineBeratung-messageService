@@ -18,7 +18,7 @@ public class ApiControllerFactory {
   private String userServiceBasePath;
 
   public UserControllerApi userControllerApi() {
-    var apiClient = new ApiClient(restTemplate).setBasePath(userServiceBasePath);
+    var apiClient = new UserApiClient(restTemplate).setBasePath(userServiceBasePath);
 
     return new UserControllerApi(apiClient);
   }

@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish Docker image skip tests
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
       - "v*"
 
 jobs:
-  test:
-    name: Build and run unit tests
+  build:
+    name: Build
     runs-on: ubuntu-latest
     env:
       FAIL_WEBHOOK_SECRET: ${{ secrets.MS_TEAMS_FAIL_WEBHOOK_URI }}
@@ -40,8 +40,6 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
       - name: Maven Package
         run: mvn -B -Pprod  clean package -DskipTests
-      - name: Maven Verify
-        run: mvn -B -Pprod clean verify
       - uses: actions/upload-artifact@v2
         with:
           name: targetfiles
@@ -61,10 +59,10 @@ jobs:
             - text: View CI
               url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   push_to_registry:
+    needs: [build]
     strategy:
       matrix:
         registry: ["ghcr.io"]
-    needs: [test]
     name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     env:
