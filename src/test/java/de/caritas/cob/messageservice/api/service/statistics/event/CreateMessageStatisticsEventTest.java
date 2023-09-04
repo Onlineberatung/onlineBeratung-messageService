@@ -1,5 +1,6 @@
 package de.caritas.cob.messageservice.api.service.statistics.event;
 
+import static de.caritas.cob.messageservice.testhelper.TestConstants.ADVICESEEKER_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.RC_GROUP_ID;
 import static de.caritas.cob.messageservice.testhelper.TestConstants.CONSULTANT_ID;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
@@ -23,7 +24,7 @@ public class CreateMessageStatisticsEventTest {
   @Before
   public void setup() throws NoSuchFieldException, IllegalAccessException {
     createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false);
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false, ADVICESEEKER_ID);
   }
 
   @Test

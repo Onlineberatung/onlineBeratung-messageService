@@ -53,6 +53,7 @@ public class MessageController implements MessagesApi {
   private final @NonNull DraftMessageService draftMessageService;
   private final @NonNull MessageMapper mapper;
 
+
   /**
    * Returns a list of {@link MessageStreamDTO}s from the specified Rocket.Chat group.
    *

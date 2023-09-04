@@ -7,6 +7,7 @@ import de.caritas.cob.messageservice.statisticsservice.generated.web.model.Event
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.CreateMessageStatisticsEventMessage;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
 import java.util.Optional;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
  * Create message statistics event.
  */
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
   private static final EventType EVENT_TYPE = EventType.CREATE_MESSAGE;
@@ -22,6 +24,8 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
   private @NonNull UserRole userRole;
   private @NonNull String rcGroupId;
   private @NonNull Boolean hasAttachment;
+
+  private String receiverId;
 
   /** {@inheritDoc} */
   @Override
@@ -43,6 +47,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
         .userRole(userRole)
         .rcGroupId(rcGroupId)
         .hasAttachment(hasAttachment)
+        .receiverId(receiverId)
         .timestamp(CustomOffsetDateTime.nowInUtc());
   }
 }
