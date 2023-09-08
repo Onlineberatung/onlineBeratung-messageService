@@ -33,6 +33,8 @@ import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
+import de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionConsultantDTO;
+import de.caritas.cob.messageservice.userservice.generated.web.model.SessionUserDTO;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -116,14 +118,26 @@ public class Messenger {
     de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO sessionBelongingToRcGroupId = sessionService.findSessionBelongingToRcGroupId(
         chatMessage.getRcToken(), chatMessage.getRcGroupId());
     if (sessionBelongingToRcGroupId != null && sessionBelongingToRcGroupId.getSessions() != null) {
-      var session = sessionBelongingToRcGroupId.getSessions().stream().findFirst();
+      var optionalSession = sessionBelongingToRcGroupId.getSessions().stream().findFirst();
       if (authenticatedUser.isConsultant()) {
-        return session.isPresent() ? session.get().getUser().getId() : null;
+        return optionalSession.isPresent() ? getUserId(optionalSession.get()) : null;
       } else if (authenticatedUser.isAdviceSeeker()) {
-        return session.isPresent() ? session.get().getConsultant().getId() : null;
+        return optionalSession.isPresent() ? getConsultantId(optionalSession.get()) : null;
       }
     }
     return null;
+  }
+
+  private String getConsultantId(
+      de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionResponseDTO session) {
+    GroupSessionConsultantDTO consultant = session.getConsultant();
+    return consultant != null ? consultant.getId() : null;
+  }
+
+  private String getUserId(
+      de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionResponseDTO session) {
+    SessionUserDTO user = session.getUser();
+    return user != null ? user.getId() : null;
   }
 
   private UserRole resolveUserRole(AuthenticatedUser authenticatedUser) {
