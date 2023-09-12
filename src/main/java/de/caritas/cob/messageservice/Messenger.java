@@ -33,7 +33,6 @@ import de.caritas.cob.messageservice.api.service.statistics.StatisticsService;
 import de.caritas.cob.messageservice.api.service.statistics.event.CreateMessageStatisticsEvent;
 import de.caritas.cob.messageservice.api.tenant.TenantContext;
 import de.caritas.cob.messageservice.statisticsservice.generated.web.model.UserRole;
-import de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionConsultantDTO;
 import de.caritas.cob.messageservice.userservice.generated.web.model.SessionUserDTO;
 import java.util.Optional;
 import lombok.NonNull;
@@ -111,27 +110,20 @@ public class Messenger {
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
-        resolveUserRole(authenticatedUser), chatMessage.getRcGroupId(), false, resolveRecipentUserId(chatMessage)));
+        resolveUserRole(authenticatedUser), chatMessage.getRcGroupId(), false, resolveAdviceseekerUserId(chatMessage)));
   }
 
-  private String resolveRecipentUserId(ChatMessage chatMessage) {
-    de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO sessionBelongingToRcGroupId = sessionService.findSessionBelongingToRcGroupId(
-        chatMessage.getRcToken(), chatMessage.getRcGroupId());
-    if (sessionBelongingToRcGroupId != null && sessionBelongingToRcGroupId.getSessions() != null) {
-      var optionalSession = sessionBelongingToRcGroupId.getSessions().stream().findFirst();
-      if (authenticatedUser.isConsultant()) {
+  private String resolveAdviceseekerUserId(ChatMessage chatMessage) {
+    if (authenticatedUser.isConsultant()) {
+      de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionListResponseDTO sessionBelongingToRcGroupId = sessionService.findSessionBelongingToRcGroupId(
+          chatMessage.getRcToken(), chatMessage.getRcGroupId());
+      if (sessionBelongingToRcGroupId != null
+          && sessionBelongingToRcGroupId.getSessions() != null) {
+        var optionalSession = sessionBelongingToRcGroupId.getSessions().stream().findFirst();
         return optionalSession.isPresent() ? getUserId(optionalSession.get()) : null;
-      } else if (authenticatedUser.isAdviceSeeker()) {
-        return optionalSession.isPresent() ? getConsultantId(optionalSession.get()) : null;
       }
     }
     return null;
-  }
-
-  private String getConsultantId(
-      de.caritas.cob.messageservice.userservice.generated.web.model.GroupSessionResponseDTO session) {
-    GroupSessionConsultantDTO consultant = session.getConsultant();
-    return consultant != null ? consultant.getId() : null;
   }
 
   private String getUserId(
