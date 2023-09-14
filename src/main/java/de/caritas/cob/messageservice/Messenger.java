@@ -110,7 +110,7 @@ public class Messenger {
     }
 
     statisticsService.fireEvent(new CreateMessageStatisticsEvent(authenticatedUser.getUserId(),
-        resolveUserRole(authenticatedUser), chatMessage.getRcGroupId(), false, resolveAdviceseekerUserId(chatMessage)));
+        resolveUserRole(authenticatedUser), chatMessage.getRcGroupId(), false, resolveAdviceseekerUserId(chatMessage), TenantContext.getCurrentTenant()));
   }
 
   private String resolveAdviceseekerUserId(ChatMessage chatMessage) {

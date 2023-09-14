@@ -47,7 +47,7 @@ public class StatisticsServiceIT {
       throws IOException {
 
     CreateMessageStatisticsEvent createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false, ADVICESEEKER_ID);
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false, ADVICESEEKER_ID, 1L);
 
     statisticsService.fireEvent(createMessageStatisticsEvent);
     Message message =
@@ -68,6 +68,9 @@ public class StatisticsServiceIT {
             + "\"receiverId\":\""
             + ADVICESEEKER_ID
             + "\","
+            + "\"tenantId\":"
+            + 1L
+            + ","
             + "  \"timestamp\":\""
             + CustomOffsetDateTime.nowInUtc()
             + "\","

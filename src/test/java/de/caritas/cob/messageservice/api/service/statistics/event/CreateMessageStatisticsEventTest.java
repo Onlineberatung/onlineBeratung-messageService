@@ -19,12 +19,14 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class CreateMessageStatisticsEventTest {
 
+  private static final long TENANT_ID = 1L;
   private CreateMessageStatisticsEvent createMessageStatisticsEvent;
 
   @Before
   public void setup() throws NoSuchFieldException, IllegalAccessException {
     createMessageStatisticsEvent =
-        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false, ADVICESEEKER_ID);
+        new CreateMessageStatisticsEvent(CONSULTANT_ID, UserRole.CONSULTANT, RC_GROUP_ID, false, ADVICESEEKER_ID,
+            TENANT_ID);
   }
 
   @Test
@@ -38,9 +40,11 @@ public class CreateMessageStatisticsEventTest {
 
     String expectedJson = "{"
         + "  \"rcGroupId\":\"" + RC_GROUP_ID + "\","
+        + "  \"receiverId\":\"" + ADVICESEEKER_ID + "\","
         + "  \"userId\":\"" + CONSULTANT_ID + "\","
         + "  \"userRole\":\"" + UserRole.CONSULTANT + "\","
         + "  \"hasAttachment\": false,"
+        + "  \"tenantId\":" + TENANT_ID + ","
         + "  \"timestamp\":\"" + CustomOffsetDateTime.nowInUtc() + "\","
         + "  \"eventType\":\"" + EventType.CREATE_MESSAGE + "\""
         + "}";

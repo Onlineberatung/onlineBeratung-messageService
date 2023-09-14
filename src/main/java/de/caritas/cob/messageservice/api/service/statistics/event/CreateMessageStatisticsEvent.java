@@ -27,6 +27,8 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
 
   private String receiverId;
 
+  private Long  tenantId;
+
   /** {@inheritDoc} */
   @Override
   public Optional<String> getPayload() {
@@ -48,6 +50,7 @@ public class CreateMessageStatisticsEvent implements StatisticsEvent {
         .rcGroupId(rcGroupId)
         .hasAttachment(hasAttachment)
         .receiverId(receiverId)
+        .tenantId(tenantId)
         .timestamp(CustomOffsetDateTime.nowInUtc());
   }
 }

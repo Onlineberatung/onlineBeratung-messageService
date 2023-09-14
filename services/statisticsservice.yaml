@@ -112,6 +112,11 @@ components:
         receiverId:
           type: string
           description: receiving user id of the message (taken from session). Can be null for groupchat.
+        tenantId:
+          type: integer
+          format: int64
+          description: The id of the tenant
+          example: 1
 
     StartVideoCallStatisticsEventMessage:
       type: object
