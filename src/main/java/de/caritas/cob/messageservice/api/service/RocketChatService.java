@@ -44,6 +44,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -128,15 +129,25 @@ public class RocketChatService {
     return messageStream;
   }
 
-  private MessageStreamDTO obtainMessageStream(String rcToken, String rcUserId, URI uri) {
+  MessageStreamDTO obtainMessageStream(String rcToken, String rcUserId, URI uri) {
     HttpEntity<?> entity = new HttpEntity<>(getRocketChatHeader(rcToken, rcUserId));
 
     try {
       return restTemplate.exchange(uri, HttpMethod.GET, entity, MessageStreamDTO.class).getBody();
-
-    } catch (RestClientException exception) {
-      LogService.logRocketChatServiceError(exception);
-      var msg = "Could not read message stream from Rocket.Chat API (uri: %s)".formatted(uri);
+    } catch (HttpClientErrorException | HttpServerErrorException ex) {
+      var msg = "HTTP error while retrieving message stream from Rocket.Chat API (uri: %s): %s"
+          .formatted(uri, ex.getMessage());
+      LogService.logRocketChatServiceError(ex);
+      throw new InternalServerErrorException(msg, LogService::logRocketChatServiceError);
+    } catch (RestClientException ex) {
+      var msg = "RestClientException while accessing Rocket.Chat API (uri: %s): %s"
+          .formatted(uri, ex.getMessage());
+      LogService.logRocketChatServiceError(ex);
+      throw new InternalServerErrorException(msg, LogService::logRocketChatServiceError);
+    } catch (Exception ex) {
+      var msg = "Unexpected error while retrieving message stream from Rocket.Chat API (uri: %s): %s"
+          .formatted(uri, ex.getMessage());
+      LogService.logRocketChatServiceError(ex);
       throw new InternalServerErrorException(msg, LogService::logRocketChatServiceError);
     }
   }
